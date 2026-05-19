@@ -10,23 +10,23 @@ export const authService = {
       
       // Verify response structure
       if (!response.data) {
-        console.error('❌ authService.login - No data in response');
+        console.error(' authService.login - No data in response');
         throw new Error('Invalid response from server');
       }
       
       if (!response.data.token) {
-        console.error('❌ authService.login - No token in response');
+        console.error(' authService.login - No token in response');
         throw new Error('No token received from server');
       }
       
-      console.log('✅ authService.login - Response valid, returning data');
+      console.log(' authService.login - Response valid, returning data');
       return response.data;
     } catch (error) {
-      console.error('❌ authService.login - Error:', error);
-      console.error('❌ authService.login - Error response:', error.response);
+      console.error(' authService.login - Error:', error);
+      console.error(' authService.login - Error response:', error.response);
       if (error.response) {
-        console.error('❌ Error data:', error.response.data);
-        console.error('❌ Error status:', error.response.status);
+        console.error(' Error data:', error.response.data);
+        console.error(' Error status:', error.response.status);
       }
       throw error;
     }
@@ -94,14 +94,14 @@ export const authService = {
     
     try {
       if (!authResponse) {
-        console.error('❌ authService.setAuthData - No authResponse provided');
+        console.error(' authService.setAuthData - No authResponse provided');
         return;
       }
       
       // Normalize role to uppercase to ensure consistency
       const role = authResponse.role ? authResponse.role.toUpperCase() : null;
       if (!role) {
-        console.error('❌ authService.setAuthData - No role in authResponse');
+        console.error(' authService.setAuthData - No role in authResponse');
         throw new Error('Role is required in auth response');
       }
       
@@ -112,17 +112,17 @@ export const authService = {
         localStorage.setItem(`token_${role}`, authResponse.token);
         // Also set to 'token' for backward compatibility
         localStorage.setItem('token', authResponse.token);
-        console.log(`✅ Token saved to localStorage as token_${role}`);
+        console.log(` Token saved to localStorage as token_${role}`);
         
         // Verify it was saved correctly
         const savedToken = localStorage.getItem(`token_${role}`);
         if (savedToken === authResponse.token) {
-          console.log(`✅ Verification - Token saved correctly to token_${role}`);
+          console.log(` Verification - Token saved correctly to token_${role}`);
         } else {
-          console.error(`❌ Verification FAILED - Token not saved correctly to token_${role}`);
+          console.error(` Verification FAILED - Token not saved correctly to token_${role}`);
         }
       } else {
-        console.warn('⚠️ No token in authResponse');
+        console.warn(' No token in authResponse');
       }
       
       // Set refresh token with role-specific key
@@ -130,7 +130,7 @@ export const authService = {
         localStorage.setItem(`refreshToken_${role}`, authResponse.refreshToken);
         // Also set to 'refreshToken' for backward compatibility
         localStorage.setItem('refreshToken', authResponse.refreshToken);
-        console.log(`✅ RefreshToken saved to localStorage as refreshToken_${role}`);
+        console.log(` RefreshToken saved to localStorage as refreshToken_${role}`);
       }
       
       // Set user data with role-specific key (use normalized role)
@@ -144,28 +144,28 @@ export const authService = {
       
       // Verify required fields
       if (!userData.id || !userData.role) {
-        console.error('❌ Missing required user data:', userData);
+        console.error(' Missing required user data:', userData);
         throw new Error('Incomplete user data in response');
       }
       
       localStorage.setItem(`user_${role}`, JSON.stringify(userData));
       // Also set to 'user' for backward compatibility
       localStorage.setItem('user', JSON.stringify(userData));
-      console.log(`✅ User data saved to localStorage as user_${role}:`, userData);
+      console.log(` User data saved to localStorage as user_${role}:`, userData);
       
       // Verify it was saved
       const savedUser = JSON.parse(localStorage.getItem(`user_${role}`));
       if (savedUser && savedUser.role === role) {
-        console.log('✅ Verification - User saved correctly:', savedUser);
+        console.log(' Verification - User saved correctly:', savedUser);
       } else {
-        console.error('❌ Verification FAILED - User not saved correctly:', {
+        console.error(' Verification FAILED - User not saved correctly:', {
           saved: savedUser,
           expected: userData
         });
       }
       
     } catch (error) {
-      console.error('❌ authService.setAuthData - Error:', error);
+      console.error(' authService.setAuthData - Error:', error);
       throw error;
     }
   },

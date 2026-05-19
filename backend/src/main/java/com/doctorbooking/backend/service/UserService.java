@@ -4,9 +4,11 @@ import com.doctorbooking.backend.dto.request.ChangePasswordRequest;
 import com.doctorbooking.backend.dto.request.UpdateUserRequest;
 import com.doctorbooking.backend.dto.request.UserRequest;
 import com.doctorbooking.backend.dto.response.UserResponse;
+import com.doctorbooking.backend.model.Admin;
 import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.model.Doctor;
 import com.doctorbooking.backend.model.Patient;
+import com.doctorbooking.backend.repository.AdminRepository;
 import com.doctorbooking.backend.repository.UserRepository;
 import com.doctorbooking.backend.repository.DoctorRepository;
 import com.doctorbooking.backend.repository.PatientRepository;
@@ -30,15 +32,18 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final AdminRepository adminRepository;
 
     public UserService(UserRepository userRepository, 
                       @Lazy PasswordEncoder passwordEncoder,
                       DoctorRepository doctorRepository,
-                      PatientRepository patientRepository) {
+                      PatientRepository patientRepository,
+                      AdminRepository adminRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
+        this.adminRepository = adminRepository;
     }
 
     @Override
@@ -136,6 +141,7 @@ public class UserService implements UserDetailsService {
         user.setEnabled(request.getEnabled() != null ? request.getEnabled() : true);
 
         User savedUser = userRepository.save(user);
+        syncRoleProfile(savedUser);
         return UserResponse.fromUser(savedUser);
     }
 
@@ -164,7 +170,41 @@ public class UserService implements UserDetailsService {
         }
 
         User updatedUser = userRepository.save(user);
+        syncRoleProfile(updatedUser);
         return UserResponse.fromUser(updatedUser);
+    }
+
+    private void syncRoleProfile(User user) {
+        Long userId = user.getId();
+        switch (user.getRole()) {
+            case DOCTOR -> {
+                if (doctorRepository.findByUserId(userId).isEmpty()) {
+                    Doctor doctor = new Doctor();
+                    doctor.setUser(user);
+                    doctor.setFullName(user.getUsername());
+                    doctor.setSpecialization("General");
+                    doctor.setExperience(0);
+                    doctor.setStatus(Doctor.DoctorStatus.ACTIVE);
+                    doctorRepository.save(doctor);
+                }
+            }
+            case PATIENT -> {
+                if (patientRepository.findByUserId(userId).isEmpty()) {
+                    Patient patient = new Patient();
+                    patient.setUser(user);
+                    patient.setFullName(user.getUsername());
+                    patientRepository.save(patient);
+                }
+            }
+            case ADMIN -> {
+                if (adminRepository.findByUserId(userId).isEmpty()) {
+                    Admin admin = new Admin();
+                    admin.setUser(user);
+                    admin.setFullName(user.getUsername());
+                    adminRepository.save(admin);
+                }
+            }
+        }
     }
 
     @Transactional

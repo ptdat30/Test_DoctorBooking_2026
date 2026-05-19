@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import .meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -25,17 +25,11 @@ api.interceptors.request.use(
     const role = getRoleFromUrl(config.url);
 
     let token = null;
-    let tokenSource = '';
 
     if (role) {
       // CRITICAL: If role is determined from URL, ONLY use token for that specific role
       // Do NOT fallback to other roles' tokens to avoid 403 errors
       token = localStorage.getItem(`token_${role}`);
-      if (!token) {
-        tokenSource = null;
-      } else {
-        tokenSource = `token_${role}`;
-      }
     } else {
       // For non-role-specific endpoints (e.g., /auth/**), use fallback logic
       // Try role-specific tokens first
@@ -43,7 +37,6 @@ api.interceptors.request.use(
       for (const r of roles) {
         token = localStorage.getItem(`token_${r}`);
         if (token) {
-          tokenSource = `token_${r} (fallback)`;
           break;
         }
       }
@@ -51,9 +44,6 @@ api.interceptors.request.use(
       // Final fallback to old token key
       if (!token) {
         token = localStorage.getItem('token');
-        if (token) {
-          tokenSource = 'token (default fallback)';
-        }
       }
     }
 
@@ -99,7 +89,7 @@ api.interceptors.response.use(
 
       if (errorString.includes('expired') || errorString.includes('jwt')) {
         // JWT expired - clear all tokens and redirect to login
-        console.warn('⚠️ JWT token expired. Clearing tokens and redirecting to login...');
+        console.warn(' JWT token expired. Clearing tokens and redirecting to login...');
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');

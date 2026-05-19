@@ -84,8 +84,15 @@ const AuthUnified = () => {
       // Login
       setLoading(true);
       try {
-        await login(email, password);
-        navigate('/');
+        const authResponse = await login(email, password);
+        const role = authResponse?.role?.toUpperCase();
+        if (role === 'ADMIN') {
+          navigate('/admin/dashboard');
+        } else if (role === 'DOCTOR') {
+          navigate('/doctor/dashboard');
+        } else {
+          navigate('/patient/dashboard');
+        }
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Đăng nhập thất bại');
         setLoading(false);

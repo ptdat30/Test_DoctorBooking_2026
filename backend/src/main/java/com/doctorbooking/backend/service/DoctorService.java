@@ -150,16 +150,32 @@ public class DoctorService {
     }
 
     // Doctor Profile Management (for doctor themselves)
+    @Transactional
+    public Doctor ensureDoctorProfile(Long userId) {
+        return doctorRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                    if (user.getRole() != User.Role.DOCTOR) {
+                        throw new RuntimeException("Doctor not found with user id: " + userId);
+                    }
+                    Doctor doctor = new Doctor();
+                    doctor.setUser(user);
+                    doctor.setFullName(user.getUsername());
+                    doctor.setSpecialization("General");
+                    doctor.setExperience(0);
+                    doctor.setStatus(Doctor.DoctorStatus.ACTIVE);
+                    return doctorRepository.save(doctor);
+                });
+    }
+
     public DoctorResponse getDoctorByUserId(Long userId) {
-        Doctor doctor = doctorRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with user id: " + userId));
-        return DoctorResponse.fromEntity(doctor);
+        return DoctorResponse.fromEntity(ensureDoctorProfile(userId));
     }
 
     @Transactional
     public DoctorResponse updateDoctorProfile(Long userId, UpdateProfileRequest request) {
-        Doctor doctor = doctorRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with user id: " + userId));
+        Doctor doctor = ensureDoctorProfile(userId);
 
         if (request.getFullName() != null) {
             doctor.setFullName(request.getFullName());

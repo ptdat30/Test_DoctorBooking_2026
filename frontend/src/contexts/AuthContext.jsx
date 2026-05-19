@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }) => {
         fullName: authResponse.fullName,
       };
       setUser(userData);
-      
       return authResponse;
     } catch (error) {
       console.error('Login error in AuthContext:', error);
