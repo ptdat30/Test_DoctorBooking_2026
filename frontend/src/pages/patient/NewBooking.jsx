@@ -7,6 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import '../patient/patientPages.css';
 import './NewBooking.css';
 
+// Helper: Lấy ngày hôm nay theo LOCAL timezone (tránh lỗi UTC vs UTC+7)
+const getLocalDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const NewBooking = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +42,7 @@ const NewBooking = () => {
     loadWalletBalance();
     loadFamilyMembers();
     // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     setFormData(prev => ({ ...prev, appointmentDate: today }));
   }, []);
 
@@ -143,43 +152,65 @@ const NewBooking = () => {
     setSubmitting(true);
 
     try {
+      // Frontend validation
+      if (!formData.doctorId) {
+        setError('Vui lòng chọn bác sĩ');
+        setSubmitting(false);
+        return;
+      }
+      if (!formData.appointmentDate) {
+        setError('Vui lòng chọn ngày hẹn');
+        setSubmitting(false);
+        return;
+      }
+      if (!formData.appointmentTime) {
+        setError('Vui lòng chọn giờ hẹn');
+        setSubmitting(false);
+        return;
+      }
+
       // Get selected doctor info
       const selectedDoctor = doctors.find(d => d.id === parseInt(formData.doctorId));
       const consultationFee = selectedDoctor?.consultationFee || 0;
-      console.log(' Consultation fee:', consultationFee);
-      console.log(' Payment method:', formData.paymentMethod);
+      console.log('💰 Consultation fee:', consultationFee);
+      console.log('💳 Payment method:', formData.paymentMethod);
 
       // Validate payment method với wallet balance
       if (formData.paymentMethod === 'WALLET' && walletBalance < consultationFee) {
         const errorMsg = `Số dư ví không đủ. Bạn cần ${consultationFee.toLocaleString('vi-VN')} VNĐ nhưng chỉ có ${walletBalance.toLocaleString('vi-VN')} VNĐ`;
-        console.error(' Wallet validation failed:', errorMsg);
+        console.error('❌ Wallet validation failed:', errorMsg);
         setError(errorMsg);
         setSubmitting(false);
         return;
       }
 
-      console.log('📤 Calling API to create appointment...');
-
       // Chuẩn bị request data
+      // appointmentTime từ dropdown là "HH:mm", cộng ":00" thành "HH:mm:ss" cho LocalTime
+      const timeValue = formData.appointmentTime.includes(':') && formData.appointmentTime.split(':').length === 2
+        ? formData.appointmentTime + ':00'
+        : formData.appointmentTime;
+
       const appointmentData = {
         doctorId: parseInt(formData.doctorId),
         appointmentDate: formData.appointmentDate,
-        appointmentTime: formData.appointmentTime + ':00',
-        notes: formData.notes,
-        paymentMethod: formData.paymentMethod,
+        appointmentTime: timeValue,
+        notes: formData.notes || '',
+        paymentMethod: formData.paymentMethod || 'CASH',
       };
 
       // Nếu đặt cho người nhà (không phải 'self'), thêm familyMemberId
       if (formData.patientFor !== 'self') {
         appointmentData.familyMemberId = parseInt(formData.patientFor);
-        console.log(' Booking for family member:', appointmentData.familyMemberId);
+        console.log('👨‍👩‍👧 Booking for family member:', appointmentData.familyMemberId);
       } else {
-        console.log(' Booking for self');
+        console.log('🧑 Booking for self');
       }
+
+      console.log('📤 Request payload:', JSON.stringify(appointmentData, null, 2));
 
       const response = await patientService.createAppointment(appointmentData);
 
-      console.log(' API response received:', response);
+      console.log('✅ API response received:', response);
 
       // Nếu chọn VNPAY, redirect sang trang thanh toán
       if (formData.paymentMethod === 'VNPAY' && response.paymentUrl) {
@@ -190,15 +221,38 @@ const NewBooking = () => {
         return;
       }
 
-      console.log(' Appointment created successfully (non-VNPAY)');
+      console.log('✅ Appointment created successfully (non-VNPAY)');
       setSuccess('Đặt lịch hẹn thành công!');
       setTimeout(() => {
         navigate('/patient/history');
       }, 2000);
     } catch (err) {
-      console.error(' Error creating appointment:', err);
-      console.error(' Error response:', err.response);
-      const errorMessage = err.response?.data?.message || err.message || 'Không thể đặt lịch hẹn. Vui lòng thử lại.';
+      console.error('❌ Error creating appointment:', err);
+      console.error('❌ Error response data (JSON):', JSON.stringify(err.response?.data, null, 2));
+      console.error('❌ Error status:', err.response?.status);
+      console.error('❌ Error headers:', err.response?.headers);
+
+      // Trích xuất error message từ nhiều format response khác nhau
+      let errorMessage = 'Không thể đặt lịch hẹn. Vui lòng thử lại.';
+      if (err.response?.data) {
+        const data = err.response.data;
+        if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.errors) {
+          // Validation errors từ @Valid
+          const errorDetails = Object.entries(data.errors)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join('; ');
+          errorMessage = errorDetails || 'Dữ liệu không hợp lệ';
+        } else if (data.error) {
+          errorMessage = data.error;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       setError(errorMessage);
     } finally {
       setSubmitting(false);
@@ -411,7 +465,7 @@ const NewBooking = () => {
                     name="appointmentDate"
                     value={formData.appointmentDate}
                     onChange={handleChange}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={getLocalDateString()}
                     required
                     className="with-icon"
                   />

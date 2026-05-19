@@ -80,6 +80,10 @@ public class PatientController {
     @PostMapping("/appointments")
     public ResponseEntity<?> createAppointment(@Valid @RequestBody CreateAppointmentRequest request) {
         try {
+            logger.info("Creating appointment - doctorId: {}, date: {}, time: {}, paymentMethod: {}, familyMemberId: {}",
+                request.getDoctorId(), request.getAppointmentDate(), request.getAppointmentTime(),
+                request.getPaymentMethod(), request.getFamilyMemberId());
+            
             Long patientId = getCurrentPatientId();
             AppointmentResponse appointment = appointmentService.createAppointment(patientId, request);
             
@@ -104,7 +108,9 @@ public class PatientController {
                     return ResponseEntity.status(HttpStatus.CREATED).body(response);
                 } catch (Exception e) {
                     logger.error("Error creating VNPAY payment URL", e);
-                    return ResponseEntity.badRequest().build();
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("message", "Không thể tạo link thanh toán VNPAY: " + e.getMessage());
+                    return ResponseEntity.badRequest().body(errorResponse);
                 }
             }
             
@@ -112,7 +118,9 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.CREATED).body(appointment);
         } catch (RuntimeException e) {
             logger.error("Error creating appointment: ", e);
-            return ResponseEntity.badRequest().build();
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 

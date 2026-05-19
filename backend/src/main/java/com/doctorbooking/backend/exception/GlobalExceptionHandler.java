@@ -2,6 +2,7 @@ package com.doctorbooking.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +14,36 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("message", "Dữ liệu gửi lên không hợp lệ: " + extractRootCause(ex));
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    private String extractRootCause(HttpMessageNotReadableException ex) {
+        String message = ex.getMessage();
+        if (message == null) return "Không thể đọc dữ liệu request";
+        
+        // Extract the most useful part of the error message
+        if (message.contains("Cannot deserialize value of type `java.time.LocalTime`")) {
+            return "Định dạng giờ hẹn không hợp lệ. Vui lòng dùng format HH:mm:ss (ví dụ: 08:00:00)";
+        }
+        if (message.contains("Cannot deserialize value of type `java.time.LocalDate`")) {
+            return "Định dạng ngày hẹn không hợp lệ. Vui lòng dùng format YYYY-MM-DD (ví dụ: 2026-05-20)";
+        }
+        if (message.contains("Cannot deserialize")) {
+            return "Kiểu dữ liệu không đúng định dạng yêu cầu";
+        }
+        
+        // Truncate long messages
+        return message.length() > 200 ? message.substring(0, 200) + "..." : message;
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
@@ -30,6 +61,26 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("errors", errors);
         response.put("message", "Validation failed");
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        
+        String message = ex.getMostSpecificCause().getMessage();
+        if (message != null && message.contains("Duplicate entry")) {
+            response.put("message", "Khung giờ này đã có lịch hẹn. Vui lòng chọn giờ khác.");
+        } else if (message != null && message.contains("unique constraint") || 
+                   (message != null && message.contains("UNIQUE"))) {
+            response.put("message", "Dữ liệu bị trùng lặp. Vui lòng kiểm tra lại.");
+        } else {
+            response.put("message", "Lỗi dữ liệu: " + (message != null && message.length() > 200 ? message.substring(0, 200) : message));
+        }
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
