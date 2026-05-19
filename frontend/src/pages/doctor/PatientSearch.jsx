@@ -1,18 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, Clock, Star, Award, Video,
-  CheckCircle, XCircle, GitCompare, X, Calendar,
-  TrendingUp, DollarSign, User, Mail, Phone, FileText
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Mail, Phone, Calendar, Clock, FileText, User, X, CheckSquare, Square } from 'lucide-react';
 import DoctorLayout from '../../components/doctor/DoctorLayout';
 import { doctorService } from '../../services/doctorService';
-import Loading from '../../components/common/Loading';
-import ErrorMessage from '../../components/common/ErrorMessage';
 import { formatDate } from '../../utils/formatDate';
-import './PatientSearch.css';
+import '../../pages/admin/AdminPages.css'; // Reuse admin table styles
 
-// Mock condition to specialty mapping for patient search
 const conditionToCategory = {
   'diabetes': 'Chronic Care',
   'hypertension': 'Cardiac Care',
@@ -32,13 +24,14 @@ const PatientSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestedCategories, setSuggestedCategories] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [highlightedPatientId, setHighlightedPatientId] = useState(null);
   const [compareList, setCompareList] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [patientTreatments, setPatientTreatments] = useState([]);
   const [loadingTreatments, setLoadingTreatments] = useState(false);
-  const [hoveredVideoId, setHoveredVideoId] = useState(null);
-  const videoRefs = useRef({});
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     loadPatients();
@@ -48,6 +41,7 @@ const PatientSearch = () => {
     if (searchTerm.trim() === '') {
       setFilteredPatients(patients);
       setSuggestedCategories([]);
+      setCurrentPage(1);
       return;
     }
 
@@ -76,34 +70,24 @@ const PatientSearch = () => {
 
     // Calculate match scores
     const patientsWithScores = filtered.map(patient => {
-      let score = 50; // Base score
-
-      // Category match
-      if (suggestions.length > 0) {
-        score += 20;
-      }
-
-      // Treatment history bonus (using treatmentCount from patient data)
+      let score = 50; 
+      if (suggestions.length > 0) score += 20;
       const treatmentCount = patient.treatmentCount || 0;
       if (treatmentCount > 5) score += 15;
       else if (treatmentCount > 2) score += 10;
-
-      // Recent activity bonus
       if (patient.dateOfBirth) {
         const age = new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear();
         if (age > 0 && age < 100) score += 5;
       }
-
-      // Last visit recency bonus
       if (patient.lastVisit?.includes('days')) score += 10;
       else if (patient.lastVisit?.includes('week')) score += 5;
 
       return { ...patient, matchScore: Math.min(100, score) };
     });
 
-    // Sort by match score
     patientsWithScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
     setFilteredPatients(patientsWithScores);
+    setCurrentPage(1);
   }, [searchTerm, patients]);
 
   const loadPatients = async () => {
@@ -115,16 +99,9 @@ const PatientSearch = () => {
       const enhanced = data.map((patient, index) => ({
         ...patient,
         matchScore: 75 + Math.floor(Math.random() * 20),
-        lastVisit: index % 3 === 0 ? '2 days ago' :
-          index % 3 === 1 ? '1 week ago' :
-            '3 weeks ago',
+        lastVisit: index % 3 === 0 ? '2 ngày trước' :
+          index % 3 === 1 ? '1 tuần trước' : '3 tuần trước',
         treatmentCount: Math.floor(Math.random() * 10),
-        location: {
-          lat: 10.762622 + (Math.random() - 0.5) * 0.1,
-          lng: 106.660172 + (Math.random() - 0.5) * 0.1,
-          address: patient.address || `123 Medical Street, District ${index + 1}`
-        },
-        // Video URL priority: 1) From API, 2) From public root, 3) null (show initial)
         videoStoryUrl: patient.videoStoryUrl ||
           (patient.id ? `/patient-${patient.id}.mp4` : null)
       }));
@@ -157,474 +134,410 @@ const PatientSearch = () => {
     }
   };
 
-  const handleCardClick = (patientId) => {
-    setHighlightedPatientId(patientId);
-  };
-
   const toggleCompare = (patient) => {
     if (compareList.find(p => p.id === patient.id)) {
       setCompareList(compareList.filter(p => p.id !== patient.id));
     } else if (compareList.length < 3) {
       setCompareList([...compareList, patient]);
-    }
-  };
-
-  const handleVideoHover = (patientId, isHovering) => {
-    if (isHovering) {
-      setHoveredVideoId(patientId);
-      const video = videoRefs.current[patientId];
-      if (video) {
-        video.currentTime = 0;
-        video.play().catch(() => {
-          // Video failed to load, keep showing initial
-        });
-      }
     } else {
-      setHoveredVideoId(null);
-      const video = videoRefs.current[patientId];
-      if (video) {
-        video.pause();
-        video.currentTime = 0;
-      }
+      alert("Chỉ có thể so sánh tối đa 3 bệnh nhân.");
     }
   };
 
-  const handleVideoError = (patientId) => {
-    // Hide video on error, show initial instead
-    const video = videoRefs.current[patientId];
-    if (video) {
-      video.style.display = 'none';
-    }
-  };
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPatients = filteredPatients.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <DoctorLayout>
-      <div className="smart-patient-finder">
-        {/* Page Header */}
-        <div className="page-header">
-          <h1 className="page-title">
-            <Search size={32} />
-            Tìm kiếm Bệnh nhân
-          </h1>
-          <p className="page-subtitle">
-            Tìm kiếm và quản lý thông tin bệnh nhân một cách thông minh và hiệu quả
-          </p>
-        </div>
-
-        {/* AI Search Bar */}
-        <div className="ai-search-container">
-          <div className="ai-search-bar">
-            <Search className="search-icon" size={22} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên, email, ID, hoặc tình trạng bệnh..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="ai-search-input"
-            />
-          </div>
-
-          <AnimatePresence>
-            {suggestedCategories.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="suggested-categories"
+      <div className="admin-main">
+        <div className="main-content">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Danh sách Bệnh nhân</h1>
+            
+            {compareList.length > 0 && (
+              <button 
+                onClick={() => setShowCompareModal(true)}
+                className="btn-primary flex items-center gap-2 px-4 py-2"
               >
-                <span className="suggestion-label">Gợi ý danh mục:</span>
-                {suggestedCategories.map((category, index) => (
-                  <motion.span
-                    key={index}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="category-tag"
-                  >
-                    {category}
-                  </motion.span>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {error && <ErrorMessage message={error} />}
-
-        {/* Patient Cards Layout */}
-        <div className="finder-layout">
-          <div className="patients-panel">
-            {loading && patients.length === 0 ? (
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p style={{ color: '#cbd5e1', fontSize: '1rem', margin: 0 }}>Đang tải danh sách bệnh nhân...</p>
-              </div>
-            ) : filteredPatients.length === 0 ? (
-              <div className="empty-state">
-                <Search size={64} />
-                <h3 style={{ color: '#ffffff', margin: '0.5rem 0', fontSize: '1.5rem' }}>Không tìm thấy bệnh nhân</h3>
-                <p>Không có bệnh nhân nào phù hợp với tiêu chí tìm kiếm của bạn</p>
-              </div>
-            ) : (
-              <div className="patients-list">
-                {filteredPatients.map((patient) => (
-                  <motion.div
-                    key={patient.id}
-                    id={`patient-card-${patient.id}`}
-                    className={`patient-card ${highlightedPatientId === patient.id ? 'highlighted' : ''} ${compareList.find(p => p.id === patient.id) ? 'in-compare' : ''}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => handleCardClick(patient.id)}
-                    whileHover={{ y: -4 }}
-                  >
-                    {/* Match Score Badge */}
-                    <div className="match-score-badge">
-                      <span>{patient.matchScore || 85}%</span>
-                      <span style={{ fontSize: '0.7rem', opacity: 0.9 }}>Khớp</span>
-                    </div>
-
-                    {/* Video Story Ring */}
-                    <div
-                      className="video-story-ring"
-                      onMouseEnter={() => handleVideoHover(patient.id, true)}
-                      onMouseLeave={() => handleVideoHover(patient.id, false)}
-                    >
-                      <div className="video-ring-container">
-                        {patient.videoStoryUrl && (
-                          <video
-                            ref={el => videoRefs.current[patient.id] = el}
-                            className="video-story"
-                            muted
-                            loop
-                            playsInline
-                            onError={() => handleVideoError(patient.id)}
-                          >
-                            <source src={patient.videoStoryUrl} type="video/mp4" />
-                          </video>
-                        )}
-                        <div className="video-ring-overlay">
-                          <div className="patient-initial">
-                            {patient.fullName?.charAt(0) || 'P'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Patient Info */}
-                    <div className="patient-info">
-                      <h3 className="patient-name">{patient.fullName}</h3>
-                      <div className="patient-id">
-                        <User size={16} />
-                        <span>ID: {patient.id}</span>
-                      </div>
-
-                      <div className="patient-meta">
-                        <div className="meta-item">
-                          <Mail size={16} />
-                          <span>{patient.email || 'Chưa có email'}</span>
-                        </div>
-                        <div className="meta-item">
-                          <Phone size={16} />
-                          <span>{patient.phone || 'Chưa có số điện thoại'}</span>
-                        </div>
-                      </div>
-
-                      {patient.dateOfBirth && (
-                        <div className="patient-dob">
-                          <Calendar size={16} />
-                          <span>Ngày sinh: {formatDate(patient.dateOfBirth)}</span>
-                        </div>
-                      )}
-
-                      <div className="visit-badge">
-                        <Clock size={16} />
-                        <span>Lần khám cuối: {patient.lastVisit || 'Chưa có'}</span>
-                      </div>
-
-                      <div className="patient-actions">
-                        <motion.button
-                          className="btn-primary"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetails(patient.id);
-                          }}
-                        >
-                          <FileText size={18} />
-                          Xem chi tiết
-                        </motion.button>
-                        <motion.button
-                          className="btn-secondary"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetails(patient.id);
-                          }}
-                        >
-                          <FileText size={18} />
-                          Lịch sử điều trị
-                        </motion.button>
-                      </div>
-                    </div>
-
-                    {/* Compare Checkbox */}
-                    <div className="compare-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={!!compareList.find(p => p.id === patient.id)}
-                        onChange={() => toggleCompare(patient)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <label>So sánh</label>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                <span>So sánh ({compareList.length})</span>
+              </button>
             )}
           </div>
-        </div>
 
-        {/* Compare Mode Floating Widget */}
-        <AnimatePresence>
-          {compareList.length > 0 && (
-            <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              className="compare-widget"
-              onClick={() => setShowCompareModal(true)}
-            >
-              <div className="compare-widget-content">
-                <GitCompare size={22} />
-                <span>Đang so sánh {compareList.length} bệnh nhân</span>
-                <button
-                  className="compare-close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCompareList([]);
-                  }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Comparison Modal */}
-        <AnimatePresence>
-          {showCompareModal && (
-            <motion.div
-              className="modal-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCompareModal(false)}
-            >
-              <motion.div
-                className="compare-modal"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="modal-header">
-                  <h2>
-                    <GitCompare size={24} style={{ marginRight: '0.75rem', verticalAlign: 'middle' }} />
-                    So sánh Bệnh nhân
-                  </h2>
-                  <button onClick={() => setShowCompareModal(false)}>
-                    <X size={20} />
-                  </button>
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <X className="h-5 w-5 text-red-400" />
                 </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-                <div className="compare-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Tiêu chí</th>
-                        {compareList.map(patient => (
-                          <th key={patient.id}>
-                            <div className="compare-patient-header">
-                              <div className="compare-avatar">
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="p-4">
+              <div className="relative w-full max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên, ID, email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+
+              {suggestedCategories.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="text-sm text-gray-500 flex items-center mr-2">Phân loại gợi ý:</span>
+                  {suggestedCategories.map((category, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200"
+                    >
+                      {category}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Patients Table */}
+          <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">Chọn</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bệnh nhân</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liên hệ</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày sinh</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lần khám cuối</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                        <div className="flex justify-center items-center h-20">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : currentPatients.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                        <Search className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        Không tìm thấy bệnh nhân nào
+                      </td>
+                    </tr>
+                  ) : (
+                    currentPatients.map((patient) => {
+                      const isSelected = !!compareList.find(p => p.id === patient.id);
+                      return (
+                        <tr key={patient.id} className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-indigo-50/30' : ''}`}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button 
+                              onClick={() => toggleCompare(patient)}
+                              className="text-gray-400 hover:text-indigo-600 transition-colors"
+                            >
+                              {isSelected ? <CheckSquare className="h-5 w-5 text-indigo-600" /> : <Square className="h-5 w-5" />}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                            {patient.id}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold border border-gray-300">
                                 {patient.fullName?.charAt(0) || 'P'}
                               </div>
-                              <div>
-                                <div className="compare-name">{patient.fullName}</div>
-                                <div className="compare-id">ID: {patient.id}</div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{patient.fullName}</div>
+                                {patient.matchScore && (
+                                  <div className="text-xs text-gray-500 mt-1">Độ khớp: {patient.matchScore}%</div>
+                                )}
                               </div>
                             </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><Mail size={16} /> Email</td>
-                        {compareList.map(patient => (
-                          <td key={patient.id}>
-                            {patient.email || '-'}
                           </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <td><Phone size={16} /> Số điện thoại</td>
-                        {compareList.map(patient => (
-                          <td key={patient.id}>
-                            {patient.phone || '-'}
-                          </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <td><Calendar size={16} /> Ngày sinh</td>
-                        {compareList.map(patient => (
-                          <td key={patient.id}>
-                            {patient.dateOfBirth ? formatDate(patient.dateOfBirth) : '-'}
-                          </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <td><Clock size={16} /> Lần khám cuối</td>
-                        {compareList.map(patient => (
-                          <td key={patient.id}>
-                            {patient.lastVisit || 'Chưa có'}
-                          </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <td><FileText size={16} /> Số lần điều trị</td>
-                        {compareList.map(patient => (
-                          <td key={patient.id}>
-                            {patient.treatmentCount || 0}
-                          </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <td><TrendingUp size={16} /> Độ khớp</td>
-                        {compareList.map(patient => (
-                          <td key={patient.id}>
-                            <div className="match-display">
-                              {patient.matchScore || 85}%
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900 flex items-center gap-1">
+                              <Mail className="h-3 w-3 text-gray-400" /> {patient.email || '-'}
+                            </div>
+                            <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3 text-gray-400" /> {patient.phone || '-'}
                             </div>
                           </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {patient.dateOfBirth ? formatDate(patient.dateOfBirth) : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                              {patient.lastVisit}
+                            </span>
+                            <div className="text-xs text-gray-500 mt-1">{patient.treatmentCount} lần điều trị</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleViewDetails(patient.id)}
+                                className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors"
+                                title="Hồ sơ chi tiết"
+                              >
+                                <User className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => handleViewDetails(patient.id)}
+                                className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                                title="Lịch sử điều trị"
+                              >
+                                <FileText className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-                <div className="modal-actions">
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white rounded-lg shadow-sm p-4 mt-4 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Hiển thị <span className="font-medium">{indexOfFirstItem + 1}</span> -{' '}
+                  <span className="font-medium">{Math.min(indexOfLastItem, filteredPatients.length)}</span> của{' '}
+                  <span className="font-medium">{filteredPatients.length}</span> bệnh nhân
+                </div>
+                <div className="flex gap-1">
                   <button
-                    className="btn-primary"
-                    onClick={() => {
-                      if (compareList.length > 0) {
-                        handleViewDetails(compareList[0].id);
-                        setShowCompareModal(false);
-                      }
-                    }}
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded border text-sm ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
                   >
-                    <Star size={18} style={{ marginRight: '0.5rem' }} />
-                    Xem bệnh nhân phù hợp nhất
+                    Trước
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, idx) => (
+                    <button
+                      key={idx + 1}
+                      onClick={() => paginate(idx + 1)}
+                      className={`px-3 py-1 rounded border text-sm ${
+                        currentPage === idx + 1
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded border text-sm ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    Sau
                   </button>
                 </div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           )}
-        </AnimatePresence>
 
-        {/* Patient Detail Modal */}
-        {selectedPatient && (
-          <PatientDetailModal
-            patient={selectedPatient}
-            treatments={patientTreatments}
-            loadingTreatments={loadingTreatments}
-            onClose={() => {
-              setSelectedPatient(null);
-              setPatientTreatments([]);
-            }}
-          />
-        )}
+        </div>
       </div>
+
+      {/* Comparison Modal */}
+      {showCompareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">So sánh {compareList.length} Bệnh nhân</h2>
+              <button 
+                onClick={() => setShowCompareModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-auto flex-1">
+              <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">Tiêu chí</th>
+                    {compareList.map(patient => (
+                      <th key={patient.id} className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold border border-gray-300">
+                            {patient.fullName?.charAt(0) || 'P'}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-gray-900">{patient.fullName}</div>
+                            <div className="text-xs text-gray-500">ID: {patient.id}</div>
+                          </div>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">Ngày sinh</td>
+                    {compareList.map(patient => (
+                      <td key={patient.id} className="px-4 py-3 text-sm text-gray-500">
+                        {patient.dateOfBirth ? formatDate(patient.dateOfBirth) : '-'}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">Email</td>
+                    {compareList.map(patient => (
+                      <td key={patient.id} className="px-4 py-3 text-sm text-gray-500">
+                        {patient.email || '-'}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">Số điện thoại</td>
+                    {compareList.map(patient => (
+                      <td key={patient.id} className="px-4 py-3 text-sm text-gray-500">
+                        {patient.phone || '-'}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">Lần khám cuối</td>
+                    {compareList.map(patient => (
+                      <td key={patient.id} className="px-4 py-3 text-sm text-gray-500">
+                        {patient.lastVisit}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">Lịch sử điều trị</td>
+                    {compareList.map(patient => (
+                      <td key={patient.id} className="px-4 py-3 text-sm text-gray-500">
+                        {patient.treatmentCount} lần
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">Độ khớp (Gợi ý)</td>
+                    {compareList.map(patient => (
+                      <td key={patient.id} className="px-4 py-3 text-sm font-medium text-indigo-600">
+                        {patient.matchScore}%
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+              <button 
+                onClick={() => setShowCompareModal(false)}
+                className="btn-secondary px-4 py-2"
+              >
+                Đóng
+              </button>
+              <button 
+                onClick={() => {
+                  setCompareList([]);
+                  setShowCompareModal(false);
+                }}
+                className="btn-primary bg-red-600 px-4 py-2"
+              >
+                Xóa tất cả so sánh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Patient Detail Modal */}
+      {selectedPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <User className="h-6 w-6 text-indigo-600" />
+                Chi tiết Bệnh nhân
+              </h2>
+              <button onClick={() => setSelectedPatient(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-auto flex-1">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div><strong className="text-gray-700 block text-xs uppercase">ID</strong> <span className="text-gray-900">{selectedPatient.id}</span></div>
+                <div><strong className="text-gray-700 block text-xs uppercase">Họ và tên</strong> <span className="text-gray-900">{selectedPatient.fullName}</span></div>
+                <div><strong className="text-gray-700 block text-xs uppercase">Email</strong> <span className="text-gray-900">{selectedPatient.email || '-'}</span></div>
+                <div><strong className="text-gray-700 block text-xs uppercase">Số điện thoại</strong> <span className="text-gray-900">{selectedPatient.phone || '-'}</span></div>
+                <div><strong className="text-gray-700 block text-xs uppercase">Ngày sinh</strong> <span className="text-gray-900">{selectedPatient.dateOfBirth ? formatDate(selectedPatient.dateOfBirth) : '-'}</span></div>
+                <div><strong className="text-gray-700 block text-xs uppercase">Giới tính</strong> <span className="text-gray-900">{selectedPatient.gender || '-'}</span></div>
+                <div className="col-span-2"><strong className="text-gray-700 block text-xs uppercase">Địa chỉ</strong> <span className="text-gray-900">{selectedPatient.address || '-'}</span></div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2 border-b pb-2">
+                  <FileText className="h-5 w-5 text-indigo-600" />
+                  Lịch sử Điều trị
+                </h3>
+                {loadingTreatments ? (
+                  <div className="flex justify-center p-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>
+                ) : patientTreatments.length === 0 ? (
+                  <p className="text-center text-gray-500 p-4">Chưa có lịch sử điều trị</p>
+                ) : (
+                  <div className="space-y-4">
+                    {patientTreatments.map((treatment) => (
+                      <div key={treatment.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <div className="text-sm"><strong className="text-gray-700">Ngày:</strong> <span className="text-gray-900">{formatDate(treatment.createdAt)}</span></div>
+                        {treatment.diagnosis && <div className="text-sm mt-1"><strong className="text-gray-700">Chẩn đoán:</strong> <span className="text-gray-900">{treatment.diagnosis}</span></div>}
+                        {treatment.prescription && <div className="text-sm mt-1"><strong className="text-gray-700">Đơn thuốc:</strong> <span className="text-gray-900">{treatment.prescription}</span></div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+              <button onClick={() => setSelectedPatient(null)} className="btn-secondary px-4 py-2">
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DoctorLayout>
-  );
-};
-
-const PatientDetailModal = ({ patient, treatments, loadingTreatments, onClose }) => {
-  return (
-    <motion.div
-      className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="patient-detail-modal"
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h2>
-            <User size={24} style={{ marginRight: '0.75rem', verticalAlign: 'middle' }} />
-            Chi tiết Bệnh nhân
-          </h2>
-          <button onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="patient-detail-grid">
-          <div><strong>ID:</strong> {patient.id}</div>
-          <div><strong>Họ và tên:</strong> {patient.fullName}</div>
-          <div><strong>Email:</strong> {patient.email || '-'}</div>
-          <div><strong>Số điện thoại:</strong> {patient.phone || '-'}</div>
-          <div><strong>Ngày sinh:</strong> {patient.dateOfBirth ? formatDate(patient.dateOfBirth) : '-'}</div>
-          <div><strong>Giới tính:</strong> {patient.gender || '-'}</div>
-          <div><strong>Địa chỉ:</strong> {patient.address || '-'}</div>
-          <div><strong>Liên hệ khẩn cấp:</strong> {patient.emergencyContact || '-'}</div>
-        </div>
-
-        <div className="treatments-section">
-          <h3>
-            <FileText size={24} style={{ marginRight: '0.75rem', verticalAlign: 'middle' }} />
-            Lịch sử Điều trị
-          </h3>
-          {loadingTreatments ? (
-            <div className="loading-treatments">
-              <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
-              <p style={{ textAlign: 'center', color: '#cbd5e1' }}>Đang tải lịch sử điều trị...</p>
-            </div>
-          ) : treatments.length === 0 ? (
-            <div className="no-treatments">
-              <FileText size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-              <p style={{ margin: 0 }}>Chưa có lịch sử điều trị</p>
-            </div>
-          ) : (
-            <div className="treatments-list">
-              {treatments.map((treatment) => (
-                <div key={treatment.id} className="treatment-item">
-                  <div><strong>Ngày:</strong> {formatDate(treatment.createdAt)}</div>
-                  {treatment.diagnosis && <div><strong>Chẩn đoán:</strong> {treatment.diagnosis}</div>}
-                  {treatment.prescription && <div><strong>Đơn thuốc:</strong> {treatment.prescription}</div>}
-                  {treatment.followUpDate && <div><strong>Tái khám:</strong> {formatDate(treatment.followUpDate)}</div>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose}>
-            <X size={18} style={{ marginRight: '0.5rem' }} />
-            Đóng
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
   );
 };
 

@@ -35,7 +35,7 @@ const AdminDashboard = () => {
         adminService.getAllFeedbacks('PENDING'),
       ]);
 
-      console.log('📊 Dashboard Data:', { 
+      console.log(' Dashboard Data:', { 
         totalAppointments: appointments.length,
         sampleAppointment: appointments[0] 
       });
@@ -99,7 +99,7 @@ const AdminDashboard = () => {
           return acc;
         }, {});
 
-      console.log('📊 Processed Data:', {
+      console.log(' Processed Data:', {
         timeSlotData,
         specializationData,
         revenueByDate,
@@ -131,7 +131,7 @@ const AdminDashboard = () => {
     { 
       label: 'Tổng bác sĩ', 
       value: stats.totalDoctors, 
-      icon: '👨‍⚕️',
+      icon: '',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       change: '+12%',
       trend: 'up'
@@ -139,7 +139,7 @@ const AdminDashboard = () => {
     { 
       label: 'Tổng bệnh nhân', 
       value: stats.totalPatients, 
-      icon: '👥',
+      icon: '',
       gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
       change: '+8%',
       trend: 'up'
@@ -147,7 +147,7 @@ const AdminDashboard = () => {
     { 
       label: 'Tổng lịch hẹn', 
       value: stats.totalAppointments, 
-      icon: '📅',
+      icon: '',
       gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
       change: '+23%',
       trend: 'up'
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
     { 
       label: 'Phản hồi chờ xử lý', 
       value: stats.pendingFeedbacks, 
-      icon: '💬',
+      icon: '',
       gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
       change: stats.pendingFeedbacks > 0 ? 'Cần xử lý' : 'Đã xong',
       trend: stats.pendingFeedbacks > 0 ? 'warning' : 'good'
@@ -163,10 +163,10 @@ const AdminDashboard = () => {
   ], [stats]);
 
   const quickActions = [
-    { label: 'Quản lý bác sĩ', icon: '👨‍⚕️', path: '/admin/doctors', color: '#667eea' },
-    { label: 'Quản lý bệnh nhân', icon: '👥', path: '/admin/patients', color: '#f5576c' },
-    { label: 'Quản lý lịch hẹn', icon: '📅', path: '/admin/appointments', color: '#00f2fe' },
-    { label: 'Quản lý phản hồi', icon: '💬', path: '/admin/feedbacks', color: '#fee140' },
+    { label: 'Quản lý bác sĩ', icon: '', path: '/admin/doctors', color: '#667eea' },
+    { label: 'Quản lý bệnh nhân', icon: '', path: '/admin/patients', color: '#f5576c' },
+    { label: 'Quản lý lịch hẹn', icon: '', path: '/admin/appointments', color: '#00f2fe' },
+    { label: 'Quản lý phản hồi', icon: '', path: '/admin/feedbacks', color: '#fee140' },
   ];
 
   if (loading) {
@@ -192,7 +192,7 @@ const AdminDashboard = () => {
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium text-gray-700"
             onClick={loadStats}
           >
-            <span>🔄</span>
+            <span></span>
             Làm mới
           </button>
         </div>
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
         {/* Error Banner */}
         {error && (
           <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            <span className="text-lg">⚠️</span>
+            <span className="text-lg"></span>
             <span className="flex-1">{error}</span>
             <button 
               className="text-red-800 hover:text-red-900 font-bold text-xl leading-none"
@@ -224,9 +224,9 @@ const AdminDashboard = () => {
                   <p className="text-white/80 text-sm font-medium mb-1">{card.label}</p>
                   <p className="text-4xl font-bold mb-2">{card.value}</p>
                   <div className="flex items-center gap-1 text-sm font-medium">
-                    {card.trend === 'up' && <span>↗</span>}
-                    {card.trend === 'warning' && <span>⚠️</span>}
-                    {card.trend === 'good' && <span>✓</span>}
+                    {card.trend === 'up' && <span></span>}
+                    {card.trend === 'warning' && <span></span>}
+                    {card.trend === 'good' && <span></span>}
                     <span>{card.change}</span>
                   </div>
                 </div>
@@ -258,7 +258,7 @@ const AdminDashboard = () => {
           {/* Peak Hours Chart */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span>⏰</span>
+              <span></span>
               Khung giờ đông khách nhất
             </h2>
             {Object.keys(stats.timeSlotData || {}).length > 0 ? (
@@ -277,12 +277,12 @@ const AdminDashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
                 <p className="text-sm text-gray-600 mt-4">
-                  💡 <strong>Insight:</strong> Sử dụng dữ liệu này để điều phối nhân sự vào giờ cao điểm
+                   <strong>Insight:</strong> Sử dụng dữ liệu này để điều phối nhân sự vào giờ cao điểm
                 </p>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                <span className="text-6xl mb-3">📊</span>
+                <span className="text-6xl mb-3"></span>
                 <p className="text-lg font-medium">Chưa có dữ liệu lịch hẹn</p>
                 <p className="text-sm mt-1">Dữ liệu sẽ xuất hiện khi có lịch hẹn</p>
               </div>
@@ -292,7 +292,7 @@ const AdminDashboard = () => {
           {/* Specialization Distribution */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span>🏥</span>
+              <span></span>
               Phân bố theo chuyên khoa
             </h2>
             {Object.keys(stats.specializationData || {}).length > 0 ? (
@@ -317,12 +317,12 @@ const AdminDashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <p className="text-sm text-gray-600 mt-4">
-                  💡 <strong>Insight:</strong> Chuyên khoa phổ biến giúp định hướng tuyển dụng bác sĩ
+                   <strong>Insight:</strong> Chuyên khoa phổ biến giúp định hướng tuyển dụng bác sĩ
                 </p>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                <span className="text-6xl mb-3">🏥</span>
+                <span className="text-6xl mb-3"></span>
                 <p className="text-lg font-medium">Chưa có dữ liệu chuyên khoa</p>
                 <p className="text-sm mt-1">Dữ liệu sẽ xuất hiện khi có lịch hẹn</p>
               </div>
@@ -332,7 +332,7 @@ const AdminDashboard = () => {
           {/* Revenue Trend */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span>💰</span>
+              <span></span>
               Doanh thu 7 ngày gần đây
             </h2>
             {(stats.revenueByDate || []).some(d => d.count > 0) ? (
@@ -357,12 +357,12 @@ const AdminDashboard = () => {
                   </LineChart>
                 </ResponsiveContainer>
                 <p className="text-sm text-gray-600 mt-4">
-                  💡 <strong>Insight:</strong> Theo dõi xu hướng doanh thu để lập kế hoạch kinh doanh
+                   <strong>Insight:</strong> Theo dõi xu hướng doanh thu để lập kế hoạch kinh doanh
                 </p>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                <span className="text-6xl mb-3">💰</span>
+                <span className="text-6xl mb-3"></span>
                 <p className="text-lg font-medium">Chưa có dữ liệu doanh thu</p>
                 <p className="text-sm mt-1">Dữ liệu sẽ xuất hiện khi có lịch hẹn trong 7 ngày gần đây</p>
               </div>
@@ -372,7 +372,7 @@ const AdminDashboard = () => {
           {/* Top Doctors Performance */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span>🏆</span>
+              <span></span>
               Bác sĩ có hiệu suất cao nhất
             </h2>
             {Object.keys(stats.doctorStats || {}).length > 0 ? (
@@ -400,12 +400,12 @@ const AdminDashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
                 <p className="text-sm text-gray-600 mt-4">
-                  💡 <strong>Insight:</strong> Bác sĩ có tỷ lệ hoàn thành cao đáng được khen thưởng
+                   <strong>Insight:</strong> Bác sĩ có tỷ lệ hoàn thành cao đáng được khen thưởng
                 </p>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                <span className="text-6xl mb-3">🏆</span>
+                <span className="text-6xl mb-3"></span>
                 <p className="text-lg font-medium">Chưa có dữ liệu hoàn thành</p>
                 <p className="text-sm mt-1">Dữ liệu sẽ xuất hiện khi có lịch hẹn hoàn thành</p>
               </div>
@@ -416,18 +416,18 @@ const AdminDashboard = () => {
         {/* Appointment Status Overview */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span>📊</span>
+            <span></span>
             Tổng quan trạng thái lịch hẹn
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats.appointmentsByStatus).map(([status, count]) => {
               const configs = {
-                PENDING: { icon: '⏳', label: 'Chờ xác nhận', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-                CONFIRMED: { icon: '✅', label: 'Đã xác nhận', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-                COMPLETED: { icon: '✨', label: 'Hoàn thành', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
-                CANCELLED: { icon: '❌', label: 'Đã hủy', gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+                PENDING: { icon: '', label: 'Chờ xác nhận', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+                CONFIRMED: { icon: '', label: 'Đã xác nhận', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+                COMPLETED: { icon: '', label: 'Hoàn thành', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+                CANCELLED: { icon: '', label: 'Đã hủy', gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
               };
-              const config = configs[status] || { icon: '📌', label: status, gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' };
+              const config = configs[status] || { icon: '', label: status, gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' };
               const percentage = stats.totalAppointments > 0 ? ((count / stats.totalAppointments) * 100).toFixed(1) : 0;
               
               return (
@@ -475,7 +475,7 @@ const AdminDashboard = () => {
                 return (
                   <div key={apt.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors duration-200">
                     <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-xl">
-                      📅
+                      
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">
@@ -493,7 +493,7 @@ const AdminDashboard = () => {
               })
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                <span className="text-5xl mb-3">📭</span>
+                <span className="text-5xl mb-3"></span>
                 <p>Không có lịch hẹn gần đây</p>
               </div>
             )}

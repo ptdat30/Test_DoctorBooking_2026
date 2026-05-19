@@ -41,7 +41,7 @@ const NewBooking = () => {
     try {
       setLoadingFamilyMembers(true);
       const members = await familyService.getFamilyMembers();
-      console.log('✅ Family members loaded:', members);
+      console.log(' Family members loaded:', members);
 
       // Filter ra main account (isMainAccount = true hoặc relationship = 'SELF')
       // Vì "Cho bản thân tôi" đã đại diện cho main account rồi
@@ -49,10 +49,10 @@ const NewBooking = () => {
         !member.isMainAccount && member.relationship !== 'SELF'
       );
 
-      console.log('✅ Filtered family members (excluding main account):', familyMembersOnly);
+      console.log(' Filtered family members (excluding main account):', familyMembersOnly);
       setFamilyMembers(familyMembersOnly);
     } catch (err) {
-      console.error('❌ Error loading family members:', err);
+      console.error(' Error loading family members:', err);
       // Không hiển thị error vì có thể user chưa có thành viên nào
       setFamilyMembers([]);
     } finally {
@@ -66,9 +66,9 @@ const NewBooking = () => {
       const timer = setTimeout(() => {
         try {
           window.feather.replace();
-          console.log('✅ Feather icons initialized');
+          console.log(' Feather icons initialized');
         } catch (e) {
-          console.log('⚠️ Feather icons error (ignored):', e.message);
+          console.log(' Feather icons error (ignored):', e.message);
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -125,10 +125,10 @@ const NewBooking = () => {
 
     try {
       const slots = await patientService.getAvailableTimeSlots(doctorId, date);
-      console.log('✅ Available slots loaded:', slots);
+      console.log(' Available slots loaded:', slots);
       setAvailableTimeSlots(slots);
     } catch (error) {
-      console.error('❌ Error loading slots:', error);
+      console.error(' Error loading slots:', error);
       setAvailableTimeSlots([]);
     } finally {
       setLoadingSlots(false);
@@ -146,13 +146,13 @@ const NewBooking = () => {
       // Get selected doctor info
       const selectedDoctor = doctors.find(d => d.id === parseInt(formData.doctorId));
       const consultationFee = selectedDoctor?.consultationFee || 0;
-      console.log('💰 Consultation fee:', consultationFee);
-      console.log('💳 Payment method:', formData.paymentMethod);
+      console.log(' Consultation fee:', consultationFee);
+      console.log(' Payment method:', formData.paymentMethod);
 
       // Validate payment method với wallet balance
       if (formData.paymentMethod === 'WALLET' && walletBalance < consultationFee) {
         const errorMsg = `Số dư ví không đủ. Bạn cần ${consultationFee.toLocaleString('vi-VN')} VNĐ nhưng chỉ có ${walletBalance.toLocaleString('vi-VN')} VNĐ`;
-        console.error('❌ Wallet validation failed:', errorMsg);
+        console.error(' Wallet validation failed:', errorMsg);
         setError(errorMsg);
         setSubmitting(false);
         return;
@@ -172,14 +172,14 @@ const NewBooking = () => {
       // Nếu đặt cho người nhà (không phải 'self'), thêm familyMemberId
       if (formData.patientFor !== 'self') {
         appointmentData.familyMemberId = parseInt(formData.patientFor);
-        console.log('👨‍👩‍👧‍👦 Booking for family member:', appointmentData.familyMemberId);
+        console.log(' Booking for family member:', appointmentData.familyMemberId);
       } else {
-        console.log('👤 Booking for self');
+        console.log(' Booking for self');
       }
 
       const response = await patientService.createAppointment(appointmentData);
 
-      console.log('✅ API response received:', response);
+      console.log(' API response received:', response);
 
       // Nếu chọn VNPAY, redirect sang trang thanh toán
       if (formData.paymentMethod === 'VNPAY' && response.paymentUrl) {
@@ -190,14 +190,14 @@ const NewBooking = () => {
         return;
       }
 
-      console.log('✅ Appointment created successfully (non-VNPAY)');
+      console.log(' Appointment created successfully (non-VNPAY)');
       setSuccess('Đặt lịch hẹn thành công!');
       setTimeout(() => {
         navigate('/patient/history');
       }, 2000);
     } catch (err) {
-      console.error('❌ Error creating appointment:', err);
-      console.error('❌ Error response:', err.response);
+      console.error(' Error creating appointment:', err);
+      console.error(' Error response:', err.response);
       const errorMessage = err.response?.data?.message || err.message || 'Không thể đặt lịch hẹn. Vui lòng thử lại.';
       setError(errorMessage);
     } finally {
@@ -253,25 +253,25 @@ const NewBooking = () => {
           <div className="form-steps">
             <div className={`form-step ${getCurrentStep() >= 1 ? 'active' : ''} ${getCurrentStep() > 1 ? 'completed' : ''}`}>
               <div className="step-circle">
-                {getCurrentStep() > 1 ? '✓' : '1'}
+                {getCurrentStep() > 1 ? '' : '1'}
               </div>
               <div className="step-label">Chọn người khám</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 2 ? 'active' : ''} ${getCurrentStep() > 2 ? 'completed' : ''}`}>
               <div className="step-circle">
-                {getCurrentStep() > 2 ? '✓' : '2'}
+                {getCurrentStep() > 2 ? '' : '2'}
               </div>
               <div className="step-label">Chọn bác sĩ</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 3 ? 'active' : ''} ${getCurrentStep() > 3 ? 'completed' : ''}`}>
               <div className="step-circle">
-                {getCurrentStep() > 3 ? '✓' : '3'}
+                {getCurrentStep() > 3 ? '' : '3'}
               </div>
               <div className="step-label">Chọn thời gian</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 4 ? 'active' : ''} ${getCurrentStep() > 4 ? 'completed' : ''}`}>
               <div className="step-circle">
-                {getCurrentStep() > 4 ? '✓' : '4'}
+                {getCurrentStep() > 4 ? '' : '4'}
               </div>
               <div className="step-label">Thanh toán</div>
             </div>
@@ -299,14 +299,14 @@ const NewBooking = () => {
                     onChange={handleChange}
                   />
                   <div className="patient-option-content">
-                    <div className="patient-option-icon">👤</div>
+                    <div className="patient-option-icon"></div>
                     <div className="patient-option-info">
                       <div className="patient-option-name">Cho bản thân tôi</div>
                       <div className="patient-option-desc">Đặt lịch cho chính bạn</div>
                     </div>
                   </div>
                   <div className="patient-check-icon">
-                    <span style={{ fontSize: '1.2rem' }}>✓</span>
+                    <span style={{ fontSize: '1.2rem' }}></span>
                   </div>
                 </label>
 
@@ -314,7 +314,7 @@ const NewBooking = () => {
                 {loadingFamilyMembers ? (
                   <div className="patient-option-card" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
                     <div className="patient-option-content">
-                      <div className="patient-option-icon">⏳</div>
+                      <div className="patient-option-icon"></div>
                       <div className="patient-option-info">
                         <div className="patient-option-name">Đang tải...</div>
                         <div className="patient-option-desc">Đang tải danh sách thành viên</div>
@@ -324,7 +324,7 @@ const NewBooking = () => {
                 ) : familyMembers.length === 0 ? (
                   <div className="patient-option-card" style={{ opacity: 0.5, borderStyle: 'dashed' }}>
                     <div className="patient-option-content">
-                      <div className="patient-option-icon">👤</div>
+                      <div className="patient-option-icon"></div>
                       <div className="patient-option-info">
                         <div className="patient-option-name">Chưa có thành viên</div>
                         <div className="patient-option-desc">Vào "Hồ sơ Gia đình" để thêm thành viên</div>
@@ -348,7 +348,7 @@ const NewBooking = () => {
                         <div className="patient-option-icon">
                           {member.relationship === 'CHILD' ? '👶' :
                             member.relationship === 'PARENT' ? '👨‍👩' :
-                              member.relationship === 'SPOUSE' ? '💑' : '👤'}
+                              member.relationship === 'SPOUSE' ? '💑' : ''}
                         </div>
                         <div className="patient-option-info">
                           <div className="patient-option-name">{member.fullName}</div>
@@ -363,7 +363,7 @@ const NewBooking = () => {
                         </div>
                       </div>
                       <div className="patient-check-icon">
-                        <span style={{ fontSize: '1.2rem' }}>✓</span>
+                        <span style={{ fontSize: '1.2rem' }}></span>
                       </div>
                     </label>
                   ))
@@ -455,7 +455,7 @@ const NewBooking = () => {
                 </div>
                 {formData.doctorId && formData.appointmentDate && availableTimeSlots.length > 0 && (
                   <div style={{ fontSize: '0.85rem', color: '#10b981', marginTop: '0.5rem' }}>
-                    ✓ Có {availableTimeSlots.length} khung giờ trống
+                     Có {availableTimeSlots.length} khung giờ trống
                   </div>
                 )}
                 {formData.doctorId && formData.appointmentDate && availableTimeSlots.length === 0 && !loadingSlots && (
@@ -545,7 +545,7 @@ const NewBooking = () => {
                       disabled={walletBalance < consultationFee}
                     />
                     <div className="payment-option-content">
-                      <div className="payment-option-icon">💰</div>
+                      <div className="payment-option-icon"></div>
                       <div className="payment-option-info">
                         <div className="payment-option-name">Ví Sức khỏe</div>
                         <div className="payment-option-desc">
@@ -604,7 +604,7 @@ const NewBooking = () => {
                   </>
                 ) : (
                   <>
-                    <span style={{ fontSize: '1.2rem' }}>✓</span>
+                    <span style={{ fontSize: '1.2rem' }}></span>
                     Xác nhận đặt lịch
                   </>
                 )}

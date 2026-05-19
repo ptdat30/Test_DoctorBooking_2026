@@ -1,0 +1,441 @@
+/* Admin Dark Theme Auto-Overrides
+   Applies dark theme to all Tailwind-styled elements inside the admin layout.
+   This avoids modifying every single admin sub-page JSX file. */
+
+/* ===== Background & Container Overrides ===== */
+.admin-main .main-content .bg-white {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content .bg-gray-50 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.admin-main .main-content .bg-gray-100 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ===== Text Color Overrides ===== */
+.admin-main .main-content .text-gray-900 {
+  color: #e0e0e0 !important;
+}
+
+.admin-main .main-content .text-gray-800 {
+  color: #d4d4d4 !important;
+}
+
+.admin-main .main-content .text-gray-700 {
+  color: #c0c0c0 !important;
+}
+
+.admin-main .main-content .text-gray-600 {
+  color: #94A3B8 !important;
+}
+
+.admin-main .main-content .text-gray-500 {
+  color: #94A3B8 !important;
+}
+
+.admin-main .main-content .text-gray-400 {
+  color: #888 !important;
+}
+
+/* ===== Border Overrides ===== */
+.admin-main .main-content .border-gray-200,
+.admin-main .main-content .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.admin-main .main-content .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-main .main-content .border-t {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content .border-b {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== Shadow Overrides ===== */
+.admin-main .main-content .shadow,
+.admin-main .main-content .shadow-lg,
+.admin-main .main-content .shadow-xl {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ===== Rounded Container Overrides ===== */
+.admin-main .main-content .rounded-lg {
+  border-radius: 16px;
+}
+
+/* ===== Input & Select Overrides ===== */
+.admin-main .main-content input[type="text"],
+.admin-main .main-content input[type="email"],
+.admin-main .main-content input[type="password"],
+.admin-main .main-content input[type="number"],
+.admin-main .main-content input[type="date"],
+.admin-main .main-content input[type="time"],
+.admin-main .main-content textarea,
+.admin-main .main-content select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #e0e0e0 !important;
+}
+
+.admin-main .main-content input::placeholder,
+.admin-main .main-content textarea::placeholder {
+  color: #666 !important;
+}
+
+.admin-main .main-content input:focus,
+.admin-main .main-content textarea:focus,
+.admin-main .main-content select:focus {
+  border-color: #667eea !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+.admin-main .main-content select option {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+/* ===== Table Overrides ===== */
+.admin-main .main-content table thead {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.admin-main .main-content table thead th {
+  color: #94A3B8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.admin-main .main-content table tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ===== Button Overrides ===== */
+/* Primary (indigo) buttons keep gradient look */
+.admin-main .main-content .bg-indigo-600 {
+  background: rgba(102, 126, 234, 0.3) !important;
+  border: 1px solid rgba(102, 126, 234, 0.5) !important;
+  color: #667eea !important;
+}
+
+.admin-main .main-content .bg-indigo-600:hover,
+.admin-main .main-content .hover\:bg-indigo-700:hover {
+  background: rgba(102, 126, 234, 0.45) !important;
+}
+
+/* Blue buttons */
+.admin-main .main-content .bg-blue-600 {
+  background: rgba(59, 130, 246, 0.25) !important;
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+.admin-main .main-content .bg-blue-600:hover {
+  background: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Red buttons */
+.admin-main .main-content .bg-red-600 {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+.admin-main .main-content .bg-red-600:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Green buttons */
+.admin-main .main-content .bg-green-600 {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+}
+
+.admin-main .main-content .bg-green-600:hover {
+  background: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Secondary / back buttons */
+.admin-main .main-content .border.border-gray-300 {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #e0e0e0 !important;
+}
+
+.admin-main .main-content .border.border-gray-300:hover,
+.admin-main .main-content .hover\:bg-gray-50:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content .hover\:bg-gray-100:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ===== Badge Overrides ===== */
+.admin-main .main-content .bg-purple-100 {
+  background: rgba(139, 92, 246, 0.15) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.admin-main .main-content .text-purple-700 {
+  color: #a78bfa !important;
+}
+
+.admin-main .main-content .bg-blue-100 {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.admin-main .main-content .text-blue-700,
+.admin-main .main-content .text-blue-800 {
+  color: #60a5fa !important;
+}
+
+.admin-main .main-content .bg-green-100 {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.admin-main .main-content .text-green-700,
+.admin-main .main-content .text-green-800 {
+  color: #34d399 !important;
+}
+
+.admin-main .main-content .bg-red-100 {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.admin-main .main-content .text-red-700,
+.admin-main .main-content .text-red-800,
+.admin-main .main-content .text-red-600 {
+  color: #f87171 !important;
+}
+
+.admin-main .main-content .bg-yellow-100 {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.admin-main .main-content .text-yellow-700,
+.admin-main .main-content .text-yellow-800 {
+  color: #fbbf24 !important;
+}
+
+.admin-main .main-content .bg-pink-100 {
+  background: rgba(236, 72, 153, 0.15) !important;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+}
+
+.admin-main .main-content .text-pink-700 {
+  color: #f472b6 !important;
+}
+
+.admin-main .main-content .bg-indigo-100 {
+  background: rgba(102, 126, 234, 0.15) !important;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.admin-main .main-content .text-indigo-600,
+.admin-main .main-content .text-indigo-700 {
+  color: #667eea !important;
+}
+
+/* ===== Hover state on action buttons ===== */
+.admin-main .main-content .text-green-600:hover {
+  color: #6ee7b7 !important;
+}
+
+.admin-main .main-content .text-blue-600:hover {
+  color: #93c5fd !important;
+}
+
+.admin-main .main-content .text-red-600:hover {
+  color: #fca5a5 !important;
+}
+
+/* ===== Pagination overrides ===== */
+.admin-main .main-content .bg-indigo-600.text-white.border-indigo-600 {
+  background: rgba(102, 126, 234, 0.3) !important;
+  border-color: #667eea !important;
+  color: #667eea !important;
+}
+
+/* ===== Modal Overrides ===== */
+.admin-main ~ .fixed,
+.admin-layout .fixed {
+  /* Modal overlay with blur */
+}
+
+.admin-layout .fixed .bg-white {
+  background: rgba(20, 20, 20, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ===== Error banners ===== */
+.admin-main .main-content .bg-red-50 {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+.admin-main .main-content .bg-blue-50 {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+/* ===== Form button style overrides (cancel / submit) ===== */
+.admin-main .main-content .border-2.border-gray-300 {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #e0e0e0 !important;
+}
+
+.admin-main .main-content .border-2.border-gray-300:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ===== Dropdown Overrides ===== */
+.admin-main .main-content .absolute.z-10.bg-white {
+  background: rgba(20, 20, 20, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.admin-main .main-content .absolute.z-10 .hover\:bg-indigo-50:hover {
+  background: rgba(102, 126, 234, 0.1) !important;
+}
+
+.admin-main .main-content .absolute.z-10 .hover\:bg-green-50:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* ===== Gradient text for page titles ===== */
+.admin-main .main-content h1.text-3xl {
+  background: linear-gradient(135deg, #FFFFFF 0%, #A5B4FC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== View toggle override ===== */
+.admin-main .main-content .bg-white.rounded-lg.shadow-sm.border {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ===== Stat cards retain their gradients ===== */
+.admin-main .main-content [style*="linear-gradient"] {
+  border: none !important;
+  backdrop-filter: none;
+}
+
+/* ===== Feedback counter box ===== */
+.admin-main .main-content .text-blue-600 {
+  color: #667eea !important;
+}
+
+/* ===== Recharts dark mode ===== */
+.admin-main .recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-main .recharts-text {
+  fill: #94A3B8 !important;
+}
+
+.admin-main .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(15, 15, 15, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 10px !important;
+}
+
+.admin-main .recharts-default-tooltip .recharts-tooltip-label {
+  color: #e0e0e0 !important;
+}
+
+.admin-main .recharts-default-tooltip .recharts-tooltip-item {
+  color: #e0e0e0 !important;
+}
+
+.admin-main .recharts-legend-item-text {
+  color: #94A3B8 !important;
+}
+
+/* ===== Loading component override ===== */
+.admin-main .main-content .min-h-\[400px\] {
+  color: #e0e0e0;
+}
+
+/* ===== Calendar overrides ===== */
+.admin-main .main-content .rbc-calendar {
+  color: #e0e0e0;
+}
+
+.admin-main .main-content .rbc-header {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #94A3B8 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content .rbc-today {
+  background: rgba(102, 126, 234, 0.08) !important;
+}
+
+.admin-main .main-content .rbc-off-range-bg {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+.admin-main .main-content .rbc-month-view,
+.admin-main .main-content .rbc-time-view {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content .rbc-toolbar button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #e0e0e0 !important;
+}
+
+.admin-main .main-content .rbc-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-main .main-content .rbc-toolbar button.rbc-active {
+  background: rgba(102, 126, 234, 0.3) !important;
+  color: #667eea !important;
+  border-color: #667eea !important;
+}
+
+.admin-main .main-content .rbc-toolbar-label {
+  color: #e0e0e0 !important;
+}
+
+.admin-main .main-content .rbc-day-bg + .rbc-day-bg {
+  border-left-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.admin-main .main-content .rbc-month-row + .rbc-month-row {
+  border-top-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.admin-main .main-content .rbc-date-cell {
+  color: #94A3B8;
+}
+
+.admin-main .main-content .rbc-selected-cell {
+  background: rgba(102, 126, 234, 0.15) !important;
+}

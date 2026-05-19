@@ -139,9 +139,9 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
   };
 
   const quickActions = [
-    { id: 'booking', label: 'Đặt lịch mới', icon: '📅', action: () => { navigate('/patient/booking'); if (!isFullPage && onClose) onClose(); } },
-    { id: 'wallet', label: 'Ví Sức khỏe', icon: '💰', action: () => { navigate('/patient/wallet'); if (!isFullPage && onClose) onClose(); } },
-    { id: 'family', label: 'Hồ sơ Gia đình', icon: '👨‍👩‍👧‍👦', action: () => { navigate('/patient/family'); if (!isFullPage && onClose) onClose(); } },
+    { id: 'booking', label: 'Đặt lịch mới', icon: '', action: () => { navigate('/patient/booking'); if (!isFullPage && onClose) onClose(); } },
+    { id: 'wallet', label: 'Ví Sức khỏe', icon: '', action: () => { navigate('/patient/wallet'); if (!isFullPage && onClose) onClose(); } },
+    { id: 'family', label: 'Hồ sơ Gia đình', icon: '', action: () => { navigate('/patient/family'); if (!isFullPage && onClose) onClose(); } },
   ];
 
   return (
@@ -175,7 +175,7 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
                 <>
                   {chatHistory.map(msg => (
                     <div key={msg.id} className={`message ${msg.type}`}>
-                      <div className="message-avatar">{msg.type === 'user' ? '👤' : '🤖'}</div>
+                      <div className="message-avatar">{msg.type === 'user' ? '' : '🤖'}</div>
                       <div className="message-content">
                         <div className="message-text">
                           {/* Hiển thị nội dung chính */}
@@ -211,7 +211,7 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
                                     marginTop: '8px',
                                     color: '#14532d'
                                   }}>
-                                    <strong>💊 Lời khuyên tại nhà:</strong>
+                                    <strong> Lời khuyên tại nhà:</strong>
                                     <ul style={{ marginTop: '4px', paddingLeft: '20px', margin: '5px 0' }}>
                                       {msg.homeRemedies.map((item, index) => (
                                         <li key={index} style={{ marginBottom: '4px' }}>{item}</li>
@@ -239,7 +239,7 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
                               }}
                               onClick={() => handleQuickNavigate(msg.suggestion.specialty)}
                             >
-                              📅 Đặt lịch khám {msg.suggestion.specialty} ngay
+                               Đặt lịch khám {msg.suggestion.specialty} ngay
                             </button>
                           </div>
                         )}

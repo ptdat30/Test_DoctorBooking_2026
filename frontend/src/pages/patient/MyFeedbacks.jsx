@@ -113,7 +113,7 @@ const MyFeedbacks = () => {
                       <div className="flex flex-wrap items-center gap-3 mb-2">
                         <h3 className="font-semibold text-gray-100 text-lg">Bác sĩ: {feedback.doctorName}</h3>
                         <div className="flex items-center gap-1">
-                          <span className="text-yellow-400 text-base">{'⭐'.repeat(feedback.rating)}</span>
+                          <span className="text-yellow-400 text-base">{'★'.repeat(feedback.rating)}</span>
                           <span className="text-xs text-gray-400">({feedback.rating}/5)</span>
                         </div>
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(feedback.status)} shadow-sm border border-[#232b3b]`}> {getStatusDisplay(feedback.status)} </span>
@@ -188,7 +188,7 @@ const MyFeedbacks = () => {
                   </p>
                   {selectedFeedback.canEdit && (
                     <p className="text-xs text-amber-400 mt-2">
-                      ⚠️ Bạn chỉ có thể chỉnh sửa trong vòng 24 giờ và trước khi bác sĩ phản hồi
+                       Bạn chỉ có thể chỉnh sửa trong vòng 24 giờ và trước khi bác sĩ phản hồi
                     </p>
                   )}
                 </div>
@@ -206,7 +206,7 @@ const MyFeedbacks = () => {
                           onClick={() => setEditData({ ...editData, rating: star })}
                           className={`text-3xl focus:outline-none transition-transform hover:scale-110 ${star <= editData.rating ? 'text-yellow-400' : 'text-gray-500'}`}
                         >
-                          {star <= editData.rating ? '⭐' : '☆'}
+                          {star <= editData.rating ? '★' : '☆'}
                         </button>
                       ))}
                       <span className="text-sm text-gray-400 ml-2">

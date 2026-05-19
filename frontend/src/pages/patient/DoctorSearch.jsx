@@ -1,15 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, MapPin, Star, Award, Calendar,
-  TrendingUp, DollarSign, User, Clock
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Eye, Calendar, User, Clock } from 'lucide-react';
 import PatientLayout from '../../components/patient/PatientLayout';
 import { patientService } from '../../services/patientService';
-import Loading from '../../components/common/Loading';
-import ErrorMessage from '../../components/common/ErrorMessage';
 import DoctorDetail from '../../components/patient/DoctorDetail';
-import './DoctorSearch.css';
+import '../../pages/admin/AdminPages.css'; // Reuse admin table styles
 
 // Symptom to specialty mapping
 const symptomToSpecialty = {
@@ -33,7 +27,10 @@ const DoctorSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestedSpecialties, setSuggestedSpecialties] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [highlightedDoctorId, setHighlightedDoctorId] = useState(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     loadDoctors();
@@ -43,6 +40,7 @@ const DoctorSearch = () => {
     if (searchTerm.trim() === '') {
       setFilteredDoctors(doctors);
       setSuggestedSpecialties([]);
+      setCurrentPage(1);
       return;
     }
 
@@ -87,6 +85,7 @@ const DoctorSearch = () => {
 
     doctorsWithScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
     setFilteredDoctors(doctorsWithScores);
+    setCurrentPage(1); // Reset to first page on search
   }, [searchTerm, doctors]);
 
   const loadDoctors = async () => {
@@ -126,160 +125,226 @@ const DoctorSearch = () => {
     }
   };
 
-  const handleCardHover = (doctorId) => {
-    setHighlightedDoctorId(doctorId);
-  };
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDoctors = filteredDoctors.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <PatientLayout>
-      <div className="intelligent-doctor-finder">
-        {/* AI Symptom Decoder Search */}
-        <div className="ai-search-hero">
-          <div className="search-glow-wrapper">
-            <div className="search-icon-wrapper">
-              <Search className="search-icon" size={24} />
-            </div>
-            <input
-              type="text"
-              placeholder="Describe your symptoms (e.g., severe headache, back pain)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="ai-search-input"
-            />
+      <div className="admin-main">
+        <div className="main-content">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Danh sách Bác sĩ</h1>
           </div>
 
-          {/* Smart Tags */}
-          <AnimatePresence>
-            {suggestedSpecialties.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="smart-tags"
-              >
-                <span className="tags-label">RECOMMENDED</span>
-                {suggestedSpecialties.map((specialty, index) => (
-                  <motion.span
-                    key={index}
-                    initial={{ scale: 0, rotate: -10 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="smart-tag"
-                  >
-                    {specialty}
-                  </motion.span>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {error && <ErrorMessage message={error} />}
-
-        {/* Doctor List */}
-        <div className="doctors-container">
-          {loading && doctors.length === 0 ? (
-            <div className="loading-state">
-              <Loading message="Scanning for best matches..." />
-            </div>
-          ) : filteredDoctors.length === 0 ? (
-            <div className="empty-state">
-              <Search size={48} />
-              <p>No doctors match your search</p>
-            </div>
-          ) : (
-            <div className="holographic-cards-list">
-              {filteredDoctors.map((doctor) => (
-                <motion.div
-                  key={doctor.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`holo-card ${highlightedDoctorId === doctor.id ? 'highlighted' : ''}`}
-                  onMouseEnter={() => handleCardHover(doctor.id)}
-                  onMouseLeave={() => handleCardHover(null)}
-                >
-                  {/* Simple Avatar */}
-                  <div className="card-avatar-section">
-                    <div className={`simple-avatar ${doctor.isAvailable ? 'online' : ''}`}>
-                      <div className="avatar-circle">
-                        {doctor.fullName?.charAt(0) || 'D'}
-                      </div>
-                      {doctor.isAvailable && <div className="online-indicator"></div>}
-                    </div>
-                    <div className="neon-match-badge">
-                      <TrendingUp size={12} />
-                      {doctor.matchScore || 95}%
-                    </div>
-                  </div>
-
-                  {/* Card Info */}
-                  <div className="card-info-section">
-                    <div className="card-header">
-                      <div>
-                        <h3 className="doctor-name-holo">Dr. {doctor.fullName}</h3>
-                        <div className="doctor-specialty-holo">
-                          <Award size={14} />
-                          <span>{doctor.specialization || 'General Practitioner'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="meta-row">
-                      <div className="meta-chip">
-                        <User size={14} />
-                        {doctor.experience || 5}+ yrs
-                      </div>
-                      <div className="meta-chip">
-                        <Star size={14} fill="#fbbf24" color="#fbbf24" />
-                        {doctor.rating?.toFixed(1) || '4.5'}
-                      </div>
-                      <div className="meta-chip">
-                        <DollarSign size={14} />
-                        {(doctor.price / 1000).toFixed(0)}k
-                      </div>
-                    </div>
-
-                    {doctor.isAvailable && (
-                      <div className="availability-tag">
-                        <Clock size={14} />
-                        {doctor.nextAvailableSlot}
-                      </div>
-                    )}
-
-                    <div className="card-actions">
-                      <motion.button
-                        className="btn-book-fast"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleViewDetails(doctor.id)}
-                      >
-                        <Calendar size={16} />
-                        Đặt Lịch
-                      </motion.button>
-                      <motion.button
-                        className="btn-profile-glass"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleViewDetails(doctor.id)}
-                      >
-                        Hồ Sơ
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Doctor Detail Modal */}
-        {selectedDoctor && (
-          <DoctorDetail
-            doctor={selectedDoctor}
-            onClose={() => setSelectedDoctor(null)}
-          />
-        )}
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="p-4">
+              <div className="relative w-full max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên, chuyên khoa, triệu chứng..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+
+              {suggestedSpecialties.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="text-sm text-gray-500 flex items-center mr-2">Gợi ý chuyên khoa:</span>
+                  {suggestedSpecialties.map((specialty, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200"
+                    >
+                      {specialty}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Doctors Table */}
+          <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bác sĩ</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chuyên khoa</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thông tin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lịch trống</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                        <div className="flex justify-center items-center h-20">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : currentDoctors.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                        <Search className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        Không tìm thấy bác sĩ nào
+                      </td>
+                    </tr>
+                  ) : (
+                    currentDoctors.map((doctor, index) => (
+                      <tr key={doctor.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {indexOfFirstItem + index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold border border-gray-300">
+                              {doctor.fullName?.charAt(0) || 'D'}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{doctor.fullName}</div>
+                              <div className="text-xs text-gray-500 flex items-center mt-1">
+                                <span className="text-yellow-500 mr-1">★</span> 
+                                {doctor.rating?.toFixed(1) || '4.5'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{doctor.specialization || 'Đa khoa'}</div>
+                          <div className="text-sm text-gray-500">{doctor.qualification || ''}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{doctor.experience || 5}+ năm KN</div>
+                          <div className="text-sm text-gray-500">{(doctor.price / 1000).toFixed(0)}k VND/Lượt</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {doctor.isAvailable ? (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+                              {doctor.nextAvailableSlot}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                              Kín lịch
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleViewDetails(doctor.id)}
+                              className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors"
+                              title="Xem hồ sơ"
+                            >
+                              <User className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleViewDetails(doctor.id)}
+                              className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                              title="Đặt lịch"
+                            >
+                              <Calendar className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white rounded-lg shadow-sm p-4 mt-4 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Hiển thị <span className="font-medium">{indexOfFirstItem + 1}</span> -{' '}
+                  <span className="font-medium">{Math.min(indexOfLastItem, filteredDoctors.length)}</span> của{' '}
+                  <span className="font-medium">{filteredDoctors.length}</span> bác sĩ
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded border text-sm ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    Trước
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, idx) => (
+                    <button
+                      key={idx + 1}
+                      onClick={() => paginate(idx + 1)}
+                      className={`px-3 py-1 rounded border text-sm ${
+                        currentPage === idx + 1
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded border text-sm ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    Sau
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
+
+      {/* Doctor Detail Modal */}
+      {selectedDoctor && (
+        <DoctorDetail
+          doctor={selectedDoctor}
+          onClose={() => setSelectedDoctor(null)}
+        />
+      )}
     </PatientLayout>
   );
 };

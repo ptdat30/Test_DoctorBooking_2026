@@ -95,12 +95,12 @@ export const familyAccountData = {
 };
 
 export const relationshipTypes = [
-  { value: "self", label: "Bản thân", icon: "👤" },
+  { value: "self", label: "Bản thân", icon: "" },
   { value: "spouse", label: "Vợ/Chồng", icon: "💑" },
   { value: "child", label: "Con", icon: "👶" },
   { value: "parent", label: "Bố/Mẹ", icon: "👴👵" },
   { value: "sibling", label: "Anh/Chị/Em", icon: "👫" },
-  { value: "other", label: "Khác", icon: "👥" }
+  { value: "other", label: "Khác", icon: "" }
 ];
 
 export const familyMemberTemplates = [

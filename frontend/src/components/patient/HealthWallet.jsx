@@ -151,7 +151,7 @@ const HealthWallet = () => {
       {/* Overview Cards */}
       <div className="wallet-overview">
         <div className="wallet-card balance">
-          <div className="card-icon">💰</div>
+          <div className="card-icon"></div>
           <div className="card-content">
             <h3>Số dư</h3>
             <p className="card-value">{Number(walletData.balance).toLocaleString('vi-VN')} VNĐ</p>
@@ -159,7 +159,7 @@ const HealthWallet = () => {
         </div>
 
         <div className="wallet-card points">
-          <div className="card-icon">⭐</div>
+          <div className="card-icon">★</div>
           <div className="card-content">
             <h3>Điểm tích lũy</h3>
             <p className="card-value">{walletData.loyaltyPoints.toLocaleString('vi-VN')} điểm</p>
@@ -217,7 +217,7 @@ const HealthWallet = () => {
               <h3>Quyền lợi hạng {currentTier.name}</h3>
               <ul>
                 {currentTier.benefits.map((benefit, idx) => (
-                  <li key={idx}>✓ {benefit}</li>
+                  <li key={idx}> {benefit}</li>
                 ))}
               </ul>
             </div>
@@ -346,21 +346,21 @@ const HealthWallet = () => {
                 transactions.map((transaction) => (
                   <div key={transaction.id} className="transaction-item">
                     <div className="transaction-icon">
-                      {transaction.transactionType === 'PAYMENT' && '💳'}
+                      {transaction.transactionType === 'PAYMENT' && ''}
                       {transaction.transactionType === 'REWARD' && '🎁'}
                       {transaction.transactionType === 'REFUND' && '↩️'}
-                      {transaction.transactionType === 'DEPOSIT' && '💰'}
+                      {transaction.transactionType === 'DEPOSIT' && ''}
                       {transaction.transactionType === 'WITHDRAWAL' && '💸'}
                     </div>
                     <div className="transaction-details">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                         <h4 style={{ margin: 0 }}>{transaction.description}</h4>
                         <span className={`transaction-status-badge status-${transaction.status?.toLowerCase() || 'pending'}`}>
-                          {transaction.status === 'COMPLETED' && '✓ Hoàn thành'}
-                          {transaction.status === 'PENDING' && '⏳ Đang xử lý'}
+                          {transaction.status === 'COMPLETED' && ' Hoàn thành'}
+                          {transaction.status === 'PENDING' && ' Đang xử lý'}
                           {transaction.status === 'FAILED' && '✗ Thất bại'}
                           {transaction.status === 'CANCELLED' && '✕ Đã hủy'}
-                          {!transaction.status && '⏳ Đang xử lý'}
+                          {!transaction.status && ' Đang xử lý'}
                         </span>
                       </div>
                       <span className="transaction-date">

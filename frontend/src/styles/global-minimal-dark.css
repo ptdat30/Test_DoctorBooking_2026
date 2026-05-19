@@ -1,0 +1,162 @@
+/* 
+  Global Minimal Dark Theme Override
+  Applies to ALL roles: Admin, Doctor, Patient
+  Removes colorful gradients, limits colors to black, dark gray, light gray, white.
+*/
+
+:root {
+  --minimal-bg: #050505; /* Pure dark / near black */
+  --minimal-surface: #111111; /* Dark gray for cards */
+  --minimal-surface-hover: #1a1a1a;
+  --minimal-border: #222222;
+  --minimal-text: #e0e0e0;
+  --minimal-text-muted: #888888;
+  --minimal-accent: #333333; /* Very subtle accent */
+}
+
+/* 1. Reset all backgrounds to minimal dark */
+body {
+  background-color: var(--minimal-bg) !important;
+  color: var(--minimal-text) !important;
+}
+
+/* 2. Override ALL gradients across the app */
+[style*="linear-gradient"],
+.bg-gradient-to-r,
+.bg-gradient-to-br,
+.bg-gradient-to-b {
+  background: var(--minimal-surface) !important;
+  border: 1px solid var(--minimal-border) !important;
+}
+
+/* 3. Override Tailwind color classes commonly used for backgrounds */
+.bg-indigo-600, .bg-blue-600, .bg-purple-600, .bg-green-600, .bg-red-600, .bg-yellow-600,
+.bg-indigo-500, .bg-blue-500, .bg-purple-500, .bg-green-500, .bg-red-500, .bg-yellow-500,
+.bg-indigo-50, .bg-blue-50, .bg-purple-50, .bg-green-50, .bg-red-50, .bg-yellow-50,
+.bg-indigo-100, .bg-blue-100, .bg-purple-100, .bg-green-100, .bg-red-100, .bg-yellow-100 {
+  background-color: var(--minimal-surface) !important;
+  border: 1px solid var(--minimal-border) !important;
+  color: var(--minimal-text) !important;
+}
+
+/* 4. Text color overrides */
+.text-indigo-600, .text-blue-600, .text-purple-600, .text-green-600, .text-red-600, .text-yellow-600,
+.text-indigo-500, .text-blue-500, .text-purple-500, .text-green-500, .text-red-500, .text-yellow-500,
+.text-indigo-700, .text-blue-700, .text-purple-700, .text-green-700, .text-red-700, .text-yellow-700,
+.text-gray-900, .text-gray-800, .text-gray-700 {
+  color: var(--minimal-text) !important;
+}
+
+.text-gray-600, .text-gray-500, .text-gray-400 {
+  color: var(--minimal-text-muted) !important;
+}
+
+/* Gradient text overrides */
+.text-transparent {
+  background: none !important;
+  -webkit-text-fill-color: var(--minimal-text) !important;
+  color: var(--minimal-text) !important;
+}
+
+/* 5. Border color overrides */
+.border-indigo-200, .border-blue-200, .border-purple-200, .border-green-200, .border-red-200, .border-yellow-200,
+.border-indigo-300, .border-blue-300, .border-purple-300, .border-green-300, .border-red-300, .border-yellow-300,
+.border-gray-200, .border-gray-300 {
+  border-color: var(--minimal-border) !important;
+}
+
+/* 6. Card & Container standardizations */
+.bg-white, .admin-card, .doctor-card, .patient-card {
+  background-color: var(--minimal-surface) !important;
+  border: 1px solid var(--minimal-border) !important;
+  box-shadow: none !important; /* Remove heavy shadows */
+}
+
+/* Hover effects */
+.hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover, 
+.hover\:bg-indigo-50:hover, .hover\:bg-blue-50:hover,
+tbody tr:hover {
+  background-color: var(--minimal-surface-hover) !important;
+}
+
+/* 7. Button styling (Minimal) */
+button {
+  transition: all 0.2s ease;
+}
+
+button.bg-indigo-600, button.bg-blue-600, button.bg-green-600, button.bg-red-600,
+.btn-primary, .btn-submit, .admin-btn-primary {
+  background-color: var(--minimal-text) !important;
+  color: var(--minimal-bg) !important;
+  border: none !important;
+}
+
+button.bg-indigo-600:hover, button.bg-blue-600:hover, button.bg-green-600:hover, button.bg-red-600:hover,
+.btn-primary:hover, .btn-submit:hover, .admin-btn-primary:hover {
+  background-color: var(--minimal-text-muted) !important;
+  transform: none !important;
+}
+
+button.border, .btn-cancel, .admin-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid var(--minimal-border) !important;
+  color: var(--minimal-text) !important;
+}
+
+button.border:hover, .btn-cancel:hover, .admin-btn-secondary:hover {
+  background-color: var(--minimal-surface-hover) !important;
+}
+
+/* 8. Input & Form styling */
+input, select, textarea {
+  background-color: var(--minimal-bg) !important;
+  border: 1px solid var(--minimal-border) !important;
+  color: var(--minimal-text) !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--minimal-text-muted) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 9. Badges / Status Pills */
+.rounded-full, .admin-badge, .status-badge {
+  background-color: var(--minimal-bg) !important;
+  border: 1px solid var(--minimal-border) !important;
+  color: var(--minimal-text) !important;
+  font-weight: 500 !important;
+}
+
+/* 10. Recharts monochrome override */
+.recharts-cartesian-grid line {
+  stroke: var(--minimal-border) !important;
+}
+.recharts-text {
+  fill: var(--minimal-text-muted) !important;
+}
+.recharts-default-tooltip {
+  background-color: var(--minimal-surface) !important;
+  border: 1px solid var(--minimal-border) !important;
+}
+.recharts-tooltip-label, .recharts-tooltip-item {
+  color: var(--minimal-text) !important;
+}
+.recharts-bar-rectangle, .recharts-pie-sector, .recharts-line-curve {
+  fill: var(--minimal-text-muted) !important; /* Mute chart colors */
+  stroke: var(--minimal-surface) !important;
+}
+
+/* 11. Overwrite specific roles CSS vars if they exist */
+:root {
+  --bg-color: var(--minimal-bg);
+  --card-bg: var(--minimal-surface);
+  --text-primary: var(--minimal-text);
+  --text-secondary: var(--minimal-text-muted);
+  --border-color: var(--minimal-border);
+}
+
+/* 12. Hide background videos to ensure focus on content */
+video {
+  display: none !important;
+}

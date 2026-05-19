@@ -159,7 +159,7 @@ const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
                   <span className="suggestion-category">{medication.category}</span>
                 </div>
                 {isSelected && (
-                  <span className="suggestion-checkmark">✓ Đã thêm</span>
+                  <span className="suggestion-checkmark"> Đã thêm</span>
                 )}
               </div>
             );

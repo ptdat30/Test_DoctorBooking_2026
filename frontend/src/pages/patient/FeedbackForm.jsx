@@ -136,7 +136,7 @@ const FeedbackForm = () => {
                         color: star <= formData.rating ? '#f39c12' : '#ddd',
                       }}
                     >
-                      ⭐
+                      ★
                     </button>
                   ))}
                   <span style={{ marginLeft: '10px' }}>({formData.rating}/5)</span>

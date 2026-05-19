@@ -96,10 +96,10 @@ const PatientPortal = () => {
 
   const quickActions = [
     { id: 'symptom', label: 'Kiểm tra triệu chứng', icon: '🔍', action: () => setActiveMode('symptom') },
-    { id: 'booking', label: 'Đặt lịch khám', icon: '📅', action: () => navigate('/patient/booking') },
-    { id: 'wallet', label: 'Ví Sức khỏe', icon: '💰', action: () => setActiveMode('wallet') },
-    { id: 'family', label: 'Gia đình', icon: '👨‍👩‍👧‍👦', action: () => setActiveMode('family') },
-    { id: 'history', label: 'Lịch sử', icon: '📋', action: () => navigate('/patient/history') },
+    { id: 'booking', label: 'Đặt lịch khám', icon: '', action: () => navigate('/patient/booking') },
+    { id: 'wallet', label: 'Ví Sức khỏe', icon: '', action: () => setActiveMode('wallet') },
+    { id: 'family', label: 'Gia đình', icon: '', action: () => setActiveMode('family') },
+    { id: 'history', label: 'Lịch sử', icon: '', action: () => navigate('/patient/history') },
   ];
 
   return (
@@ -108,7 +108,7 @@ const PatientPortal = () => {
       <header className="portal-header">
         <div className="header-left">
           <div className="logo">
-            <span className="logo-icon">🏥</span>
+            <span className="logo-icon"></span>
             <span className="logo-text">HealthAI</span>
           </div>
         </div>
@@ -195,7 +195,7 @@ const PatientPortal = () => {
                         className={`message ${message.type}`}
                       >
                         <div className="message-avatar">
-                          {message.type === 'user' ? '👤' : '🤖'}
+                          {message.type === 'user' ? '' : '🤖'}
                         </div>
                         <div className="message-content">
                           <div className="message-text">
@@ -341,21 +341,21 @@ const PatientPortal = () => {
             <h3>Thông tin nhanh</h3>
             <div className="info-cards">
               <div className="info-card">
-                <div className="info-icon">📅</div>
+                <div className="info-icon"></div>
                 <div className="info-content">
                   <span className="info-label">Lịch hẹn sắp tới</span>
                   <span className="info-value">2</span>
                 </div>
               </div>
               <div className="info-card">
-                <div className="info-icon">💰</div>
+                <div className="info-icon"></div>
                 <div className="info-content">
                   <span className="info-label">Điểm tích lũy</span>
                   <span className="info-value">1,250</span>
                 </div>
               </div>
               <div className="info-card">
-                <div className="info-icon">👨‍👩‍👧‍👦</div>
+                <div className="info-icon"></div>
                 <div className="info-content">
                   <span className="info-label">Thành viên</span>
                   <span className="info-value">3</span>

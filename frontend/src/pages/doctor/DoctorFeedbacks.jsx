@@ -128,7 +128,7 @@ const DoctorFeedbacks = () => {
             <div className="flex items-center gap-2 mt-2">
               <span className="text-4xl font-bold">{averageRating.toFixed(1)}</span>
               <div>
-                <div className="text-2xl">{'⭐'.repeat(Math.round(averageRating))}</div>
+                <div className="text-2xl">{'★'.repeat(Math.round(averageRating))}</div>
                 <p className="text-xs opacity-90">{feedbacks.length} đánh giá</p>
               </div>
             </div>
@@ -146,11 +146,11 @@ const DoctorFeedbacks = () => {
             className="px-3 py-2 border border-[#232b3b] rounded-lg focus:ring-2 focus:ring-blue-500 bg-[#232b3b] text-gray-100 min-w-[140px]"
           >
             <option value="">Tất cả</option>
-            <option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
-            <option value="4">⭐⭐⭐⭐ (4 sao)</option>
-            <option value="3">⭐⭐⭐ (3 sao)</option>
-            <option value="2">⭐⭐ (2 sao)</option>
-            <option value="1">⭐ (1 sao)</option>
+            <option value="5">★★★★★ (5 sao)</option>
+            <option value="4">★★★★ (4 sao)</option>
+            <option value="3">★★★ (3 sao)</option>
+            <option value="2">★★ (2 sao)</option>
+            <option value="1">★ (1 sao)</option>
           </select>
           {filterRating && (
             <button
@@ -179,7 +179,7 @@ const DoctorFeedbacks = () => {
                       <div className="flex flex-wrap items-center gap-3 mb-2">
                         <h3 className="font-semibold text-gray-100 text-lg">{feedback.patientName}</h3>
                         <div className="flex items-center gap-1">
-                          <span className="text-yellow-400 text-base">{'⭐'.repeat(feedback.rating)}</span>
+                          <span className="text-yellow-400 text-base">{'★'.repeat(feedback.rating)}</span>
                           <span className="text-xs text-gray-400">({feedback.rating}/5)</span>
                         </div>
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(feedback.status)} shadow-sm border border-[#232b3b]`}> {getStatusDisplay(feedback.status)} </span>
@@ -245,7 +245,7 @@ const DoctorFeedbacks = () => {
                 <h3 className="font-semibold text-gray-100 mb-2">Phản hồi gốc:</h3>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-medium text-gray-100">{selectedFeedback.patientName}</span>
-                  <span className="text-yellow-400">{'⭐'.repeat(selectedFeedback.rating)}</span>
+                  <span className="text-yellow-400">{'★'.repeat(selectedFeedback.rating)}</span>
                 </div>
                 <p className="text-gray-300">{selectedFeedback.comment || 'Không có nhận xét'}</p>
                 <p className="text-xs text-gray-400 mt-2">{formatDate(selectedFeedback.createdAt)}</p>
@@ -267,7 +267,7 @@ const DoctorFeedbacks = () => {
                   />
                   {isEditingReply && selectedFeedback.canEdit && (
                     <p className="text-xs text-amber-400 mt-1">
-                      ⚠️ Bạn chỉ có thể chỉnh sửa trong vòng 24 giờ sau khi gửi phản hồi
+                       Bạn chỉ có thể chỉnh sửa trong vòng 24 giờ sau khi gửi phản hồi
                     </p>
                   )}
                 </div>

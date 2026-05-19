@@ -70,7 +70,7 @@ const AppointmentCalendar = ({ appointments, onSelectEvent }) => {
     allDay: 'Cả ngày',
     previous: '◀ Trước',
     next: 'Sau ▶',
-    today: '📅 Hôm nay',
+    today: ' Hôm nay',
     month: 'Tháng',
     week: 'Tuần',
     day: 'Ngày',

@@ -31,13 +31,13 @@ const DoctorAppointments = () => {
   const loadAppointments = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Loading doctor appointments...', { filterDate });
+      console.log(' Loading doctor appointments...', { filterDate });
       const data = await doctorService.getAppointments(filterDate || null);
-      console.log('✅ Appointments loaded:', data);
+      console.log(' Appointments loaded:', data);
       setAppointments(data);
       setError('');
     } catch (err) {
-      console.error('❌ Error loading appointments:', err);
+      console.error(' Error loading appointments:', err);
       console.error('Error response:', err.response?.data);
       setError('Failed to load appointments');
       console.error(err);

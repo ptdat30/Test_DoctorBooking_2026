@@ -157,11 +157,11 @@ const FeedbackManagement = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Tất cả</option>
-                <option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
-                <option value="4">⭐⭐⭐⭐ (4 sao)</option>
-                <option value="3">⭐⭐⭐ (3 sao)</option>
-                <option value="2">⭐⭐ (2 sao)</option>
-                <option value="1">⭐ (1 sao)</option>
+                <option value="5">★★★★★ (5 sao)</option>
+                <option value="4">★★★★ (4 sao)</option>
+                <option value="3">★★★ (3 sao)</option>
+                <option value="2">★★ (2 sao)</option>
+                <option value="1">★ (1 sao)</option>
               </select>
             </div>
           </div>
@@ -201,7 +201,7 @@ const FeedbackManagement = () => {
                         <td className="px-6 py-4 text-sm text-gray-900">{feedback.doctorName || '-'}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-1">
-                            <span>{'⭐'.repeat(feedback.rating)}</span>
+                            <span>{'★'.repeat(feedback.rating)}</span>
                             <span className="text-xs text-gray-500">({feedback.rating})</span>
                           </div>
                         </td>
@@ -299,7 +299,7 @@ const FeedbackManagement = () => {
                   <div>
                     <label className="text-sm font-medium text-gray-500">Đánh giá</label>
                     <div className="flex items-center gap-2">
-                      <span>{'⭐'.repeat(selectedFeedback.rating)}</span>
+                      <span>{'★'.repeat(selectedFeedback.rating)}</span>
                       <span className="text-gray-600">({selectedFeedback.rating}/5)</span>
                     </div>
                   </div>
@@ -332,7 +332,7 @@ const FeedbackManagement = () => {
 
                 {selectedFeedback.isHidden && (
                   <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
-                    <p className="text-red-800 text-sm font-medium">⚠️ Phản hồi này đã bị ẩn</p>
+                    <p className="text-red-800 text-sm font-medium"> Phản hồi này đã bị ẩn</p>
                   </div>
                 )}
               </div>

@@ -115,8 +115,8 @@ const BookingHistory = () => {
         switch (method) {
             case 'CASH': return '💵';
             case 'VNPAY': return '🏦';
-            case 'WALLET': return '💰';
-            default: return '💳';
+            case 'WALLET': return '';
+            default: return '';
         }
     };
 
@@ -141,7 +141,7 @@ const BookingHistory = () => {
 
                 {appointments.length === 0 ? (
                     <div className="empty-state">
-                        <div className="empty-state-icon">📅</div>
+                        <div className="empty-state-icon"></div>
                         <h3>Chưa có lịch hẹn nào</h3>
                         <p>Bắt đầu đặt lịch khám bệnh với bác sĩ ngay bây giờ</p>
                         <Link to="/patient/booking" className="empty-state-btn">
@@ -569,7 +569,7 @@ const FeedbackModal = ({ appointment, onClose, onSuccess }) => {
                                         transform: star <= formData.rating ? 'scale(1.1)' : 'scale(1)',
                                     }}
                                 >
-                                    ⭐
+                                    ★
                                 </button>
                             ))}
                             <span style={{ marginLeft: '1rem', color: '#888' }}>({formData.rating}/5)</span>

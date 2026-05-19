@@ -136,7 +136,7 @@ const DoctorProfile = () => {
                 <span className="avatar-initials">{getInitials(profile.fullName)}</span>
               </div>
               <div className="avatar-badge">
-                <span className="badge-icon">👨‍⚕️</span>
+                <span className="badge-icon"></span>
               </div>
             </div>
             <div className="profile-header-info">
@@ -171,7 +171,7 @@ const DoctorProfile = () => {
         <ErrorMessage message={error} onClose={() => setError('')} />
         {success && (
           <div className="success-message">
-            <span className="success-icon">✓</span>
+            <span className="success-icon"></span>
             {success}
           </div>
         )}
@@ -182,7 +182,7 @@ const DoctorProfile = () => {
           <div className="profile-section-card">
             <div className="section-card-header">
               <div className="section-header-left">
-                <span className="section-icon">👤</span>
+                <span className="section-icon"></span>
                 <h2 className="section-title">Thông tin cá nhân</h2>
               </div>
               {editMode && (
@@ -202,14 +202,14 @@ const DoctorProfile = () => {
               <div className="profile-info-display">
                 <div className="info-row">
                   <div className="info-label">
-                    <span className="label-icon">👤</span>
+                    <span className="label-icon"></span>
                     Họ và tên
                   </div>
                   <div className="info-value">{profile.fullName}</div>
                 </div>
                 <div className="info-row">
                   <div className="info-label">
-                    <span className="label-icon">🏥</span>
+                    <span className="label-icon"></span>
                     Chuyên khoa
                   </div>
                   <div className="info-value">{profile.specialization}</div>
@@ -223,7 +223,7 @@ const DoctorProfile = () => {
                 </div>
                 <div className="info-row">
                   <div className="info-label">
-                    <span className="label-icon">⭐</span>
+                    <span className="label-icon">★</span>
                     Kinh nghiệm
                   </div>
                   <div className="info-value">
@@ -265,7 +265,7 @@ const DoctorProfile = () => {
               <form onSubmit={handleUpdateProfile} className="profile-edit-form">
                 <div className="form-group">
                   <label className="form-label">
-                    <span className="label-icon">👤</span>
+                    <span className="label-icon"></span>
                     Họ và tên <span className="required">*</span>
                   </label>
                   <input
@@ -281,7 +281,7 @@ const DoctorProfile = () => {
 
                 <div className="form-group">
                   <label className="form-label">
-                    <span className="label-icon">🏥</span>
+                    <span className="label-icon"></span>
                     Chuyên khoa <span className="required">*</span>
                   </label>
                   <input
@@ -313,7 +313,7 @@ const DoctorProfile = () => {
 
                   <div className="form-group">
                     <label className="form-label">
-                      <span className="label-icon">⭐</span>
+                      <span className="label-icon">★</span>
                       Kinh nghiệm (năm)
                     </label>
                     <input
@@ -455,7 +455,7 @@ const DoctorProfile = () => {
 
                 <div className="form-group">
                   <label className="form-label">
-                    <span className="label-icon">✓</span>
+                    <span className="label-icon"></span>
                     Xác nhận mật khẩu mới <span className="required">*</span>
                   </label>
                   <input

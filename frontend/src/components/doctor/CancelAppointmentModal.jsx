@@ -79,7 +79,7 @@ const CancelAppointmentModal = ({ appointment, onClose, onConfirm, isAdmin = fal
             <div><strong>Giờ:</strong> {appointment.appointmentTime}</div>
             {!isAdmin && (
               <div style={{ marginTop: '10px', color: '#856404', fontSize: '0.9rem' }}>
-                ⚠️ Lưu ý: Bạn chỉ có thể hủy lịch hẹn trước thời gian khám tối thiểu 24 giờ.
+                 Lưu ý: Bạn chỉ có thể hủy lịch hẹn trước thời gian khám tối thiểu 24 giờ.
               </div>
             )}
           </div>

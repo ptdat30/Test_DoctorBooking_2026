@@ -51,12 +51,12 @@ const FamilyProfilePage = () => {
                 const icons = document.querySelectorAll('[data-feather]');
                 if (icons.length > 0) {
                   feather.replace();
-                  console.log('✅ Feather icons initialized/replaced');
+                  console.log(' Feather icons initialized/replaced');
                 }
               }
             } catch (e) {
               // Ignore errors (có thể do removeChild nhưng không ảnh hưởng UX)
-              console.log('⚠️ Feather icons error (ignored):', e.message);
+              console.log(' Feather icons error (ignored):', e.message);
             }
           }, 100); // Thêm delay nhỏ trong requestAnimationFrame
         });
@@ -74,19 +74,19 @@ const FamilyProfilePage = () => {
       }
       setError(null);
       
-      console.log('🔄 Loading family data...');
+      console.log(' Loading family data...');
       const [membersData, statsData] = await Promise.all([
         familyService.getFamilyMembers(),
         familyService.getFamilyStats()
       ]);
       
-      console.log('✅ Family members loaded:', membersData);
-      console.log('📊 Stats loaded:', statsData);
+      console.log(' Family members loaded:', membersData);
+      console.log(' Stats loaded:', statsData);
       
       setFamilyMembers(membersData);
       setStats(statsData);
     } catch (err) {
-      console.error('❌ Error loading family data:', err);
+      console.error(' Error loading family data:', err);
       setError('Không thể tải dữ liệu. Vui lòng thử lại.');
     } finally {
       if (showLoadingScreen) {
@@ -143,11 +143,11 @@ const FamilyProfilePage = () => {
       if (editingMember) {
         // Update existing member
         await familyService.updateFamilyMember(editingMember.id, formData);
-        console.log('✅ Member updated successfully');
+        console.log(' Member updated successfully');
       } else {
         // Create new member
         await familyService.createFamilyMember(formData);
-        console.log('✅ Member created successfully');
+        console.log(' Member created successfully');
       }
       
       // Reload data (KHÔNG hiện loading screen)
@@ -162,7 +162,7 @@ const FamilyProfilePage = () => {
       
       alert(editingMember ? 'Cập nhật thành công!' : 'Thêm thành viên thành công!');
     } catch (err) {
-      console.error('❌ Error submitting form:', err);
+      console.error(' Error submitting form:', err);
       alert(err.response?.data || 'Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       // Clear submitting sau khi đã đợi React render xong
@@ -191,7 +191,7 @@ const FamilyProfilePage = () => {
       console.log('🗑️ Deleting member:', member.id);
       
       await familyService.deleteFamilyMember(member.id);
-      console.log('✅ Member deleted successfully');
+      console.log(' Member deleted successfully');
       
       // Reload data (KHÔNG hiện loading screen)
       await loadFamilyData(false);
@@ -202,7 +202,7 @@ const FamilyProfilePage = () => {
       
       alert('Xóa thành công!');
     } catch (err) {
-      console.error('❌ Error deleting member:', err);
+      console.error(' Error deleting member:', err);
       const errorMessage = err.response?.data?.message || err.response?.data || err.message || 'Không thể xóa. Vui lòng thử lại.';
       alert(errorMessage);
     } finally {
@@ -249,12 +249,12 @@ const FamilyProfilePage = () => {
 
   const getRelationshipIcon = (relationship) => {
     switch (relationship) {
-      case 'SELF': return '👤';
+      case 'SELF': return '';
       case 'CHILD': return '👶';
       case 'PARENT': return '👨‍👩';
       case 'SPOUSE': return '💑';
       case 'SIBLING': return '👫';
-      default: return '👤';
+      default: return '';
     }
   };
 
@@ -565,7 +565,7 @@ const FamilyProfilePage = () => {
                     </>
                   ) : (
                     <>
-                      <span style={{ marginRight: '6px', fontSize: '16px' }}>✓</span>
+                      <span style={{ marginRight: '6px', fontSize: '16px' }}></span>
                       {editingMember ? 'Cập nhật' : 'Thêm thành viên'}
                     </>
                   )}

@@ -79,7 +79,7 @@ const Auth = () => {
         window.debugLogs.push({ timestamp: new Date().toISOString(), message: msg, data });
       };
       
-      logPersistent('✅ Login successful - Response:', authResponse);
+      logPersistent(' Login successful - Response:', authResponse);
       
       await new Promise(resolve => setTimeout(resolve, 100));
       
@@ -95,7 +95,7 @@ const Auth = () => {
       });
       
       if (!role) {
-        logPersistent('❌ No role found!', { authResponse, user });
+        logPersistent(' No role found!', { authResponse, user });
         setError('Login failed: Role information missing');
         return;
       }
@@ -110,7 +110,7 @@ const Auth = () => {
       logPersistent('🚀 Redirecting to:', redirectPath);
       navigate(redirectPath);
     } catch (err) {
-      console.error('❌ Login error:', err);
+      console.error(' Login error:', err);
       if (!window.debugLogs) window.debugLogs = [];
       window.debugLogs.push({ 
         timestamp: new Date().toISOString(), 

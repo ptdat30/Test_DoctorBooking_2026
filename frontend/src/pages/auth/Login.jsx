@@ -51,7 +51,7 @@ const Login = () => {
         window.debugLogs.push({ timestamp: new Date().toISOString(), message: msg, data });
       };
       
-      logPersistent('✅ Login successful - Response:', authResponse);
+      logPersistent(' Login successful - Response:', authResponse);
       
       await new Promise(resolve => setTimeout(resolve, 100));
       
@@ -59,7 +59,7 @@ const Login = () => {
       logPersistent('🔍 Role determined:', userRole);
       
       if (!userRole) {
-        logPersistent('❌ No role found!', { authResponse });
+        logPersistent(' No role found!', { authResponse });
         setError('Login failed: Role information missing');
         return;
       }
@@ -82,7 +82,7 @@ const Login = () => {
       logPersistent('🚀 Redirecting to:', redirectPath);
       navigate(redirectPath);
     } catch (err) {
-      console.error('❌ Login error:', err);
+      console.error(' Login error:', err);
       setError(err.response?.data?.message || err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.');
     } finally {
       setLoading(false);

@@ -29,7 +29,7 @@ const PatientLayout = ({ children }) => {
             setNotifications(notificationsData);
             setUnreadCount(unreadData);
         } catch (err) {
-            console.error('❌ Error loading notifications:', err);
+            console.error(' Error loading notifications:', err);
             // Không hiển thị error để không làm gián đoạn UX
             setNotifications([]);
             setUnreadCount(0);
@@ -117,7 +117,7 @@ const PatientLayout = ({ children }) => {
             // Reload notifications để cập nhật UI
             await loadNotifications();
         } catch (err) {
-            console.error('❌ Error marking notification as read:', err);
+            console.error(' Error marking notification as read:', err);
         }
     };
 
@@ -128,7 +128,7 @@ const PatientLayout = ({ children }) => {
             // Reload notifications để cập nhật UI
             await loadNotifications();
         } catch (err) {
-            console.error('❌ Error marking all as read:', err);
+            console.error(' Error marking all as read:', err);
         }
     };
 
@@ -273,12 +273,12 @@ const PatientLayout = ({ children }) => {
                                                 }}
                                             >
                                                 <div className="notification-icon">
-                                                    {notification.type === 'APPOINTMENT_REMINDER_24H' && '⏰'}
-                                                    {notification.type === 'APPOINTMENT_REMINDER_1H' && '⏰'}
-                                                    {notification.type === 'APPOINTMENT_CONFIRMED' && '✓'}
-                                                    {notification.type === 'PAYMENT_SUCCESS' && '💳'}
-                                                    {notification.type === 'WALLET_DEPOSIT_SUCCESS' && '💰'}
-                                                    {notification.type === 'APPOINTMENT_CANCELLED' && '❌'}
+                                                    {notification.type === 'APPOINTMENT_REMINDER_24H' && ''}
+                                                    {notification.type === 'APPOINTMENT_REMINDER_1H' && ''}
+                                                    {notification.type === 'APPOINTMENT_CONFIRMED' && ''}
+                                                    {notification.type === 'PAYMENT_SUCCESS' && ''}
+                                                    {notification.type === 'WALLET_DEPOSIT_SUCCESS' && ''}
+                                                    {notification.type === 'APPOINTMENT_CANCELLED' && ''}
                                                     {!['APPOINTMENT_REMINDER_24H', 'APPOINTMENT_REMINDER_1H', 'APPOINTMENT_CONFIRMED', 'PAYMENT_SUCCESS', 'WALLET_DEPOSIT_SUCCESS', 'APPOINTMENT_CANCELLED'].includes(notification.type) && '📢'}
                                                 </div>
                                                 <div className="notification-content">

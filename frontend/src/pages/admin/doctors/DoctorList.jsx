@@ -196,7 +196,7 @@ const DoctorList = () => {
         {/* Error Alert */}
         {error && (
           <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            <span className="text-lg">⚠️</span>
+            <span className="text-lg"></span>
             <span className="flex-1">{error}</span>
             <button 
               onClick={() => setError('')} 
