@@ -18,8 +18,28 @@ export const patientService = {
 
   // Appointments
   createAppointment: async (appointmentData) => {
-    const response = await api.post('/patient/appointments', appointmentData);
-    return response.data;
+    console.log('🔵 [patientService] createAppointment called');
+    console.log('🔵 [patientService] Payload:', JSON.stringify(appointmentData, null, 2));
+    console.log('🔵 [patientService] Payload types:', {
+      doctorId: typeof appointmentData.doctorId,
+      appointmentDate: typeof appointmentData.appointmentDate,
+      appointmentTime: typeof appointmentData.appointmentTime,
+      notes: typeof appointmentData.notes,
+      paymentMethod: typeof appointmentData.paymentMethod,
+      familyMemberId: typeof appointmentData.familyMemberId,
+    });
+    try {
+      const response = await api.post('/patient/appointments', appointmentData);
+      console.log('🟢 [patientService] Success:', response.status, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('🔴 [patientService] Error status:', error.response?.status);
+      console.error('🔴 [patientService] Error data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('🔴 [patientService] Request config URL:', error.config?.url);
+      console.error('🔴 [patientService] Request config baseURL:', error.config?.baseURL);
+      console.error('🔴 [patientService] Request headers:', JSON.stringify(error.config?.headers, null, 2));
+      throw error;
+    }
   },
 
   getAppointments: async () => {
