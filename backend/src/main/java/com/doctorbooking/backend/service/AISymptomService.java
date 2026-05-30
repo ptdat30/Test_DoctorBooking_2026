@@ -31,6 +31,11 @@ public class AISymptomService {
     private static final int MAX_RETRIES = 2;
     private static final int TIMEOUT_SECONDS = 30;
 
+    // ── Constants (java:S1192) ─────────────────────────────────────────────────
+    private static final String FIELD_CHOICES = "choices";
+    private static final String FIELD_MESSAGE = "message";
+    private static final String FIELD_CONTENT = "content";
+
     @Value("${groq.api-key}")
     private String apiKey;
 
@@ -245,16 +250,16 @@ public class AISymptomService {
             JsonNode root = objectMapper.readTree(jsonResponse);
 
             // Kiểm tra cấu trúc response theo định dạng OpenAI
-            if (!root.has("choices") || root.get("choices").size() == 0) {
+            if (!root.has(FIELD_CHOICES) || root.get(FIELD_CHOICES).size() == 0) {
                 throw new RuntimeException("Response không có choices");
             }
 
-            JsonNode choice = root.get("choices").get(0);
-            if (!choice.has("message") || !choice.get("message").has("content")) {
+            JsonNode choice = root.get(FIELD_CHOICES).get(0);
+            if (!choice.has(FIELD_MESSAGE) || !choice.get(FIELD_MESSAGE).has(FIELD_CONTENT)) {
                 throw new RuntimeException("Response không có message.content");
             }
 
-            String aiText = choice.get("message").get("content").asText();
+            String aiText = choice.get(FIELD_MESSAGE).get(FIELD_CONTENT).asText();
             logger.debug("Raw AI response: {}", aiText);
 
             // Làm sạch response - loại bỏ markdown và code blocks

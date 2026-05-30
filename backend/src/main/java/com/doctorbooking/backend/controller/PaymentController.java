@@ -41,6 +41,20 @@ public class PaymentController {
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
     private static final String REDIRECT_PREFIX = "redirect:";
 
+    // ── VNPay param key constants (java:S1192) ───────────────────────────────
+    private static final String VNP_TXN_REF        = "vnp_TxnRef";
+    private static final String VNP_TRANSACTION_NO = "vnp_TransactionNo";
+    private static final String VNP_AMOUNT         = "vnp_Amount";
+    private static final String VNP_RESPONSE_CODE  = "vnp_ResponseCode";
+    private static final String VNP_ORDER_INFO     = "vnp_OrderInfo";
+    private static final String VNP_BANK_CODE      = "vnp_BankCode";
+    private static final String VNP_PAY_DATE       = "vnp_PayDate";
+
+    // ── Redirect message constants (java:S1192) ────────────────────────────
+    private static final String MSG_PAYMENT_SUCCESS = "&message=Thanh%20toan%20thanh%20cong";
+    private static final String MSG_PAYMENT_FAILED  = "&message=Thanh%20toan%20that%20bai";
+    private static final String MSG_UPDATE_ERROR    = "&message=Loi%20cap%20nhat%20giao%20dich";
+
     private final WalletService walletService;
     private final VNPayService vnPayService;
     private final UserService userService;
@@ -131,9 +145,9 @@ public class PaymentController {
             logger.info("VNPAY Callback received with {} params", vnpParams.size());
             logger.info("VNPAY Params: {}", vnpParams);
 
-            String vnpTxnRef = vnpParams.get("vnp_TxnRef");
-            String vnpResponseCode = vnpParams.get("vnp_ResponseCode");
-            String vnpTransactionNo = vnpParams.get("vnp_TransactionNo");
+            String vnpTxnRef = vnpParams.get(VNP_TXN_REF);
+            String vnpResponseCode = vnpParams.get(VNP_RESPONSE_CODE);
+            String vnpTransactionNo = vnpParams.get(VNP_TRANSACTION_NO);
 
             // Verify checksum
             if (!vnPayService.verifyPayment(vnpParams)) {
@@ -168,9 +182,9 @@ public class PaymentController {
 
         try {
             Map<String, String> vnpParams = extractVnpParams(request);
-            String vnpResponseCode = vnpParams.get("vnp_ResponseCode");
-            String vnpTxnRef = vnpParams.get("vnp_TxnRef"); // Format: APT{appointmentId}_{timestamp}
-            String vnpTransactionNo = vnpParams.get("vnp_TransactionNo");
+            String vnpResponseCode = vnpParams.get(VNP_RESPONSE_CODE);
+            String vnpTxnRef = vnpParams.get(VNP_TXN_REF); // Format: APT{appointmentId}_{timestamp}
+            String vnpTransactionNo = vnpParams.get(VNP_TRANSACTION_NO);
 
             // Verify checksum
             if (!vnPayService.verifyPayment(vnpParams)) {
@@ -180,7 +194,7 @@ public class PaymentController {
 
             Long appointmentId = extractAppointmentId(vnpTxnRef);
             StringBuilder query = buildAppointmentQueryString(vnpResponseCode, vnpTransactionNo,
-                    vnpParams.get("vnp_Amount"), appointmentId);
+                    vnpParams.get(VNP_AMOUNT), appointmentId);
 
             processAppointmentPayment(vnpResponseCode, appointmentId, query);
 
@@ -255,17 +269,17 @@ public class PaymentController {
             String txnRef, String transactionNo) {
         StringBuilder q = new StringBuilder();
         q.append("?code=").append(responseCode);
-        q.append("&vnp_ResponseCode=").append(responseCode);
-        q.append("&vnp_TxnRef=").append(txnRef);
+        q.append("&").append(VNP_RESPONSE_CODE).append("=").append(responseCode);
+        q.append("&").append(VNP_TXN_REF).append("=").append(txnRef);
         q.append("&transactionId=").append(txnRef);
-        appendIfPresent(q, "vnp_TransactionNo", transactionNo);
-        appendIfPresent(q, "vnp_Amount", params.get("vnp_Amount"));
-        if (params.get("vnp_OrderInfo") != null) {
-            q.append("&vnp_OrderInfo=").append(
-                    java.net.URLEncoder.encode(params.get("vnp_OrderInfo"), java.nio.charset.StandardCharsets.UTF_8));
+        appendIfPresent(q, VNP_TRANSACTION_NO, transactionNo);
+        appendIfPresent(q, VNP_AMOUNT, params.get(VNP_AMOUNT));
+        if (params.get(VNP_ORDER_INFO) != null) {
+            q.append("&").append(VNP_ORDER_INFO).append("=").append(
+                    java.net.URLEncoder.encode(params.get(VNP_ORDER_INFO), java.nio.charset.StandardCharsets.UTF_8));
         }
-        appendIfPresent(q, "vnp_BankCode", params.get("vnp_BankCode"));
-        appendIfPresent(q, "vnp_PayDate", params.get("vnp_PayDate"));
+        appendIfPresent(q, VNP_BANK_CODE, params.get(VNP_BANK_CODE));
+        appendIfPresent(q, VNP_PAY_DATE, params.get(VNP_PAY_DATE));
         return q;
     }
 
@@ -277,10 +291,10 @@ public class PaymentController {
             try {
                 WalletTransaction updated = walletService.completeDepositTransaction(txnRef, transactionNo);
                 logger.info("Transaction completed: {} -> Status: {}", txnRef, updated.getStatus());
-                query.append("&message=Thanh%20toan%20thanh%20cong");
+                query.append(MSG_PAYMENT_SUCCESS);
             } catch (Exception e) {
                 logger.error("Error completing transaction: {}", txnRef, e);
-                query.append("&message=Loi%20cap%20nhat%20giao%20dich");
+                query.append(MSG_UPDATE_ERROR);
             }
         } else {
             logger.info("Processing failed payment for transaction: {}, ResponseCode: {}", txnRef, responseCode);
@@ -288,10 +302,10 @@ public class PaymentController {
                 WalletTransaction updated = walletService.failDepositTransaction(txnRef,
                         "Payment failed: ResponseCode=" + responseCode);
                 logger.info("Transaction failed and updated to FAILED: {} -> Status: {}", txnRef, updated.getStatus());
-                query.append("&message=Thanh%20toan%20that%20bai");
+                query.append(MSG_PAYMENT_FAILED);
             } catch (Exception e) {
                 logger.error("Error updating transaction to FAILED: {}", txnRef, e);
-                query.append("&message=Loi%20cap%20nhat%20giao%20dich");
+                query.append(MSG_UPDATE_ERROR);
             }
         }
     }
@@ -313,8 +327,8 @@ public class PaymentController {
         StringBuilder q = new StringBuilder();
         q.append("?code=").append(responseCode);
         q.append("&appointmentId=").append(appointmentId != null ? appointmentId : "");
-        appendIfPresent(q, "vnp_TransactionNo", transactionNo);
-        appendIfPresent(q, "vnp_Amount", amount);
+        appendIfPresent(q, VNP_TRANSACTION_NO, transactionNo);
+        appendIfPresent(q, VNP_AMOUNT, amount);
         return q;
     }
 
@@ -335,13 +349,13 @@ public class PaymentController {
             if (appointmentId != null) {
                 appointmentService.updatePaymentStatus(appointmentId, Appointment.PaymentStatus.PAID);
                 logger.info("Appointment payment completed: appointmentId={}", appointmentId);
-                query.append("&message=Thanh%20toan%20thanh%20cong");
+                query.append(MSG_PAYMENT_SUCCESS);
             } else {
                 query.append("&message=Thanh%20toan%20thanh%20cong%20nhung%20khong%20tim%20thay%20lich%20hen");
             }
         } catch (Exception e) {
             logger.error("Error updating appointment payment status", e);
-            query.append("&message=Loi%20cap%20nhat%20trang%20thai");
+            query.append(MSG_UPDATE_ERROR);
         }
     }
 
@@ -351,10 +365,10 @@ public class PaymentController {
                 appointmentService.cancelAppointmentDueToPaymentFailure(appointmentId);
                 logger.info("Appointment cancelled due to payment failure: appointmentId={}", appointmentId);
             }
-            query.append("&message=Thanh%20toan%20that%20bai");
+            query.append(MSG_PAYMENT_FAILED);
         } catch (Exception e) {
             logger.error("Error cancelling appointment", e);
-            query.append("&message=Thanh%20toan%20that%20bai");
+            query.append(MSG_PAYMENT_FAILED);
         }
     }
 

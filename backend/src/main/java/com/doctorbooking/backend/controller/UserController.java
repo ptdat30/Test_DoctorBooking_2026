@@ -12,13 +12,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {
+
+    // ── Constants (java:S1192) ─────────────────────────────────────────────────
+    private static final String FIELD_MESSAGE   = "message";
+    private static final String FIELD_STATUS    = "status";
+    private static final String FIELD_TIMESTAMP = "timestamp";
 
     private final UserService userService;
 
@@ -69,21 +76,21 @@ public class UserController {
             userService.deleteUser(id);
             return ResponseEntity.noContent().build();
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
-            errorResponse.put("message", "Không thể xóa người dùng này vì vẫn còn dữ liệu liên quan (ví dụ: lịch hẹn, phản hồi, v.v.). Bạn cần xóa hoặc chuyển các dữ liệu liên quan trước khi xóa người dùng này.");
-            errorResponse.put("status", HttpStatus.CONFLICT.value());
-            errorResponse.put("timestamp", java.time.LocalDateTime.now());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put(FIELD_MESSAGE, "Không thể xóa người dùng này vì vẫn còn dữ liệu liên quan (ví dụ: lịch hẹn, phản hồi, v.v.). Bạn cần xóa hoặc chuyển các dữ liệu liên quan trước khi xóa người dùng này.");
+            errorResponse.put(FIELD_STATUS, HttpStatus.CONFLICT.value());
+            errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (RuntimeException e) {
             String msg = e.getMessage();
-            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
-            errorResponse.put("message", msg);
-            errorResponse.put("timestamp", java.time.LocalDateTime.now());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put(FIELD_MESSAGE, msg);
+            errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
             if (msg != null && msg.contains("not found")) {
-                errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+                errorResponse.put(FIELD_STATUS, HttpStatus.NOT_FOUND.value());
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             } else {
-                errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+                errorResponse.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
             }
         }
