@@ -1,0 +1,95 @@
+name: SonarQube Analysis and Jira Bug Reporter
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  sonar-scan-and-jira:
+    name: SonarQube Scan and Jira Bug Generation
+    runs-on: ubuntu-latest
+    
+    env:
+      # Job-level environment variables
+      JIRA_PROJECT_KEY: 'HW'
+      JIRA_URL: 'https://your-domain.atlassian.net'
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # Step 2: Run SonarQube Scanner to analyze the source code
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      # Step 3: Wait for SonarQube Quality Gate result (fail if QG fails)
+      - name: SonarQube Quality Gate Verification
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # Step 4: Create Jira Bug ticket only if Quality Gate verification fails
+      - name: Create Bug Ticket in Jira on Failure
+        if: failure()
+        env:
+          JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          echo "Quality Gate failed. Preparing Jira Bug ticket payload..."
+          
+          # Construct JSON payload using EOF heredoc to preserve structure and formatting
+          cat << 'EOF' > jira_payload.json
+          {
+            "fields": {
+              "project": {
+                "key": "${{ env.JIRA_PROJECT_KEY }}"
+              },
+              "issuetype": {
+                "name": "Bug"
+              },
+              "summary": "[Security Auto-Report] Failed Quality Gate tại ${{ github.repository }} - Run #${{ github.run_number }}",
+              "description": "The SonarQube Quality Gate verification has failed for the repository.\n\n* Repository: ${{ github.repository }}\n* Run Number: #${{ github.run_number }}\n* Workflow Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\nPlease inspect the scan results and address the security vulnerabilities/code smells.",
+              "labels": [
+                "security",
+                "github-actions-bot"
+              ]
+            }
+          }
+          EOF
+
+          JIRA_ENDPOINT="${{ env.JIRA_URL }}/rest/api/2/issue/"
+          echo "Sending HTTP POST request to Jira API: $JIRA_ENDPOINT"
+
+          # Perform the cURL request:
+          # -s: Silent mode (don't display progress bar)
+          # -S: Show error message if it fails
+          # -f: Fail on server errors (returns a non-zero exit code)
+          # basic authentication uses JIRA_USER and JIRA_API_TOKEN
+          # Capture both stdout and stderr to a log file
+          HTTP_STATUS=0
+          curl -s -S -f -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d @jira_payload.json \
+            "$JIRA_ENDPOINT" > jira_response.log 2>&1 || HTTP_STATUS=$?
+
+          # Log response and handle failure
+          if [ $HTTP_STATUS -ne 0 ]; then
+            echo "ERROR: Failed to create Jira Bug. cURL command exited with code $HTTP_STATUS."
+            echo "Jira API response/error message details:"
+            cat jira_response.log
+            exit 1
+          else
+            echo "SUCCESS: Jira bug ticket successfully created."
+            echo "Jira API Response details:"
+            cat jira_response.log
+          fi
