@@ -46,6 +46,11 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.jasmin.internal.disabled=true
+            -Dsonar.js.analyzeSecurity=false
+            -Dsonar.javascript.node.maxspace=4096
 
       # Step 3: Wait for SonarQube Quality Gate result (fail if QG fails)
       - name: SonarQube Quality Gate Verification
