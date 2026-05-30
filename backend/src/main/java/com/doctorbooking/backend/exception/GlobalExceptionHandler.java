@@ -15,13 +15,18 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // ── Constants (java:S1192) ─────────────────────────────────────────────────
+    private static final String FIELD_TIMESTAMP = "timestamp";
+    private static final String FIELD_STATUS    = "status";
+    private static final String FIELD_MESSAGE   = "message";
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex) {
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("message", "Dữ liệu gửi lên không hợp lệ: " + extractRootCause(ex));
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(FIELD_MESSAGE, "Dữ liệu gửi lên không hợp lệ: " + extractRootCause(ex));
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
@@ -57,10 +62,10 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
         response.put("errors", errors);
-        response.put("message", "Validation failed");
+        response.put(FIELD_MESSAGE, "Validation failed");
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
@@ -69,17 +74,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(
             org.springframework.dao.DataIntegrityViolationException ex) {
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
         
         String message = ex.getMostSpecificCause().getMessage();
         if (message != null && message.contains("Duplicate entry")) {
-            response.put("message", "Khung giờ này đã có lịch hẹn. Vui lòng chọn giờ khác.");
+            response.put(FIELD_MESSAGE, "Khung giờ này đã có lịch hẹn. Vui lòng chọn giờ khác.");
         } else if (message != null && message.contains("unique constraint") || 
                    (message != null && message.contains("UNIQUE"))) {
-            response.put("message", "Dữ liệu bị trùng lặp. Vui lòng kiểm tra lại.");
+            response.put(FIELD_MESSAGE, "Dữ liệu bị trùng lặp. Vui lòng kiểm tra lại.");
         } else {
-            response.put("message", "Lỗi dữ liệu: " + (message != null && message.length() > 200 ? message.substring(0, 200) : message));
+            response.put(FIELD_MESSAGE, "Lỗi dữ liệu: " + (message != null && message.length() > 200 ? message.substring(0, 200) : message));
         }
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -88,9 +93,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("message", ex.getMessage());
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(FIELD_MESSAGE, ex.getMessage());
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
@@ -98,9 +103,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("message", "An error occurred: " + ex.getMessage());
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        response.put(FIELD_MESSAGE, "An error occurred: " + ex.getMessage());
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
@@ -110,9 +115,9 @@ public class GlobalExceptionHandler {
                       org.springframework.security.core.userdetails.UsernameNotFoundException.class})
     public ResponseEntity<Map<String, Object>> handleAuthenticationException(Exception ex) {
         Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.UNAUTHORIZED.value());
-        response.put("message", "Invalid username or password");
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.UNAUTHORIZED.value());
+        response.put(FIELD_MESSAGE, "Invalid username or password");
         response.put("error", ex.getClass().getSimpleName());
         response.put("details", ex.getMessage());
         
@@ -122,4 +127,3 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }
-
