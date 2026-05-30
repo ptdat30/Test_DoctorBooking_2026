@@ -4,6 +4,7 @@ import com.doctorbooking.backend.dto.request.TopUpRequest;
 import com.doctorbooking.backend.dto.response.TopUpResponse;
 import com.doctorbooking.backend.dto.response.WalletResponse;
 import com.doctorbooking.backend.dto.response.WalletTransactionResponse;
+import com.doctorbooking.backend.model.Appointment;
 import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.model.WalletTransaction;
 import com.doctorbooking.backend.model.User;
@@ -25,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
 public class PaymentController {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+    private static final String REDIRECT_PREFIX = "redirect:";
+
     private final WalletService walletService;
     private final VNPayService vnPayService;
     private final UserService userService;
@@ -114,129 +118,42 @@ public class PaymentController {
     }
 
     /**
-     * Callback từ VNPAY sau khi thanh toán
+     * Callback từ VNPAY sau khi thanh toán ví
      */
     @GetMapping("/payments/vnpay/callback")
-    public org.springframework.web.servlet.ModelAndView vnpayCallback(HttpServletRequest request) {
+    public ModelAndView vnpayCallback(HttpServletRequest request) {
         logger.info("=== VNPAY CALLBACK RECEIVED ===");
         logger.info("Request URL: {}", request.getRequestURL());
         logger.info("Query String: {}", request.getQueryString());
 
         try {
-            Map<String, String> vnpParams = new HashMap<>();
-            for (String paramName : request.getParameterMap().keySet()) {
-                String[] paramValues = request.getParameterValues(paramName);
-                String paramValue = paramValues != null && paramValues.length > 0 ? paramValues[0] : null;
-                vnpParams.put(paramName, paramValue);
-                logger.debug("VNPAY Param: {} = {}", paramName, paramValue);
-            }
-
+            Map<String, String> vnpParams = extractVnpParams(request);
             logger.info("VNPAY Callback received with {} params", vnpParams.size());
             logger.info("VNPAY Params: {}", vnpParams);
 
-            String vnp_ResponseCode = vnpParams.get("vnp_ResponseCode");
-            String vnp_TxnRef = vnpParams.get("vnp_TxnRef");
-            String vnp_TransactionNo = vnpParams.get("vnp_TransactionNo");
+            String vnpTxnRef = vnpParams.get("vnp_TxnRef");
+            String vnpResponseCode = vnpParams.get("vnp_ResponseCode");
+            String vnpTransactionNo = vnpParams.get("vnp_TransactionNo");
 
             // Verify checksum
-            boolean isValid = vnPayService.verifyPayment(vnpParams);
-            if (!isValid) {
-                logger.warn("Invalid VNPAY checksum for transaction: {}", vnp_TxnRef);
-                // Cập nhật transaction thành FAILED khi checksum không hợp lệ
-                if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
-                    try {
-                        walletService.failDepositTransaction(vnp_TxnRef, "Invalid checksum");
-                    } catch (Exception e) {
-                        logger.error("Error updating transaction status for invalid checksum", e);
-                    }
-                }
-                String redirectUrl = frontendUrl
-                        + "/patient/wallet/payment/result?code=97&message=Invalid%20checksum&vnp_TxnRef="
-                        + (vnp_TxnRef != null ? vnp_TxnRef : "");
-                return new org.springframework.web.servlet.ModelAndView("redirect:" + redirectUrl);
-            }
-
-            String redirectUrl = frontendUrl + "/patient/wallet/payment/result";
-
-            // Build query string with all VNPAY params
-            StringBuilder queryString = new StringBuilder();
-            queryString.append("?code=").append(vnp_ResponseCode);
-            queryString.append("&vnp_ResponseCode=").append(vnp_ResponseCode);
-            queryString.append("&vnp_TxnRef=").append(vnp_TxnRef);
-            queryString.append("&transactionId=").append(vnp_TxnRef);
-
-            if (vnp_TransactionNo != null) {
-                queryString.append("&vnp_TransactionNo=").append(vnp_TransactionNo);
-            }
-            if (vnpParams.get("vnp_Amount") != null) {
-                queryString.append("&vnp_Amount=").append(vnpParams.get("vnp_Amount"));
-            }
-            if (vnpParams.get("vnp_OrderInfo") != null) {
-                queryString.append("&vnp_OrderInfo=").append(java.net.URLEncoder.encode(vnpParams.get("vnp_OrderInfo"),
-                        java.nio.charset.StandardCharsets.UTF_8));
-            }
-            if (vnpParams.get("vnp_BankCode") != null) {
-                queryString.append("&vnp_BankCode=").append(vnpParams.get("vnp_BankCode"));
-            }
-            if (vnpParams.get("vnp_PayDate") != null) {
-                queryString.append("&vnp_PayDate=").append(vnpParams.get("vnp_PayDate"));
+            if (!vnPayService.verifyPayment(vnpParams)) {
+                return handleInvalidChecksum(vnpTxnRef);
             }
 
             // Validate vnp_TxnRef
-            if (vnp_TxnRef == null || vnp_TxnRef.isEmpty()) {
+            if (vnpTxnRef == null || vnpTxnRef.isEmpty()) {
                 logger.error("vnp_TxnRef is null or empty in callback");
-                String errorRedirectUrl = frontendUrl
-                        + "/patient/wallet/payment/result?code=99&message=Missing%20transaction%20ID";
-                return new org.springframework.web.servlet.ModelAndView("redirect:" + errorRedirectUrl);
+                return redirect(frontendUrl + "/patient/wallet/payment/result?code=99&message=Missing%20transaction%20ID");
             }
 
-            if ("00".equals(vnp_ResponseCode)) {
-                // Thanh toán thành công
-                logger.info("Processing successful payment for transaction: {}", vnp_TxnRef);
-                try {
-                    WalletTransaction updated = walletService.completeDepositTransaction(vnp_TxnRef, vnp_TransactionNo);
-                    logger.info("Transaction completed successfully: {} -> Status: {}", vnp_TxnRef,
-                            updated.getStatus());
-                    queryString.append("&message=Thanh%20toan%20thanh%20cong");
-                } catch (Exception e) {
-                    logger.error("Error completing transaction: {}", vnp_TxnRef, e);
-                    e.printStackTrace();
-                    queryString.append("&message=Loi%20cap%20nhat%20giao%20dich");
-                }
-            } else {
-                // Thanh toán thất bại - CẬP NHẬT STATUS THÀNH FAILED
-                logger.info("Processing failed payment for transaction: {}, ResponseCode: {}", vnp_TxnRef,
-                        vnp_ResponseCode);
-                try {
-                    WalletTransaction updated = walletService.failDepositTransaction(vnp_TxnRef,
-                            "Payment failed: ResponseCode=" + vnp_ResponseCode);
-                    logger.info("Transaction failed and updated to FAILED: {} -> Status: {}", vnp_TxnRef,
-                            updated.getStatus());
-                    queryString.append("&message=Thanh%20toan%20that%20bai");
-                } catch (Exception e) {
-                    logger.error("Error updating transaction to FAILED: {}", vnp_TxnRef, e);
-                    e.printStackTrace();
-                    queryString.append("&message=Loi%20cap%20nhat%20giao%20dich");
-                }
-            }
+            StringBuilder query = buildWalletQueryString(vnpParams, vnpResponseCode, vnpTxnRef, vnpTransactionNo);
+            processWalletPayment(vnpResponseCode, vnpTxnRef, vnpTransactionNo, query);
 
-            redirectUrl += queryString.toString();
-
-            return new org.springframework.web.servlet.ModelAndView("redirect:" + redirectUrl);
+            return redirect(frontendUrl + "/patient/wallet/payment/result" + query);
         } catch (Exception e) {
             logger.error("Error processing VNPAY callback", e);
-            // Cố gắng cập nhật transaction thành FAILED nếu có vnp_TxnRef
-            try {
-                String vnp_TxnRef = request.getParameter("vnp_TxnRef");
-                if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
-                    walletService.failDepositTransaction(vnp_TxnRef, "System error: " + e.getMessage());
-                    logger.info("Transaction updated to FAILED due to system error: {}", vnp_TxnRef);
-                }
-            } catch (Exception updateEx) {
-                logger.error("Error updating transaction status in exception handler", updateEx);
-            }
-            String redirectUrl = frontendUrl + "/patient/wallet/payment/result?code=99&message=Loi%20he%20thong";
-            return new org.springframework.web.servlet.ModelAndView("redirect:" + redirectUrl);
+            failTransactionSilently(request.getParameter("vnp_TxnRef"), "System error: " + e.getMessage());
+            return redirect(frontendUrl + "/patient/wallet/payment/result?code=99&message=Loi%20he%20thong");
         }
     }
 
@@ -244,98 +161,35 @@ public class PaymentController {
      * Callback từ VNPAY sau khi thanh toán APPOINTMENT
      */
     @GetMapping("/payments/vnpay/appointment-callback")
-    public org.springframework.web.servlet.ModelAndView vnpayAppointmentCallback(HttpServletRequest request) {
+    public ModelAndView vnpayAppointmentCallback(HttpServletRequest request) {
         logger.info("=== VNPAY APPOINTMENT CALLBACK RECEIVED ===");
         logger.info("Request URL: {}", request.getRequestURL());
         logger.info("Query String: {}", request.getQueryString());
 
         try {
-            Map<String, String> vnpParams = new HashMap<>();
-            for (String paramName : request.getParameterMap().keySet()) {
-                String[] paramValues = request.getParameterValues(paramName);
-                String paramValue = paramValues != null && paramValues.length > 0 ? paramValues[0] : null;
-                vnpParams.put(paramName, paramValue);
-                logger.debug("VNPAY Param: {} = {}", paramName, paramValue);
-            }
-
-            String vnp_ResponseCode = vnpParams.get("vnp_ResponseCode");
-            String vnp_TxnRef = vnpParams.get("vnp_TxnRef"); // Format: APT{appointmentId}_{timestamp}
-            String vnp_TransactionNo = vnpParams.get("vnp_TransactionNo");
+            Map<String, String> vnpParams = extractVnpParams(request);
+            String vnpResponseCode = vnpParams.get("vnp_ResponseCode");
+            String vnpTxnRef = vnpParams.get("vnp_TxnRef"); // Format: APT{appointmentId}_{timestamp}
+            String vnpTransactionNo = vnpParams.get("vnp_TransactionNo");
 
             // Verify checksum
-            boolean isValid = vnPayService.verifyPayment(vnpParams);
-            if (!isValid) {
-                logger.warn("Invalid VNPAY checksum for appointment payment: {}", vnp_TxnRef);
-                String redirectUrl = frontendUrl
-                        + "/patient/appointment/payment/result?code=97&message=Invalid%20checksum";
-                return new org.springframework.web.servlet.ModelAndView("redirect:" + redirectUrl);
+            if (!vnPayService.verifyPayment(vnpParams)) {
+                logger.warn("Invalid VNPAY checksum for appointment payment: {}", vnpTxnRef);
+                return redirect(frontendUrl + "/patient/appointment/payment/result?code=97&message=Invalid%20checksum");
             }
 
-            // Extract appointmentId from vnp_TxnRef (Format: APT{id}_{timestamp})
-            Long appointmentId = null;
-            try {
-                String idStr = vnp_TxnRef.substring(3, vnp_TxnRef.indexOf("_"));
-                appointmentId = Long.parseLong(idStr);
-            } catch (Exception e) {
-                logger.error("Cannot extract appointmentId from vnp_TxnRef: {}", vnp_TxnRef, e);
-            }
+            Long appointmentId = extractAppointmentId(vnpTxnRef);
+            StringBuilder query = buildAppointmentQueryString(vnpResponseCode, vnpTransactionNo,
+                    vnpParams.get("vnp_Amount"), appointmentId);
 
-            String redirectUrl = frontendUrl + "/patient/appointment/payment/result";
-            StringBuilder queryString = new StringBuilder();
-            queryString.append("?code=").append(vnp_ResponseCode);
-            queryString.append("&appointmentId=").append(appointmentId != null ? appointmentId : "");
+            processAppointmentPayment(vnpResponseCode, appointmentId, query);
 
-            if (vnp_TransactionNo != null) {
-                queryString.append("&vnp_TransactionNo=").append(vnp_TransactionNo);
-            }
-            if (vnpParams.get("vnp_Amount") != null) {
-                queryString.append("&vnp_Amount=").append(vnpParams.get("vnp_Amount"));
-            }
-
-            if ("00".equals(vnp_ResponseCode)) {
-                // Thanh toán thành công
-                logger.info("Processing successful appointment payment: appointmentId={}", appointmentId);
-                try {
-                    if (appointmentId != null) {
-                        appointmentService.updatePaymentStatus(appointmentId,
-                                com.doctorbooking.backend.model.Appointment.PaymentStatus.PAID);
-                        logger.info("Appointment payment completed: appointmentId={}", appointmentId);
-                        queryString.append("&message=Thanh%20toan%20thanh%20cong");
-                    } else {
-                        queryString.append(
-                                "&message=Thanh%20toan%20thanh%20cong%20nhung%20khong%20tim%20thay%20lich%20hen");
-                    }
-                } catch (Exception e) {
-                    logger.error("Error updating appointment payment status", e);
-                    queryString.append("&message=Loi%20cap%20nhat%20trang%20thai");
-                }
-            } else {
-                // Thanh toán thất bại
-                logger.info("Processing failed appointment payment: appointmentId={}, ResponseCode: {}", appointmentId,
-                        vnp_ResponseCode);
-                try {
-                    if (appointmentId != null) {
-                        // Cập nhật payment_status = UNPAID và status = CANCELLED
-                        appointmentService.cancelAppointmentDueToPaymentFailure(appointmentId);
-                        logger.info("Appointment cancelled due to payment failure: appointmentId={}", appointmentId);
-                        queryString.append("&message=Thanh%20toan%20that%20bai");
-                    } else {
-                        queryString.append("&message=Thanh%20toan%20that%20bai");
-                    }
-                } catch (Exception e) {
-                    logger.error("Error cancelling appointment", e);
-                    queryString.append("&message=Thanh%20toan%20that%20bai");
-                }
-            }
-
-            redirectUrl += queryString.toString();
+            String redirectUrl = frontendUrl + "/patient/appointment/payment/result" + query;
             logger.info("Redirecting to: {}", redirectUrl);
-
-            return new org.springframework.web.servlet.ModelAndView("redirect:" + redirectUrl);
+            return redirect(redirectUrl);
         } catch (Exception e) {
             logger.error("Error processing VNPAY appointment callback", e);
-            String redirectUrl = frontendUrl + "/patient/appointment/payment/result?code=99&message=Loi%20he%20thong";
-            return new org.springframework.web.servlet.ModelAndView("redirect:" + redirectUrl);
+            return redirect(frontendUrl + "/patient/appointment/payment/result?code=99&message=Loi%20he%20thong");
         }
     }
 
@@ -369,6 +223,164 @@ public class PaymentController {
             logger.error("Error getting transactions", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    // ─── Private helpers ────────────────────────────────────────────────────────
+
+    /** Trích xuất tất cả params từ VNPAY request vào Map. */
+    private Map<String, String> extractVnpParams(HttpServletRequest request) {
+        Map<String, String> params = new HashMap<>();
+        for (String name : request.getParameterMap().keySet()) {
+            String[] values = request.getParameterValues(name);
+            String value = (values != null && values.length > 0) ? values[0] : null;
+            params.put(name, value);
+            logger.debug("VNPAY Param: {} = {}", name, value);
+        }
+        return params;
+    }
+
+    /** Xử lý khi checksum VNPAY không hợp lệ (wallet). */
+    private ModelAndView handleInvalidChecksum(String vnpTxnRef) {
+        logger.warn("Invalid VNPAY checksum for transaction: {}", vnpTxnRef);
+        if (vnpTxnRef != null && !vnpTxnRef.isEmpty()) {
+            failTransactionSilently(vnpTxnRef, "Invalid checksum");
+        }
+        String url = frontendUrl + "/patient/wallet/payment/result?code=97&message=Invalid%20checksum&vnp_TxnRef="
+                + (vnpTxnRef != null ? vnpTxnRef : "");
+        return redirect(url);
+    }
+
+    /** Build query string cho wallet callback (chứa code, txnRef, amount, ...). */
+    private StringBuilder buildWalletQueryString(Map<String, String> params, String responseCode,
+            String txnRef, String transactionNo) {
+        StringBuilder q = new StringBuilder();
+        q.append("?code=").append(responseCode);
+        q.append("&vnp_ResponseCode=").append(responseCode);
+        q.append("&vnp_TxnRef=").append(txnRef);
+        q.append("&transactionId=").append(txnRef);
+        appendIfPresent(q, "vnp_TransactionNo", transactionNo);
+        appendIfPresent(q, "vnp_Amount", params.get("vnp_Amount"));
+        if (params.get("vnp_OrderInfo") != null) {
+            q.append("&vnp_OrderInfo=").append(
+                    java.net.URLEncoder.encode(params.get("vnp_OrderInfo"), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        appendIfPresent(q, "vnp_BankCode", params.get("vnp_BankCode"));
+        appendIfPresent(q, "vnp_PayDate", params.get("vnp_PayDate"));
+        return q;
+    }
+
+    /** Xử lý thanh toán ví: thành công hoặc thất bại. */
+    private void processWalletPayment(String responseCode, String txnRef, String transactionNo,
+            StringBuilder query) {
+        if ("00".equals(responseCode)) {
+            logger.info("Processing successful payment for transaction: {}", txnRef);
+            try {
+                WalletTransaction updated = walletService.completeDepositTransaction(txnRef, transactionNo);
+                logger.info("Transaction completed: {} -> Status: {}", txnRef, updated.getStatus());
+                query.append("&message=Thanh%20toan%20thanh%20cong");
+            } catch (Exception e) {
+                logger.error("Error completing transaction: {}", txnRef, e);
+                query.append("&message=Loi%20cap%20nhat%20giao%20dich");
+            }
+        } else {
+            logger.info("Processing failed payment for transaction: {}, ResponseCode: {}", txnRef, responseCode);
+            try {
+                WalletTransaction updated = walletService.failDepositTransaction(txnRef,
+                        "Payment failed: ResponseCode=" + responseCode);
+                logger.info("Transaction failed and updated to FAILED: {} -> Status: {}", txnRef, updated.getStatus());
+                query.append("&message=Thanh%20toan%20that%20bai");
+            } catch (Exception e) {
+                logger.error("Error updating transaction to FAILED: {}", txnRef, e);
+                query.append("&message=Loi%20cap%20nhat%20giao%20dich");
+            }
+        }
+    }
+
+    /** Trích xuất appointmentId từ vnp_TxnRef (format: APT{id}_{timestamp}). */
+    private Long extractAppointmentId(String vnpTxnRef) {
+        try {
+            String idStr = vnpTxnRef.substring(3, vnpTxnRef.indexOf("_"));
+            return Long.parseLong(idStr);
+        } catch (Exception e) {
+            logger.error("Cannot extract appointmentId from vnp_TxnRef: {}", vnpTxnRef, e);
+            return null;
+        }
+    }
+
+    /** Build query string cho appointment callback. */
+    private StringBuilder buildAppointmentQueryString(String responseCode, String transactionNo,
+            String amount, Long appointmentId) {
+        StringBuilder q = new StringBuilder();
+        q.append("?code=").append(responseCode);
+        q.append("&appointmentId=").append(appointmentId != null ? appointmentId : "");
+        appendIfPresent(q, "vnp_TransactionNo", transactionNo);
+        appendIfPresent(q, "vnp_Amount", amount);
+        return q;
+    }
+
+    /** Xử lý thanh toán appointment: thành công hoặc thất bại. */
+    private void processAppointmentPayment(String responseCode, Long appointmentId, StringBuilder query) {
+        if ("00".equals(responseCode)) {
+            logger.info("Processing successful appointment payment: appointmentId={}", appointmentId);
+            handleSuccessfulAppointmentPayment(appointmentId, query);
+        } else {
+            logger.info("Processing failed appointment payment: appointmentId={}, ResponseCode: {}",
+                    appointmentId, responseCode);
+            handleFailedAppointmentPayment(appointmentId, query);
+        }
+    }
+
+    private void handleSuccessfulAppointmentPayment(Long appointmentId, StringBuilder query) {
+        try {
+            if (appointmentId != null) {
+                appointmentService.updatePaymentStatus(appointmentId, Appointment.PaymentStatus.PAID);
+                logger.info("Appointment payment completed: appointmentId={}", appointmentId);
+                query.append("&message=Thanh%20toan%20thanh%20cong");
+            } else {
+                query.append("&message=Thanh%20toan%20thanh%20cong%20nhung%20khong%20tim%20thay%20lich%20hen");
+            }
+        } catch (Exception e) {
+            logger.error("Error updating appointment payment status", e);
+            query.append("&message=Loi%20cap%20nhat%20trang%20thai");
+        }
+    }
+
+    private void handleFailedAppointmentPayment(Long appointmentId, StringBuilder query) {
+        try {
+            if (appointmentId != null) {
+                appointmentService.cancelAppointmentDueToPaymentFailure(appointmentId);
+                logger.info("Appointment cancelled due to payment failure: appointmentId={}", appointmentId);
+            }
+            query.append("&message=Thanh%20toan%20that%20bai");
+        } catch (Exception e) {
+            logger.error("Error cancelling appointment", e);
+            query.append("&message=Thanh%20toan%20that%20bai");
+        }
+    }
+
+    /** Append param vào query string nếu value không null. */
+    private void appendIfPresent(StringBuilder sb, String key, String value) {
+        if (value != null) {
+            sb.append("&").append(key).append("=").append(value);
+        }
+    }
+
+    /** Cố gắng đánh dấu transaction là FAILED mà không throw exception. */
+    private void failTransactionSilently(String txnRef, String reason) {
+        if (txnRef == null || txnRef.isEmpty()) {
+            return;
+        }
+        try {
+            walletService.failDepositTransaction(txnRef, reason);
+            logger.info("Transaction updated to FAILED: {}", txnRef);
+        } catch (Exception ex) {
+            logger.error("Error updating transaction status in exception handler", ex);
+        }
+    }
+
+    /** Tạo redirect ModelAndView. */
+    private ModelAndView redirect(String url) {
+        return new ModelAndView(REDIRECT_PREFIX + url);
     }
 
     private WalletTransactionResponse mapToResponse(WalletTransaction transaction) {
