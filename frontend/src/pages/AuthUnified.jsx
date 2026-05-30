@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Loading from '../components/common/Loading';
-import videoBg from '../assets/625148e1956a6a29189fca52d43d74f576029421.mp4';
+import logoImage from '../assets/DoctorBooking-removebg-preview.png';
 import './AuthUnified.css';
 
 const AuthUnified = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  
   const [isSignUp, setIsSignUp] = useState(location.pathname === '/register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,17 +23,9 @@ const AuthUnified = () => {
   const { login, register } = useAuth();
 
   useEffect(() => {
-    // Initialize Feather Icons
-    if (window.feather) {
-      window.feather.replace();
-    }
-    
-    document.body.style.background = '#0f172a';
-    document.body.style.overflow = 'hidden';
-    
+    document.body.style.background = '#e0f2ff';
     return () => {
       document.body.style.background = '';
-      document.body.style.overflow = '';
     };
   }, []);
 
@@ -42,12 +35,6 @@ const AuthUnified = () => {
       setIsSignUp(shouldBeSignUp);
     }
   }, [location.pathname, isSignUp]);
-
-  useEffect(() => {
-    if (window.feather) {
-      window.feather.replace();
-    }
-  }, [isSignUp]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,11 +54,11 @@ const AuthUnified = () => {
       setLoading(true);
       try {
         const userData = {
-          username: username || email,
-          email: email,
+          username: username.trim(),
+          email: email.trim(),
           password: password,
-          fullName: fullName,
-          phone: phone,
+          fullName: fullName.trim(),
+          phone: phone.trim(),
           role: 'PATIENT'
         };
         await register(userData);
@@ -84,7 +71,7 @@ const AuthUnified = () => {
       // Login
       setLoading(true);
       try {
-        const authResponse = await login(email, password);
+        const authResponse = await login(email.trim(), password);
         const role = authResponse?.role?.toUpperCase();
         if (role === 'ADMIN') {
           navigate('/admin/dashboard');
@@ -94,7 +81,7 @@ const AuthUnified = () => {
           navigate('/patient/dashboard');
         }
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Đăng nhập thất bại');
+        setError(err.response?.data?.message || err.message || 'Tên đăng nhập hoặc mật khẩu không chính xác');
         setLoading(false);
       }
     }
@@ -107,152 +94,193 @@ const AuthUnified = () => {
   };
 
   if (loading) {
-    return <Loading message={isSignUp ? 'Đang đăng ký...' : 'Đang đăng nhập...'} />;
+    return <Loading message={isSignUp ? 'Đang đăng ký tài khoản...' : 'Đang đăng nhập...'} />;
   }
 
   return (
-    <div className="auth-unified-wrapper">
-      {/* Video Background */}
-      <div className="auth-video-wrapper">
-        <video className="auth-video" autoPlay loop muted playsInline>
-          <source src={videoBg} type="video/mp4" />
-        </video>
-        <div className="auth-video-overlay"></div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-tr from-segesta-skyblue via-segesta-lavender/40 to-segesta-peach/30 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      
+      {/* Decorative Blur Spheres */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-segesta-skyblue/30 blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] rounded-full bg-segesta-peach/25 blur-[90px] pointer-events-none"></div>
 
-      {/* Back to Home */}
-      <Link to="/" className="auth-back-home">
-        <i data-feather="arrow-left"></i>
+      {/* Back to Home Button */}
+      <Link to="/" className="premium-back-btn">
+        <i className="fa-solid fa-arrow-left"></i>
       </Link>
 
-      {/* Login/Register Box */}
-      <div className={`login-box ${isSignUp ? 'expanded' : ''}`}>
-        <form onSubmit={handleSubmit}>
-          <h2>{isSignUp ? 'Đăng Ký' : 'Đăng Nhập'}</h2>
+      {/* Auth Card */}
+      <div className="auth-glass-card rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-glass border border-segesta-lavender/40 bg-white/70 backdrop-blur-md animate-slide-in relative">
+        
+        {/* Brand Logo & Header */}
+        <div className="text-center mb-8">
+          <img src={logoImage} alt="SEGESTA Logo" className="w-16 h-16 object-contain mx-auto mb-3.5 animate-pulse-subtle" />
+          <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+            {isSignUp ? 'Đăng ký tài khoản' : 'Đăng nhập hệ thống'}
+          </h2>
+          <p className="text-xs text-segesta-electric font-semibold uppercase tracking-wider mt-1">
+            SEGESTA DOCTOR BOOKING
+          </p>
+        </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="auth-error-message">
-              {error}
+        {/* Error Alert Box */}
+        {error && (
+          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-800 text-xs px-4 py-3 rounded-xl flex items-center space-x-2 animate-pulse-subtle">
+            <i className="fa-solid fa-circle-exclamation text-rose-500 text-sm flex-shrink-0"></i>
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Auth Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* Full Name (Sign Up Only) */}
+          {isSignUp && (
+            <div className="premium-input-group">
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required={isSignUp}
+                placeholder=" "
+                className="premium-input"
+              />
+              <label className="premium-label">Họ và tên</label>
+              <div className="premium-icon">
+                <i className="fa-solid fa-user"></i>
+              </div>
+              <span className="premium-input-glow"></span>
             </div>
           )}
 
-          {/* Full Name - Signup Only */}
-          <div className={`input-box ${isSignUp ? 'expanded' : 'collapsed'}`}>
-            <span className="icon">
-              <i data-feather="user"></i>
-            </span>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required={isSignUp}
-              placeholder=" "
-            />
-            <label>Họ và tên</label>
-          </div>
+          {/* Username (Sign Up Only) */}
+          {isSignUp && (
+            <div className="premium-input-group">
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required={isSignUp}
+                placeholder=" "
+                className="premium-input"
+              />
+              <label className="premium-label">Tên đăng nhập</label>
+              <div className="premium-icon">
+                <i className="fa-solid fa-at"></i>
+              </div>
+              <span className="premium-input-glow"></span>
+            </div>
+          )}
 
-          {/* Username - Signup Only */}
-          <div className={`input-box ${isSignUp ? 'expanded' : 'collapsed'}`}>
-            <span className="icon">
-              <i data-feather="at-sign"></i>
-            </span>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required={isSignUp}
-              placeholder=" "
-            />
-            <label>Tên đăng nhập</label>
-          </div>
-
-          {/* Email/Username */}
-          <div className="input-box">
-            <span className="icon">
-              <i data-feather="mail"></i>
-            </span>
+          {/* Email / Username */}
+          <div className="premium-input-group">
             <input
               type={isSignUp ? 'email' : 'text'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoFocus
+              autoFocus={!isSignUp}
               placeholder=" "
+              className="premium-input"
             />
-            <label>{isSignUp ? 'Email' : 'Email hoặc Tên đăng nhập'}</label>
+            <label className="premium-label">
+              {isSignUp ? 'Địa chỉ Email' : 'Email hoặc Tên đăng nhập'}
+            </label>
+            <div className="premium-icon">
+              <i className="fa-solid fa-envelope"></i>
+            </div>
+            <span className="premium-input-glow"></span>
           </div>
 
-          {/* Phone - Signup Only */}
-          <div className={`input-box ${isSignUp ? 'expanded' : 'collapsed'}`}>
-            <span className="icon">
-              <i data-feather="phone"></i>
-            </span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required={isSignUp}
-              placeholder=" "
-            />
-            <label>Số điện thoại</label>
-          </div>
+          {/* Phone (Sign Up Only) */}
+          {isSignUp && (
+            <div className="premium-input-group">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required={isSignUp}
+                placeholder=" "
+                className="premium-input"
+              />
+              <label className="premium-label">Số điện thoại</label>
+              <div className="premium-icon">
+                <i className="fa-solid fa-phone"></i>
+              </div>
+              <span className="premium-input-glow"></span>
+            </div>
+          )}
 
           {/* Password */}
-          <div className="input-box">
+          <div className="premium-input-group">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder=" "
+              className="premium-input"
             />
-            <label>Mật khẩu</label>
+            <label className="premium-label">Mật khẩu</label>
+            <div className="premium-icon">
+              <i className="fa-solid fa-lock"></i>
+            </div>
             <button
               type="button"
-              className="password-toggle-btn"
               onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
+              className="premium-eye-btn"
+              tabIndex="-1"
             >
-              <i data-feather={showPassword ? 'eye-off' : 'eye'}></i>
+              <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
             </button>
+            <span className="premium-input-glow"></span>
           </div>
 
-          {/* Confirm Password - Signup Only */}
-          <div className={`input-box ${isSignUp ? 'expanded' : 'collapsed'}`}>
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required={isSignUp}
-              placeholder=" "
-            />
-            <label>Xác nhận mật khẩu</label>
-            <button
-              type="button"
-              className="password-toggle-btn"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              tabIndex={-1}
-            >
-              <i data-feather={showConfirmPassword ? 'eye-off' : 'eye'}></i>
-            </button>
-          </div>
+          {/* Confirm Password (Sign Up Only) */}
+          {isSignUp && (
+            <div className="premium-input-group">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required={isSignUp}
+                placeholder=" "
+                className="premium-input"
+              />
+              <label className="premium-label">Xác nhận mật khẩu</label>
+              <div className="premium-icon">
+                <i className="fa-solid fa-shield-halved"></i>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="premium-eye-btn"
+                tabIndex="-1"
+              >
+                <i className={`fa-solid ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              </button>
+              <span className="premium-input-glow"></span>
+            </div>
+          )}
 
           {/* Submit Button */}
-          <button type="submit">
-            {isSignUp ? 'Đăng ký' : 'Đăng nhập'}
+          <button type="submit" className="premium-btn-submit">
+            {isSignUp ? 'Đăng ký ngay' : 'Đăng nhập'}
           </button>
-
-          {/* Toggle Login/Register */}
-          <div className="register-link">
-            <p>
-              {isSignUp ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? '}
-              <button type="button" onClick={toggleMode}>
-                {isSignUp ? 'Đăng nhập' : 'Đăng ký'}
-              </button>
-            </p>
-          </div>
         </form>
+
+        {/* Toggle Mode */}
+        <div className="mt-6 text-center text-xs text-segesta-slate">
+          <span>{isSignUp ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? '}</span>
+          <button 
+            type="button" 
+            onClick={toggleMode}
+            className="text-segesta-electric font-bold hover:underline ml-1"
+          >
+            {isSignUp ? 'Đăng nhập ngay' : 'Đăng ký làm Bệnh nhân'}
+          </button>
+        </div>
+
       </div>
     </div>
   );

@@ -170,7 +170,7 @@ const DoctorDashboard = () => {
 
   return (
     <DoctorLayout>
-      <div className="doctor-dashboard">
+      <div className="doctor-dashboard text-slate-800">
         <div className="dashboard-header">
           <h1 className="dashboard-title">
             Bảng Điều Khiển Bác Sĩ

@@ -87,7 +87,7 @@ const MyFeedbacks = () => {
 
   return (
     <PatientLayout>
-      <div className="space-y-8 bg-[#0a0a0a] min-h-screen py-8 px-2 md:px-6">
+      <div className="space-y-8 bg-transparent min-h-screen py-8 px-2 md:px-6">
         {/* Page Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-100 mb-2">Phản Hồi Của Tôi</h1>
