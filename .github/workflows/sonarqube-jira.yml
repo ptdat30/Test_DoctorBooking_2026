@@ -184,47 +184,29 @@ jobs:
             echo "  Creating new Jira task..."
 
             # ── BUILD PAYLOAD ─────────────────────────────────────────────────
+            # Description ngắn gọn: file + rule + link
             SONAR_ISSUE_URL="https://sonarcloud.io/project/issues?id=${{ env.SONAR_PROJECT_KEY }}&open=${SONAR_KEY}"
-            DESCRIPTION="*SonarCloud AUTO-IMPORT* | Rule: ${RULE}\n\n*Issue:* ${MSG}\n*File:* {{${FILENAME}}}\n*SonarCloud Link:* [View Issue|${SONAR_ISSUE_URL}]\n\n_This task was automatically created by GitHub Actions. Label: ${DEDUP_LABEL}_"
+            SHORT_FILE=$(basename "$FILENAME")
+            DESCRIPTION="*File:* ${SHORT_FILE}\n*Rule:* ${RULE}\n*SonarCloud:* [View Issue|${SONAR_ISSUE_URL}]"
 
-            SUMMARY="[HIGH] $(echo "$MSG" | cut -c1-80) ($(basename "$FILENAME"))"
+            SUMMARY="[HIGH] $(echo "$MSG" | cut -c1-90) (${SHORT_FILE})"
 
-            # Build payload com or sem sprint
-            if [ -n "$ACTIVE_SPRINT_ID" ]; then
-              PAYLOAD=$(jq -n \
-                --arg project "${{ env.JIRA_PROJECT_KEY }}" \
-                --arg summary "$SUMMARY" \
-                --arg description "$DESCRIPTION" \
-                --arg dedup_label "$DEDUP_LABEL" \
-                --argjson sprint_id "$ACTIVE_SPRINT_ID" \
-                '{
-                  "fields": {
-                    "project": { "key": $project },
-                    "issuetype": { "name": "Bug" },
-                    "summary": $summary,
-                    "description": $description,
-                    "priority": { "name": "High" },
-                    "labels": ["sonarcloud", "auto-import", $dedup_label],
-                    "customfield_10020": $sprint_id
-                  }
-                }')
-            else
-              PAYLOAD=$(jq -n \
-                --arg project "${{ env.JIRA_PROJECT_KEY }}" \
-                --arg summary "$SUMMARY" \
-                --arg description "$DESCRIPTION" \
-                --arg dedup_label "$DEDUP_LABEL" \
-                '{
-                  "fields": {
-                    "project": { "key": $project },
-                    "issuetype": { "name": "Bug" },
-                    "summary": $summary,
-                    "description": $description,
-                    "priority": { "name": "High" },
-                    "labels": ["sonarcloud", "auto-import", $dedup_label]
-                  }
-                }')
-            fi
+            # Tạo payload KHÔNG có sprint (sprint assign dùng Agile API riêng sau khi tạo)
+            PAYLOAD=$(jq -n \
+              --arg project "${{ env.JIRA_PROJECT_KEY }}" \
+              --arg summary "$SUMMARY" \
+              --arg description "$DESCRIPTION" \
+              --arg dedup_label "$DEDUP_LABEL" \
+              '{
+                "fields": {
+                  "project": { "key": $project },
+                  "issuetype": { "name": "Bug" },
+                  "summary": $summary,
+                  "description": $description,
+                  "priority": { "name": "High" },
+                  "labels": ["sonarcloud", "auto-import", $dedup_label]
+                }
+              }')
 
             # ── CREATE JIRA ISSUE ──────────────────────────────────────────────
             CREATE_RESP=$(curl -s -X POST \
@@ -244,6 +226,21 @@ jobs:
 
             echo "  CREATED: ${JIRA_KEY} → ${JIRA_BASE}/browse/${JIRA_KEY}"
             CREATED=$((CREATED + 1))
+
+            # ── ASSIGN VÀO SPRINT (Agile API) ────────────────────────────────
+            # Dùng POST /sprint/{id}/issue thay vì customfield_10020 (tin cậy hơn)
+            if [ -n "$ACTIVE_SPRINT_ID" ]; then
+              SPRINT_ASSIGN=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+                -H "Content-Type: application/json" \
+                -u "$JIRA_USER:$JIRA_API_TOKEN" \
+                -d "{\"issues\": [\"${JIRA_KEY}\"]}" \
+                "${JIRA_AGILE_API}/sprint/${ACTIVE_SPRINT_ID}/issue")
+              if [ "$SPRINT_ASSIGN" = "204" ]; then
+                echo "  Sprint assign: ${JIRA_KEY} → Sprint ${ACTIVE_SPRINT_ID} ✓ (will show on board)"
+              else
+                echo "  Sprint assign: HTTP ${SPRINT_ASSIGN} (check Agile API permissions)"
+              fi
+            fi
 
             # ── TRANSITION: TO DO → TESTING → BUG FOUND ──────────────────────
             # Bước A: Start Work (TO DO → TESTING)
