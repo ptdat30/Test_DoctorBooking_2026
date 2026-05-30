@@ -163,14 +163,17 @@ jobs:
             echo "  File    : ${FILENAME}"
 
             # ── DEDUP: Tìm Jira issue có label sonar-{SONAR_KEY} ─────────────
+            # Dùng curl --data-urlencode để tránh bug shell quoting với dấu " trong JQL
             DEDUP_LABEL="sonar-${SONAR_KEY}"
             JQL="project = ${{ env.JIRA_PROJECT_KEY }} AND labels = \"${DEDUP_LABEL}\" AND statusCategory != Done"
-            JQL_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${JQL}'))")
 
-            SEARCH_RESP=$(curl -s \
+            SEARCH_RESP=$(curl -s -G \
               -H "Content-Type: application/json" \
               -u "$JIRA_USER:$JIRA_API_TOKEN" \
-              "${JIRA_BASE}/rest/api/2/search?jql=${JQL_ENCODED}&maxResults=1&fields=key,summary,status")
+              --data-urlencode "jql=${JQL}" \
+              --data-urlencode "maxResults=1" \
+              --data-urlencode "fields=key,summary,status" \
+              "${JIRA_BASE}/rest/api/2/search")
 
             EXISTING_COUNT=$(echo "$SEARCH_RESP" | jq '.total // 0')
 
