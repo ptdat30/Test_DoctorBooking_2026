@@ -133,21 +133,22 @@ jobs:
           JIRA_ISSUE_ENDPOINT="${JIRA_BASE_URL}/rest/api/2/issue/"
 
           echo "============================================"
-          echo "[1/4] Fetching BLOCKER and HIGH severity issues from SonarCloud..."
+          echo "[1/4] Fetching HIGH impact issues from SonarCloud (new severity model)..."
           echo "============================================"
 
-          # Fetch unresolved BLOCKER and HIGH severity BUG + VULNERABILITY issues
-          # SonarCloud uses Bearer token authentication
+          # SonarCloud 10.x uses new impact severity model: impactSeverities=HIGH,MEDIUM,LOW
+          # The old 'severities' param (BLOCKER/CRITICAL/MAJOR) is a separate, legacy model
+          # We use impactSeverities=HIGH to match the 'High: 39' shown in the SonarCloud UI
           RESPONSE=$(curl -s \
             -H "Authorization: Bearer $SONAR_TOKEN" \
-            "${SONAR_API_URL}?componentKeys=${SONAR_PROJECT_KEY}&types=BUG,VULNERABILITY&severities=BLOCKER,HIGH&resolved=false&ps=20&p=1")
+            "${SONAR_API_URL}?componentKeys=${SONAR_PROJECT_KEY}&impactSeverities=HIGH&resolved=false&ps=20&p=1")
 
           # Count total matching issues using jq
           TOTAL=$(echo "$RESPONSE" | jq '.total // 0')
           echo "Total BLOCKER/HIGH issues found: $TOTAL"
 
           if [ "$TOTAL" -eq "0" ]; then
-            echo "No BLOCKER/HIGH issues found. Skipping Jira task creation."
+            echo "No HIGH impact issues found. Skipping Jira task creation."
             exit 0
           fi
 
@@ -157,7 +158,7 @@ jobs:
             "- [" + .severity + "] " + .message + " (File: " + (.component | split(":")[1]) + ")"
           ' | head -20)
 
-          SONAR_REPORT_URL="https://sonarcloud.io/project/issues?id=${SONAR_PROJECT_KEY}&types=BUG,VULNERABILITY&severities=BLOCKER,HIGH&resolved=false"
+          SONAR_REPORT_URL="https://sonarcloud.io/project/issues?id=${SONAR_PROJECT_KEY}&impactSeverities=HIGH&resolved=false"
 
           echo "============================================"
           echo "[2/4] Creating Jira Bug task (initial status: TO DO)..."
@@ -169,7 +170,7 @@ jobs:
             "fields": {
               "project": { "key": "${{ env.JIRA_PROJECT_KEY }}" },
               "issuetype": { "name": "Bug" },
-              "summary": "[SonarCloud Auto-Report] ${TOTAL} BLOCKER/HIGH issues in ${{ github.repository }} - Run #${{ github.run_number }}",
+              "summary": "[SonarCloud Auto-Report] ${TOTAL} HIGH impact issues in ${{ github.repository }} - Run #${{ github.run_number }}",
               "description": "SonarCloud automated scan detected *${TOTAL}* unresolved BLOCKER or HIGH severity issues.\n\n*Top Issues Found:*\n${ISSUE_LIST}\n\n*Full SonarCloud Report:* ${SONAR_REPORT_URL}\n*GitHub Actions Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
               "labels": ["security", "sonarcloud-auto-report", "github-actions-bot"],
               "priority": { "name": "High" }
