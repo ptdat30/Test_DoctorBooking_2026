@@ -16,7 +16,7 @@ jobs:
     env:
       # Job-level environment variables
       JIRA_PROJECT_KEY: 'HW'
-      JIRA_URL: 'https://your-domain.atlassian.net'
+      JIRA_URL: 'https://huynhphongdat2005.atlassian.net'
 
     steps:
       # Step 1: Checkout the repository code
