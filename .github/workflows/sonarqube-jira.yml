@@ -213,20 +213,65 @@ jobs:
           echo "SUCCESS: Jira task created -> ${JIRA_KEY} (currently in TO DO)"
 
           echo "============================================"
-          echo "[3/4] Fetching available transitions for ${JIRA_KEY}..."
+          echo "[3/4] Transitioning ${JIRA_KEY}: TO DO → TESTING → BUG FOUND (2-step workflow)"
           echo "============================================"
 
-          # Get all available transitions for the newly created issue
-          TRANSITIONS_RESPONSE=$(curl -s \
+          # ── STEP A: TO DO → TESTING via "Start Work" ───────────────────────
+          # Your custom Jira workflow: TO DO --(Start Work)--> TESTING --(Bug Found)--> BUG FOUND
+          # "Bug Found" transition is only available AFTER moving to TESTING first.
+          echo "[3a] Fetching transitions from TO DO state..."
+          TRANSITIONS_RESP_1=$(curl -s \
             -H "Content-Type: application/json" \
             -u "$JIRA_USER:$JIRA_API_TOKEN" \
             "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions")
 
-          echo "Available transitions:"
-          echo "$TRANSITIONS_RESPONSE" | jq -r '.transitions[] | "  ID: \(.id) | Name: \(.name)"'
+          echo "Transitions available from TO DO:"
+          echo "$TRANSITIONS_RESP_1" | jq -r '.transitions[] | "  ID: \(.id) | Name: \(.name)"'
 
-          # Find the transition ID for "Bug Found" (matches the custom workflow status)
-          BUG_FOUND_TRANSITION_ID=$(echo "$TRANSITIONS_RESPONSE" | jq -r '
+          # Find "Start Work" transition (TO DO → TESTING)
+          START_WORK_ID=$(echo "$TRANSITIONS_RESP_1" | jq -r '
+            .transitions[] | select(.name | test("Start Work|Start"; "i")) | .id
+          ' | head -1)
+
+          if [ -z "$START_WORK_ID" ]; then
+            echo "ERROR: 'Start Work' transition not found from TO DO. Cannot proceed to BUG FOUND."
+            echo "Available transitions listed above. Task stays in TO DO."
+            echo "Direct Jira link: ${JIRA_BASE_URL}/browse/${JIRA_KEY}"
+            rm -f sonar_jira_payload.json sonar_jira_response.log
+            exit 0
+          fi
+
+          echo "[3a] Found 'Start Work' transition ID: ${START_WORK_ID}. Moving to TESTING..."
+          echo "{\"transition\":{\"id\":\"${START_WORK_ID}\"}}" > transition_payload.json
+
+          TRANS_STATUS_A=0
+          curl -s -S -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d @transition_payload.json \
+            "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions" > /dev/null 2>&1 || TRANS_STATUS_A=$?
+
+          if [ $TRANS_STATUS_A -ne 0 ]; then
+            echo "ERROR: Step A transition (Start Work) failed with code $TRANS_STATUS_A. Task stays in TO DO."
+            rm -f transition_payload.json sonar_jira_payload.json sonar_jira_response.log
+            exit 0
+          fi
+          echo "[3a] SUCCESS: ${JIRA_KEY} moved to TESTING."
+
+          # ── STEP B: TESTING → BUG FOUND via "Bug Found" ────────────────────
+          echo "[3b] Fetching transitions from TESTING state..."
+          sleep 2  # Brief pause to ensure Jira registers the status change
+
+          TRANSITIONS_RESP_2=$(curl -s \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions")
+
+          echo "Transitions available from TESTING:"
+          echo "$TRANSITIONS_RESP_2" | jq -r '.transitions[] | "  ID: \(.id) | Name: \(.name)"'
+
+          # Find "Bug Found" transition (TESTING → BUG FOUND)
+          BUG_FOUND_ID=$(echo "$TRANSITIONS_RESP_2" | jq -r '
             .transitions[] | select(.name | test("Bug Found|BUG FOUND"; "i")) | .id
           ' | head -1)
 
@@ -234,32 +279,30 @@ jobs:
           echo "[4/4] Transitioning ${JIRA_KEY} to BUG FOUND status..."
           echo "============================================"
 
-          if [ -z "$BUG_FOUND_TRANSITION_ID" ]; then
-            echo "WARNING: 'Bug Found' transition not found. Listing all transitions for manual check."
-            echo "$TRANSITIONS_RESPONSE" | jq '.transitions[] | {id, name}'
-            echo "Task remains in TO DO. Please transition manually on Jira."
+          if [ -z "$BUG_FOUND_ID" ]; then
+            echo "WARNING: 'Bug Found' transition not found from TESTING state."
+            echo "Task is now in TESTING. Please transition manually to BUG FOUND on Jira."
+            echo "Direct Jira link: ${JIRA_BASE_URL}/browse/${JIRA_KEY}"
           else
-            echo "Found 'Bug Found' transition ID: ${BUG_FOUND_TRANSITION_ID}"
+            echo "[3b] Found 'Bug Found' transition ID: ${BUG_FOUND_ID}. Moving to BUG FOUND..."
+            echo "{\"transition\":{\"id\":\"${BUG_FOUND_ID}\"}}" > transition_payload.json
 
-            # POST the transition to move issue from TO DO → TESTING → BUG FOUND
-            echo "{\"transition\":{\"id\":\"${BUG_FOUND_TRANSITION_ID}\"}}" > transition_payload.json
-
-            TRANS_STATUS=0
+            TRANS_STATUS_B=0
             curl -s -S -X POST \
               -H "Content-Type: application/json" \
               -u "$JIRA_USER:$JIRA_API_TOKEN" \
               -d @transition_payload.json \
-              "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions" > transition_response.log 2>&1 || TRANS_STATUS=$?
+              "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions" > /dev/null 2>&1 || TRANS_STATUS_B=$?
 
-            if [ $TRANS_STATUS -ne 0 ]; then
-              echo "ERROR: Transition failed with code $TRANS_STATUS."
-              cat transition_response.log
+            if [ $TRANS_STATUS_B -ne 0 ]; then
+              echo "ERROR: Step B transition (Bug Found) failed with code $TRANS_STATUS_B."
+              echo "Task is currently in TESTING. Please transition manually on Jira."
             else
-              echo "SUCCESS: ${JIRA_KEY} has been transitioned to 'BUG FOUND'."
+              echo "SUCCESS: ${JIRA_KEY} is now in BUG FOUND status! 🐛"
               echo "Jira Issue URL: ${JIRA_BASE_URL}/browse/${JIRA_KEY}"
             fi
 
-            rm -f transition_payload.json transition_response.log
+            rm -f transition_payload.json
           fi
 
           # Cleanup temp files
