@@ -15,7 +15,7 @@ jobs:
     
     env:
       # Job-level environment variables
-      JIRA_PROJECT_KEY: 'HW'
+      JIRA_PROJECT_KEY: 'SCRUM'
       JIRA_URL: 'https://huynhphongdat2005.atlassian.net'
       # Opt into Node.js 24 runtime for actions (avoids deprecation warning for Node.js 20)
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
