@@ -115,3 +115,83 @@ jobs:
             echo "Jira API Response details:"
             cat jira_response.log
           fi
+
+      # Step 5: Fetch SonarCloud Issues and create a Jira Task for BLOCKER/HIGH findings
+      # This step ALWAYS runs (even when QG passes) to report actionable security/bug issues
+      - name: Report SonarCloud Issues to Jira
+        if: always()
+        env:
+          JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          SONAR_PROJECT_KEY="ptdat30_Test_DoctorBooking_2026"
+          SONAR_API_URL="https://sonarcloud.io/api/issues/search"
+          JIRA_ENDPOINT="${{ env.JIRA_URL }}/rest/api/2/issue/"
+
+          echo "Fetching BLOCKER and HIGH severity issues from SonarCloud..."
+
+          # Fetch unresolved BLOCKER and HIGH severity BUG + VULNERABILITY issues
+          # SonarCloud uses Bearer token authentication
+          RESPONSE=$(curl -s \
+            -H "Authorization: Bearer $SONAR_TOKEN" \
+            "${SONAR_API_URL}?componentKeys=${SONAR_PROJECT_KEY}&types=BUG,VULNERABILITY&severities=BLOCKER,HIGH&resolved=false&ps=20&p=1")
+
+          echo "Raw SonarCloud API Response:"
+          echo "$RESPONSE" | head -c 500
+
+          # Count total matching issues using jq
+          TOTAL=$(echo "$RESPONSE" | jq '.total // 0')
+          echo "Total BLOCKER/HIGH issues found: $TOTAL"
+
+          if [ "$TOTAL" -eq "0" ]; then
+            echo "No BLOCKER/HIGH issues found. Skipping Jira task creation."
+            exit 0
+          fi
+
+          # Build a formatted issue list for the Jira description (top 20)
+          ISSUE_LIST=$(echo "$RESPONSE" | jq -r '
+            .issues[] |
+            "- [" + .severity + "] " + .message + " (File: " + (.component | split(":")[1]) + ")"
+          ' | head -20)
+
+          SONAR_REPORT_URL="https://sonarcloud.io/project/issues?id=${SONAR_PROJECT_KEY}&types=BUG,VULNERABILITY&severities=BLOCKER,HIGH&resolved=false"
+
+          echo "Creating summary Jira task for $TOTAL findings..."
+
+          # Write Jira payload to a temp file to avoid shell escaping issues
+          cat > sonar_jira_payload.json << JSONEOF
+          {
+            "fields": {
+              "project": { "key": "${{ env.JIRA_PROJECT_KEY }}" },
+              "issuetype": { "name": "Bug" },
+              "summary": "[SonarCloud Auto-Report] ${TOTAL} BLOCKER/HIGH issues in ${{ github.repository }} - Run #${{ github.run_number }}",
+              "description": "SonarCloud detected *${TOTAL}* unresolved BLOCKER or HIGH severity issues.\n\n*Top Issues:*\n${ISSUE_LIST}\n\n*Full SonarCloud Report:* ${SONAR_REPORT_URL}\n*GitHub Actions Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "labels": ["security", "sonarcloud-auto-report", "github-actions-bot"],
+              "priority": { "name": "High" }
+            }
+          }
+          JSONEOF
+
+          # Send the Jira ticket via curl with Basic Auth
+          HTTP_STATUS=0
+          curl -s -S -f -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d @sonar_jira_payload.json \
+            "$JIRA_ENDPOINT" > sonar_jira_response.log 2>&1 || HTTP_STATUS=$?
+
+          # Print the response for audit trail
+          if [ $HTTP_STATUS -ne 0 ]; then
+            echo "ERROR: Failed to create Jira task. curl exited with code $HTTP_STATUS."
+            echo "Jira API Response:"
+            cat sonar_jira_response.log
+          else
+            JIRA_KEY=$(cat sonar_jira_response.log | jq -r '.key // "unknown"')
+            echo "SUCCESS: Jira task created successfully -> $JIRA_KEY"
+            echo "Full Jira API Response:"
+            cat sonar_jira_response.log
+          fi
+
+          # Cleanup temp files
+          rm -f sonar_jira_payload.json sonar_jira_response.log
