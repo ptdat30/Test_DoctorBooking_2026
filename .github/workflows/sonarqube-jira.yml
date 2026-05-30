@@ -164,19 +164,24 @@ jobs:
           echo "[2/4] Creating Jira Bug task (initial status: TO DO)..."
           echo "============================================"
 
-          # Write Jira payload to a temp file to avoid shell escaping issues
-          cat > sonar_jira_payload.json << JSONEOF
-          {
-            "fields": {
-              "project": { "key": "${{ env.JIRA_PROJECT_KEY }}" },
-              "issuetype": { "name": "Bug" },
-              "summary": "[SonarCloud Auto-Report] ${TOTAL} HIGH impact issues in ${{ github.repository }} - Run #${{ github.run_number }}",
-              "description": "SonarCloud automated scan detected *${TOTAL}* unresolved BLOCKER or HIGH severity issues.\n\n*Top Issues Found:*\n${ISSUE_LIST}\n\n*Full SonarCloud Report:* ${SONAR_REPORT_URL}\n*GitHub Actions Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-              "labels": ["security", "sonarcloud-auto-report", "github-actions-bot"],
-              "priority": { "name": "High" }
-            }
-          }
-          JSONEOF
+          # Build JSON payload safely using jq -n to avoid heredoc indentation/escaping issues
+          jq -n \
+            --arg project "${{ env.JIRA_PROJECT_KEY }}" \
+            --arg summary "[SonarCloud Auto-Report] ${TOTAL} HIGH impact issues in ${{ github.repository }} - Run #${{ github.run_number }}" \
+            --arg description "SonarCloud automated scan detected ${TOTAL} unresolved HIGH severity issues.\n\nTop Issues Found:\n${ISSUE_LIST}\n\nFull SonarCloud Report: ${SONAR_REPORT_URL}\nGitHub Actions Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            '{
+              "fields": {
+                "project": { "key": $project },
+                "issuetype": { "name": "Bug" },
+                "summary": $summary,
+                "description": $description,
+                "labels": ["security", "sonarcloud-auto-report", "github-actions-bot"],
+                "priority": { "name": "High" }
+              }
+            }' > sonar_jira_payload.json
+
+          echo "Generated Jira payload:"
+          cat sonar_jira_payload.json
 
           # Create the Jira issue (lands in TO DO by default)
           HTTP_STATUS=0
@@ -186,15 +191,25 @@ jobs:
             -d @sonar_jira_payload.json \
             "${JIRA_ISSUE_ENDPOINT}" > sonar_jira_response.log 2>&1 || HTTP_STATUS=$?
 
+          echo "Jira API raw response:"
+          cat sonar_jira_response.log
+
           if [ $HTTP_STATUS -ne 0 ]; then
-            echo "ERROR: Failed to create Jira task. curl exited with code $HTTP_STATUS."
-            cat sonar_jira_response.log
+            echo "ERROR: curl failed with code $HTTP_STATUS."
             rm -f sonar_jira_payload.json sonar_jira_response.log
             exit 1
           fi
 
           # Extract the issue key from the creation response (e.g. HW-12)
           JIRA_KEY=$(cat sonar_jira_response.log | jq -r '.key // "unknown"')
+
+          # Guard: if key is still unknown, Jira returned an error body (permissions, bad JSON, etc.)
+          if [ "$JIRA_KEY" = "unknown" ]; then
+            echo "ERROR: Jira issue creation failed - no key in response. Check Jira credentials and project key."
+            rm -f sonar_jira_payload.json sonar_jira_response.log
+            exit 1
+          fi
+
           echo "SUCCESS: Jira task created -> ${JIRA_KEY} (currently in TO DO)"
 
           echo "============================================"
