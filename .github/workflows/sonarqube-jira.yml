@@ -119,7 +119,7 @@ jobs:
           fi
 
       # Step 5: Fetch SonarCloud Issues and create a Jira Task for BLOCKER/HIGH findings
-      # This step ALWAYS runs (even when QG passes) to report actionable security/bug issues
+      # Workflow mapping: SonarCloud scan = automated TESTING → Bug found → transition to BUG FOUND
       - name: Report SonarCloud Issues to Jira
         if: always()
         env:
@@ -129,18 +129,18 @@ jobs:
         run: |
           SONAR_PROJECT_KEY="ptdat30_Test_DoctorBooking_2026"
           SONAR_API_URL="https://sonarcloud.io/api/issues/search"
-          JIRA_ENDPOINT="${{ env.JIRA_URL }}/rest/api/2/issue/"
+          JIRA_BASE_URL="${{ env.JIRA_URL }}"
+          JIRA_ISSUE_ENDPOINT="${JIRA_BASE_URL}/rest/api/2/issue/"
 
-          echo "Fetching BLOCKER and HIGH severity issues from SonarCloud..."
+          echo "============================================"
+          echo "[1/4] Fetching BLOCKER and HIGH severity issues from SonarCloud..."
+          echo "============================================"
 
           # Fetch unresolved BLOCKER and HIGH severity BUG + VULNERABILITY issues
           # SonarCloud uses Bearer token authentication
           RESPONSE=$(curl -s \
             -H "Authorization: Bearer $SONAR_TOKEN" \
             "${SONAR_API_URL}?componentKeys=${SONAR_PROJECT_KEY}&types=BUG,VULNERABILITY&severities=BLOCKER,HIGH&resolved=false&ps=20&p=1")
-
-          echo "Raw SonarCloud API Response:"
-          echo "$RESPONSE" | head -c 500
 
           # Count total matching issues using jq
           TOTAL=$(echo "$RESPONSE" | jq '.total // 0')
@@ -159,7 +159,9 @@ jobs:
 
           SONAR_REPORT_URL="https://sonarcloud.io/project/issues?id=${SONAR_PROJECT_KEY}&types=BUG,VULNERABILITY&severities=BLOCKER,HIGH&resolved=false"
 
-          echo "Creating summary Jira task for $TOTAL findings..."
+          echo "============================================"
+          echo "[2/4] Creating Jira Bug task (initial status: TO DO)..."
+          echo "============================================"
 
           # Write Jira payload to a temp file to avoid shell escaping issues
           cat > sonar_jira_payload.json << JSONEOF
@@ -168,31 +170,80 @@ jobs:
               "project": { "key": "${{ env.JIRA_PROJECT_KEY }}" },
               "issuetype": { "name": "Bug" },
               "summary": "[SonarCloud Auto-Report] ${TOTAL} BLOCKER/HIGH issues in ${{ github.repository }} - Run #${{ github.run_number }}",
-              "description": "SonarCloud detected *${TOTAL}* unresolved BLOCKER or HIGH severity issues.\n\n*Top Issues:*\n${ISSUE_LIST}\n\n*Full SonarCloud Report:* ${SONAR_REPORT_URL}\n*GitHub Actions Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "description": "SonarCloud automated scan detected *${TOTAL}* unresolved BLOCKER or HIGH severity issues.\n\n*Top Issues Found:*\n${ISSUE_LIST}\n\n*Full SonarCloud Report:* ${SONAR_REPORT_URL}\n*GitHub Actions Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
               "labels": ["security", "sonarcloud-auto-report", "github-actions-bot"],
               "priority": { "name": "High" }
             }
           }
           JSONEOF
 
-          # Send the Jira ticket via curl with Basic Auth
+          # Create the Jira issue (lands in TO DO by default)
           HTTP_STATUS=0
-          curl -s -S -f -X POST \
+          curl -s -S -X POST \
             -H "Content-Type: application/json" \
             -u "$JIRA_USER:$JIRA_API_TOKEN" \
             -d @sonar_jira_payload.json \
-            "$JIRA_ENDPOINT" > sonar_jira_response.log 2>&1 || HTTP_STATUS=$?
+            "${JIRA_ISSUE_ENDPOINT}" > sonar_jira_response.log 2>&1 || HTTP_STATUS=$?
 
-          # Print the response for audit trail
           if [ $HTTP_STATUS -ne 0 ]; then
             echo "ERROR: Failed to create Jira task. curl exited with code $HTTP_STATUS."
-            echo "Jira API Response:"
             cat sonar_jira_response.log
+            rm -f sonar_jira_payload.json sonar_jira_response.log
+            exit 1
+          fi
+
+          # Extract the issue key from the creation response (e.g. HW-12)
+          JIRA_KEY=$(cat sonar_jira_response.log | jq -r '.key // "unknown"')
+          echo "SUCCESS: Jira task created -> ${JIRA_KEY} (currently in TO DO)"
+
+          echo "============================================"
+          echo "[3/4] Fetching available transitions for ${JIRA_KEY}..."
+          echo "============================================"
+
+          # Get all available transitions for the newly created issue
+          TRANSITIONS_RESPONSE=$(curl -s \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions")
+
+          echo "Available transitions:"
+          echo "$TRANSITIONS_RESPONSE" | jq -r '.transitions[] | "  ID: \(.id) | Name: \(.name)"'
+
+          # Find the transition ID for "Bug Found" (matches the custom workflow status)
+          BUG_FOUND_TRANSITION_ID=$(echo "$TRANSITIONS_RESPONSE" | jq -r '
+            .transitions[] | select(.name | test("Bug Found|BUG FOUND"; "i")) | .id
+          ' | head -1)
+
+          echo "============================================"
+          echo "[4/4] Transitioning ${JIRA_KEY} to BUG FOUND status..."
+          echo "============================================"
+
+          if [ -z "$BUG_FOUND_TRANSITION_ID" ]; then
+            echo "WARNING: 'Bug Found' transition not found. Listing all transitions for manual check."
+            echo "$TRANSITIONS_RESPONSE" | jq '.transitions[] | {id, name}'
+            echo "Task remains in TO DO. Please transition manually on Jira."
           else
-            JIRA_KEY=$(cat sonar_jira_response.log | jq -r '.key // "unknown"')
-            echo "SUCCESS: Jira task created successfully -> $JIRA_KEY"
-            echo "Full Jira API Response:"
-            cat sonar_jira_response.log
+            echo "Found 'Bug Found' transition ID: ${BUG_FOUND_TRANSITION_ID}"
+
+            # POST the transition to move issue from TO DO → TESTING → BUG FOUND
+            echo "{\"transition\":{\"id\":\"${BUG_FOUND_TRANSITION_ID}\"}}" > transition_payload.json
+
+            TRANS_STATUS=0
+            curl -s -S -X POST \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              -d @transition_payload.json \
+              "${JIRA_BASE_URL}/rest/api/2/issue/${JIRA_KEY}/transitions" > transition_response.log 2>&1 || TRANS_STATUS=$?
+
+            if [ $TRANS_STATUS -ne 0 ]; then
+              echo "ERROR: Transition failed with code $TRANS_STATUS."
+              cat transition_response.log
+            else
+              echo "SUCCESS: ${JIRA_KEY} has been transitioned to 'BUG FOUND'."
+              echo "Jira Issue URL: ${JIRA_BASE_URL}/browse/${JIRA_KEY}"
+            fi
+
+            rm -f transition_payload.json transition_response.log
           fi
 
           # Cleanup temp files
