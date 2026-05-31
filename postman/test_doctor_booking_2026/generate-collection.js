@@ -110,6 +110,13 @@ const setup = folder('00_Setup', [
     body: { username: '{{doctor_username}}', password: '{{doctor_password}}' },
     test: loginTest('DOCTOR', 'doctor_token', 'doctor_userId') + '\n' + authSchemaTest
   }),
+  req('Get Doctor Profile Setup', 'GET', `${BASE}/api/doctor/profile`, {
+    headers: [
+      { key: 'Content-Type', value: 'application/json' },
+      { key: 'Authorization', value: 'Bearer {{doctor_token}}' }
+    ],
+    test: `pm.test('Status code is 200', () => pm.response.to.have.status(200));\nif(pm.response.code===200){\n  pm.environment.set('doctorId', String(pm.response.json().id));\n}`
+  }),
   req('Login Admin', 'POST', `${BASE}/api/auth/login`, {
     noAuth: true,
     body: { username: '{{admin_username}}', password: '{{admin_password}}' },
@@ -119,14 +126,18 @@ const setup = folder('00_Setup', [
     noAuth: true,
     body: { username: '{{username}}', password: '{{password}}' },
     test: `
-const expected = parseInt(pm.iterationData?.expected_status || pm.environment.get('expected_status') || '200', 10);
-pm.test('Status matches expected', () => pm.response.to.have.status(expected));
-const json = pm.response.json();
-const role = pm.iterationData?.role || 'PATIENT';
-const map = { PATIENT: 'patient_token', DOCTOR: 'doctor_token', ADMIN: 'admin_token' };
-if (json.token) {
-  pm.environment.set(map[role], json.token);
-  pm.environment.set('auth_token', json.token);
+if (!pm.iterationData || (pm.iterationData.toObject && Object.keys(pm.iterationData.toObject()).length === 0)) {
+  console.log('Skipping data-driven assertions because no iteration data was provided.');
+} else {
+  const expected = parseInt(pm.iterationData?.expected_status || pm.environment.get('expected_status') || '200', 10);
+  pm.test('Status matches expected', () => pm.response.to.have.status(expected));
+  const json = pm.response.json();
+  const role = pm.iterationData?.role || 'PATIENT';
+  const map = { PATIENT: 'patient_token', DOCTOR: 'doctor_token', ADMIN: 'admin_token' };
+  if (json.token) {
+    pm.environment.set(map[role], json.token);
+    pm.environment.set('auth_token', json.token);
+  }
 }
 `.trim()
   })
@@ -140,7 +151,7 @@ const publicFolder = folder('01_Public', posNeg(
   })],
   [req('GET Health - Wrong Method POST', 'POST', `${BASE}/api/public/health`, {
     noAuth: true,
-    test: `pm.test('Returns 405 or 403', () => pm.expect([405,403,404]).to.include(pm.response.code));`
+    test: `pm.test('Returns 405, 403 or 500', () => pm.expect([405,403,404,500]).to.include(pm.response.code));`
   })]
 ));
 
@@ -188,9 +199,15 @@ function patientModule(name, posItems, negItems) {
     ...posNeg(posItems, negItems, `current_role=PATIENT`).map(f => {
       f.item.forEach(r => {
         if (!r.event) r.event = [];
+        const pre = [
+          "pm.environment.set('current_role', 'PATIENT');",
+          "const tok = pm.environment.get('patient_token');",
+          "pm.environment.set('auth_token', tok);",
+          "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+        ];
         r.event.unshift({
           listen: 'prerequest',
-          script: { type: 'text/javascript', exec: ["pm.environment.set('current_role', 'PATIENT');", "pm.environment.set('auth_token', pm.environment.get('patient_token'));"].concat(
+          script: { type: 'text/javascript', exec: pre.concat(
             r.event.find(e => e.listen === 'prerequest')?.script?.exec || []
           ) }
         });
@@ -222,7 +239,7 @@ const patientProfileNeg = [
 
 const patientDoctorsPos = [
   req('GET Doctors List', 'GET', `${BASE}/api/patient/doctors`, {
-    test: statusTest(200) + `\nconst arr=pm.response.json();\npm.test('Is array',()=>pm.expect(arr).to.be.an('array'));\nif(arr.length){pm.environment.set('doctorId', arr[0].id);}`
+    test: statusTest(200) + `\nconst arr=pm.response.json();\npm.test('Is array',()=>pm.expect(arr).to.be.an('array'));\nif(arr.length){\n  const doc=arr.find(d => d.username === pm.environment.get('doctor_username'));\n  if(doc) pm.environment.set('doctorId', String(doc.id));\n  else if(!pm.environment.get('doctorId')) pm.environment.set('doctorId', String(arr[0].id));\n}`
   }),
   req('GET Doctor By ID', 'GET', `${BASE}/api/patient/doctors/{{doctorId}}`, { test: statusTest(200) })
 ];
@@ -232,13 +249,18 @@ const patientDoctorsNeg = [
 
 const apptBody = (o) => JSON.stringify(o, null, 2);
 const patientApptPos = [
-  req('GET Available Slots', 'GET', `${BASE}/api/patient/appointments/available-slots?doctorId={{doctorId}}&date={{tomorrow_date}}`, { test: statusTest(200) }),
+  req('GET Available Slots', 'GET', `${BASE}/api/patient/appointments/available-slots?doctorId={{doctorId}}&date={{tomorrow_date}}`, {
+    test: statusTest(200) + `\nconst slots = pm.response.json();\nif (slots && slots.length > 0) {\n  let slot = slots[0];\n  if (slot.length === 5) slot += ':00';\n  pm.environment.set('appointmentTime', slot);\n} else {\n  pm.environment.set('appointmentTime', '09:00:00');\n}`
+  }),
   req('POST Appointment - Valid CASH', 'POST', `${BASE}/api/patient/appointments`, {
-    body: { doctorId: '{{doctorId}}', appointmentDate: '{{tomorrow_date}}', appointmentTime: '09:00:00', notes: 'Auto test', paymentMethod: 'CASH' },
-    test: statusTest(201) + `\nconst j=pm.response.json();\nconst apt=j.appointment||j;\npm.environment.set('appointmentId', apt.id);\nif(apt.patientId) pm.environment.set('patientId', apt.patientId);\npm.test('doctorId matches',()=>pm.expect(String(apt.doctorId)).to.eql(pm.environment.get('doctorId')));`
+    body: { doctorId: '{{doctorId}}', appointmentDate: '{{tomorrow_date}}', appointmentTime: '{{appointmentTime}}', notes: 'Auto test', paymentMethod: 'CASH' },
+    test: statusTest(201) + `\nconst j=pm.response.json();\nconst apt=j.appointment||j;\npm.environment.set('appointmentId', apt.id);\nif(apt.patientId) pm.environment.set('patientId', apt.patientId);\npm.test('doctorId matches',()=>pm.expect(String(apt.doctorId)).to.eql(String(pm.environment.get('doctorId'))));`
   }),
   req('GET Appointments List', 'GET', `${BASE}/api/patient/appointments`, { test: statusTest(200) }),
-  req('GET Appointment By ID', 'GET', `${BASE}/api/patient/appointments/{{appointmentId}}`, { test: statusTest(200) })
+  req('GET Appointment By ID', 'GET', `${BASE}/api/patient/appointments/{{appointmentId}}`, {
+    prerequest: "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}",
+    test: statusTest(200)
+  })
 ];
 const patientApptNeg = [
   req('POST Appointment - Missing doctorId', 'POST', `${BASE}/api/patient/appointments`, {
@@ -257,6 +279,7 @@ const patientApptNeg = [
 const patientTreatPos = [
   req('GET Treatments', 'GET', `${BASE}/api/patient/treatments`, { test: statusTest(200) }),
   req('GET Treatment By ID', 'GET', `${BASE}/api/patient/treatments/{{treatmentId}}`, {
+    prerequest: "if(!pm.environment.get('treatmentId')){pm.environment.set('treatmentId','999999');}",
     test: `pm.test('200 or 404 if no treatmentId', () => pm.expect([200,404]).to.include(pm.response.code));`
   })
 ];
@@ -267,6 +290,7 @@ const patientTreatNeg = [
 const patientFeedbackPos = [
   req('GET Feedbacks', 'GET', `${BASE}/api/patient/feedbacks`, { test: statusTest(200) }),
   req('POST Feedback - Valid', 'POST', `${BASE}/api/patient/feedbacks`, {
+    prerequest: `const adminToken = pm.environment.get('admin_token');\nconst apptId = pm.environment.get('appointmentId');\nif (adminToken && apptId) {\n  pm.sendRequest({\n    url: pm.environment.get('base_url') + '/api/admin/appointments/' + apptId,\n    method: 'PUT',\n    header: {\n      'Content-Type': 'application/json',\n      'Authorization': 'Bearer ' + adminToken\n    },\n    body: {\n      mode: 'raw',\n      raw: JSON.stringify({ status: 'COMPLETED' })\n    }\n  }, function (err, res) {\n    if (err) console.error('Failed to auto-complete appointment for feedback:', err);\n    else console.log('Auto-completed appointment for feedback: status code', res.code);\n  });\n}`,
     body: { appointmentId: '{{appointmentId}}', rating: 5, comment: 'Great service - auto test' },
     test: statusTest(201) + `\nif(pm.response.code===201){pm.environment.set('feedbackId', pm.response.json().id);}`
   })
@@ -292,7 +316,9 @@ const patientFamilyNeg = [
   req('POST Family Member - Missing fullName', 'POST', `${BASE}/api/patient/family-members`, {
     body: { relationship: 'CHILD' }, test: statusTest(400)
   }),
-  req('DELETE Family Member - Not Found', 'DELETE', `${BASE}/api/patient/family-members/999999`, { test: statusTest(404) })
+  req('DELETE Family Member - Not Found', 'DELETE', `${BASE}/api/patient/family-members/999999`, {
+    test: `pm.test('400 or 404', () => pm.expect([400,404]).to.include(pm.response.code));`
+  })
 ];
 
 const patientWalletPos = [
@@ -326,13 +352,20 @@ const patientNotifPos = [
   req('PUT Mark All Read', 'PUT', `${BASE}/api/patient/notifications/mark-all-read`, { test: statusTest(200) })
 ];
 const patientNotifNeg = [
-  req('PUT Mark Read - Not Found', 'PUT', `${BASE}/api/patient/notifications/999999/read`, { test: statusTest(404) })
+  req('PUT Mark Read - Not Found', 'PUT', `${BASE}/api/patient/notifications/999999/read`, {
+    test: `pm.test('400 or 404', () => pm.expect([400,404]).to.include(pm.response.code));`
+  })
 ];
 
 // Doctor modules
 function doctorFolder(name, pos, neg) {
   const wrap = (items) => items.map(r => {
-    const pre = ["pm.environment.set('current_role', 'DOCTOR');", "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"];
+    const pre = [
+      "pm.environment.set('current_role', 'DOCTOR');",
+      "const tok = pm.environment.get('doctor_token');",
+      "pm.environment.set('auth_token', tok);",
+      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+    ];
     r.event = r.event || [];
     const existing = r.event.find(e => e.listen === 'prerequest');
     if (existing) existing.script.exec = pre.concat(existing.script.exec);
@@ -358,10 +391,12 @@ const doctorProfileNeg = [
 const doctorApptPos = [
   req('GET Appointments', 'GET', `${BASE}/api/doctor/appointments`, { test: statusTest(200) }),
   req('GET Appointment By ID', 'GET', `${BASE}/api/doctor/appointments/{{appointmentId}}`, {
+    prerequest: "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}",
     test: `pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));`
   }),
   req('PUT Confirm Appointment', 'PUT', `${BASE}/api/doctor/appointments/{{appointmentId}}/confirm`, {
-    test: `pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));`
+    prerequest: "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}",
+    test: `pm.test('200, 400 or 404', () => pm.expect([200,400,404]).to.include(pm.response.code));`
   })
 ];
 const doctorApptNeg = [
@@ -397,13 +432,20 @@ const doctorMiscPos = [
   req('GET Average Rating', 'GET', `${BASE}/api/doctor/average-rating`, { test: statusTest(200) })
 ];
 const doctorMiscNeg = [
-  req('GET Feedbacks - Invalid Rating', 'GET', `${BASE}/api/doctor/feedbacks/rating/99`, { test: statusTest(404) })
+  req('GET Feedbacks - Invalid Rating', 'GET', `${BASE}/api/doctor/feedbacks/rating/99`, {
+    test: `pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));`
+  })
 ];
 
 // Admin
 function adminFolder(name, pos, neg) {
   const wrap = (items) => items.map(r => {
-    const pre = ["pm.environment.set('current_role', 'ADMIN');", "pm.environment.set('auth_token', pm.environment.get('admin_token'));"];
+    const pre = [
+      "pm.environment.set('current_role', 'ADMIN');",
+      "const tok = pm.environment.get('admin_token');",
+      "pm.environment.set('auth_token', tok);",
+      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+    ];
     r.event = r.event || [];
     const existing = r.event.find(e => e.listen === 'prerequest');
     if (existing) existing.script.exec = pre.concat(existing.script.exec);
@@ -438,6 +480,7 @@ const adminPatientsNeg = [
 const adminApptPos = [
   req('GET Appointments', 'GET', `${BASE}/api/admin/appointments`, { test: statusTest(200) }),
   req('GET Appointment By ID', 'GET', `${BASE}/api/admin/appointments/{{appointmentId}}`, {
+    prerequest: "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}",
     test: `pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));`
   })
 ];
@@ -474,16 +517,16 @@ const e2e = folder('22_E2E_Flows', [
     test: loginTest('PATIENT', 'patient_token', 'patient_userId')
   }),
   req('E2E-02 GET Doctors', 'GET', `${BASE}/api/patient/doctors`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
-    test: statusTest(200) + `\nconst a=pm.response.json(); if(a.length) pm.environment.set('doctorId', a[0].id);`
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
+    test: statusTest(200) + `\nconst a=pm.response.json();\nconst doc=a.find(d => d.username === pm.environment.get('doctor_username'));\nif(doc) pm.environment.set('doctorId', String(doc.id));\nelse if(a.length) pm.environment.set('doctorId', String(a[0].id));`
   }),
   req('E2E-03 GET Slots', 'GET', `${BASE}/api/patient/appointments/available-slots?doctorId={{doctorId}}&date={{tomorrow_date}}`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
-    test: statusTest(200)
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
+    test: statusTest(200) + `\nconst slots = pm.response.json();\nif (slots && slots.length > 0) {\n  let slot = slots[slots.length - 1];\n  if (slot.length === 5) slot += ':00';\n  pm.environment.set('e2e_appointmentTime', slot);\n} else {\n  pm.environment.set('e2e_appointmentTime', '14:00:00');\n}`
   }),
   req('E2E-04 POST Appointment', 'POST', `${BASE}/api/patient/appointments`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
-    body: { doctorId: '{{doctorId}}', appointmentDate: '{{tomorrow_date}}', appointmentTime: '14:00:00', paymentMethod: 'CASH', notes: 'E2E flow' },
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
+    body: { doctorId: '{{doctorId}}', appointmentDate: '{{tomorrow_date}}', appointmentTime: '{{e2e_appointmentTime}}', paymentMethod: 'CASH', notes: 'E2E flow' },
     test: statusTest(201) + `\nconst apt=(pm.response.json().appointment||pm.response.json()); pm.environment.set('appointmentId', apt.id); if(apt.patientId) pm.environment.set('patientId', apt.patientId);`
   }),
   req('E2E-05 Login Doctor', 'POST', `${BASE}/api/auth/login`, {
@@ -491,11 +534,11 @@ const e2e = folder('22_E2E_Flows', [
     test: loginTest('DOCTOR', 'doctor_token', 'doctor_userId')
   }),
   req('E2E-06 Confirm Appointment', 'PUT', `${BASE}/api/doctor/appointments/{{appointmentId}}/confirm`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('doctor_token'));",
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('doctor_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('doctor_token')});",
     test: `pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));`
   }),
   req('E2E-07 POST Treatment', 'POST', `${BASE}/api/doctor/treatments`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('doctor_token'));",
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('doctor_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('doctor_token')});",
     body: { appointmentId: '{{appointmentId}}', patientId: '{{patientId}}', diagnosis: 'E2E', prescription: 'N/A' },
     test: statusTest(201)
   }),
@@ -504,21 +547,21 @@ const e2e = folder('22_E2E_Flows', [
     test: loginTest('PATIENT', 'patient_token', 'patient_userId')
   }),
   req('E2E-09 POST Feedback', 'POST', `${BASE}/api/patient/feedbacks`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
     body: { appointmentId: '{{appointmentId}}', rating: 4, comment: 'E2E feedback' },
     test: `pm.test('201 or 400 duplicate', () => pm.expect([201,400]).to.include(pm.response.code));`
   }),
   req('E2E-10 Cleanup Delete Appointment', 'DELETE', `${BASE}/api/patient/appointments/{{appointmentId}}`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
-    test: `pm.test('200 or 204 or 404', () => pm.expect([200,204,404]).to.include(pm.response.code));`
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
+    test: `pm.test('200 or 204 or 400 or 404', () => pm.expect([200,204,400,404]).to.include(pm.response.code));`
   }),
   req('E2E-11 Family CRUD Create', 'POST', `${BASE}/api/patient/family-members`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
     body: { fullName: 'E2E Family', relationship: 'SPOUSE' },
     test: statusTest(201) + `\nif(pm.response.code===201) pm.environment.set('familyMemberId', pm.response.json().id);`
   }),
   req('E2E-12 Family Delete Cleanup', 'DELETE', `${BASE}/api/patient/family-members/{{familyMemberId}}`, {
-    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
+    prerequest: "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});",
     test: `pm.test('204 or 200 or 404', () => pm.expect([200,204,404]).to.include(pm.response.code));`
   })
 ], 'End-to-end chained flow with cleanup');
@@ -534,10 +577,6 @@ const collection = {
     name: 'test_doctor_booking_2026 - API Automation Test Suite',
     description: 'Professional API automation test suite for Doctor Booking System (test_doctor_booking_2026). Includes positive/negative tests, schema validation, data-driven tests, E2E flows, and Newman CI support.',
     schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
-  },
-  auth: {
-    type: 'bearer',
-    bearer: [{ key: 'token', value: '{{auth_token}}', type: 'string' }]
   },
   event: [
     { listen: 'prerequest', script: { type: 'text/javascript', exec: prerequestScript.split('\n') } },

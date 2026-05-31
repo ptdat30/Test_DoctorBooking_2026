@@ -14,7 +14,8 @@ pm.environment.set('random_username', `autotest_${ts}`);
 pm.environment.set('random_string', `str_${ts}`);
 
 const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
+const randomDays = Math.floor(Math.random() * 190) + 5;
+tomorrow.setDate(tomorrow.getDate() + randomDays);
 const y = tomorrow.getFullYear();
 const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
 const d = String(tomorrow.getDate()).padStart(2, '0');
