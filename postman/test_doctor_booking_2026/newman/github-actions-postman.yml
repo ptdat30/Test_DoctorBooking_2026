@@ -1,0 +1,283 @@
+# .github/workflows/api-tests.yml
+name: API Tests (Newman + Jira Reporter)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# ─── Shared constants (match sonarqube-jira.yml) ─────────────────────────────
+env:
+  JIRA_PROJECT_KEY: 'SCRUM'
+  JIRA_URL:         'https://huynhphongdat2005.atlassian.net'
+
+jobs:
+  postman-newman:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: doctor_booking
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-htmlextra
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Start Backend
+        working-directory: backend
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
+          JWT_EXPIRATION: "86400000"
+          JWT_REFRESH_EXPIRATION: "604800000"
+          SKIP_AI_TESTS: "true"
+        run: |
+          chmod +x mvnw
+          ./mvnw spring-boot:run -DskipTests &
+          echo $! > backend.pid
+
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/public/health; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API failed to start"
+          exit 1
+
+      - name: Run Newman - Setup + E2E
+        # --bail=false: Newman tiếp tục chạy kể cả khi có test fail
+        # Đảm bảo JSON report luôn được tạo ra để bước sau phân tích
+        run: |
+          mkdir -p postman/test_doctor_booking_2026/reports
+
+          newman run postman/test_doctor_booking_2026/test_doctor_booking_2026.postman_collection.json \
+            -e postman/test_doctor_booking_2026/test_doctor_booking_2026.postman_environment.json \
+            --folder "00_Setup" \
+            --timeout-request 15000 \
+            --reporters cli,json \
+            --reporter-json-export postman/test_doctor_booking_2026/reports/ci-setup.json \
+            || true
+
+          newman run postman/test_doctor_booking_2026/test_doctor_booking_2026.postman_collection.json \
+            -e postman/test_doctor_booking_2026/test_doctor_booking_2026.postman_environment.json \
+            --folder "22_E2E_Flows" \
+            --timeout-request 15000 \
+            --reporters cli,htmlextra,json \
+            --reporter-htmlextra-export postman/test_doctor_booking_2026/reports/ci-e2e.html \
+            --reporter-json-export postman/test_doctor_booking_2026/reports/ci-e2e.json \
+            || true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-reports
+          path: postman/test_doctor_booking_2026/reports/
+
+      # ══════════════════════════════════════════════════════════════════════
+      # Tạo Jira Task khi Newman có failures
+      # Sử dụng lại secrets: JIRA_USER, JIRA_API_TOKEN (từ sonarqube-jira.yml)
+      # ══════════════════════════════════════════════════════════════════════
+      - name: Create Jira Task for Newman Failures
+        if: always()
+        env:
+          JIRA_USER:      ${{ secrets.JIRA_USER }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          JIRA_BASE="${{ env.JIRA_URL }}"
+          PROJECT_KEY="${{ env.JIRA_PROJECT_KEY }}"
+          JIRA_ISSUE_API="${JIRA_BASE}/rest/api/2/issue"
+          JIRA_AGILE_API="${JIRA_BASE}/rest/agile/1.0"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          echo "========================================================"
+          echo "Analyzing Newman JSON reports for failures..."
+          echo "========================================================"
+
+          FAILURE_ITEMS=""
+          TOTAL_FAIL=0
+
+          for REPORT_FILE in \
+            postman/test_doctor_booking_2026/reports/ci-setup.json \
+            postman/test_doctor_booking_2026/reports/ci-e2e.json; do
+
+            if [ ! -f "$REPORT_FILE" ]; then
+              echo "  Report not found: $REPORT_FILE - skipping"
+              continue
+            fi
+
+            FILE_FAIL_COUNT=$(jq '.run.stats.assertions.failed // 0' "$REPORT_FILE" 2>/dev/null || echo "0")
+            TOTAL_FAIL=$((TOTAL_FAIL + FILE_FAIL_COUNT))
+
+            FILE_FAILS=$(jq -r '
+              .run.failures[]? |
+              "  - [\(.source.name // "Unknown")] \(.error.test // "Assertion failed")"
+            ' "$REPORT_FILE" 2>/dev/null || echo "")
+
+            if [ -n "$FILE_FAILS" ]; then
+              BASENAME=$(basename "$REPORT_FILE" .json)
+              FAILURE_ITEMS="${FAILURE_ITEMS}*[${BASENAME}]*\n${FILE_FAILS}\n\n"
+            fi
+          done
+
+          echo "Total failed assertions: $TOTAL_FAIL"
+
+          if [ "$TOTAL_FAIL" -eq 0 ]; then
+            echo "All Newman tests passed! No Jira task needed."
+            exit 0
+          fi
+
+          echo "$TOTAL_FAIL failure(s) found. Creating Jira Task..."
+
+          # ── Auto-detect active Sprint ──────────────────────────────────────
+          ACTIVE_SPRINT_ID=""
+          BOARD_RESP=$(curl -s \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            "${JIRA_AGILE_API}/board?projectKeyOrId=${PROJECT_KEY}&type=scrum")
+          BOARD_ID=$(echo "$BOARD_RESP" | jq -r '.values[0].id // empty')
+
+          if [ -n "$BOARD_ID" ]; then
+            SPRINT_RESP=$(curl -s \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              "${JIRA_AGILE_API}/board/${BOARD_ID}/sprint?state=active")
+            ACTIVE_SPRINT_ID=$(echo "$SPRINT_RESP" | jq -r '.values[0].id // empty')
+          fi
+
+          [ -n "$ACTIVE_SPRINT_ID" ] && echo "Active Sprint: ${ACTIVE_SPRINT_ID}" || echo "No active sprint found."
+
+          # ── Build Jira issue payload ───────────────────────────────────────
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          COMMIT_SHORT="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_SHORT:0:7}"
+          SUMMARY="[Newman] ${TOTAL_FAIL} API test(s) failed — ${{ github.ref_name }} @ $(date +'%Y-%m-%d %H:%M')"
+
+          DESCRIPTION=$(printf "*Newman API Test Failure Report*\n\n*Branch:* %s\n*Commit:* [%s|%s/%s/commit/%s]\n*Run:* [GitHub Actions|%s]\n*Time:* %s\n*Total Failures:* %s\n\n----\n\nh4. Failed Tests\n\n%b\n\n----\n_Auto-created by Newman CI. Labels: postman-auto, api-test-failure, newman-ci_" \
+            "${{ github.ref_name }}" \
+            "${COMMIT_SHORT}" "${{ github.server_url }}" "${{ github.repository }}" "${{ github.sha }}" \
+            "${RUN_URL}" \
+            "${NOW}" \
+            "${TOTAL_FAIL}" \
+            "${FAILURE_ITEMS}")
+
+          PAYLOAD=$(jq -n \
+            --arg project  "$PROJECT_KEY" \
+            --arg summary  "$SUMMARY" \
+            --arg desc     "$DESCRIPTION" \
+            '{
+              "fields": {
+                "project":     { "key": $project },
+                "issuetype":   { "name": "Task" },
+                "summary":     $summary,
+                "description": $desc,
+                "priority":    { "name": "High" },
+                "labels":      ["postman-auto", "api-test-failure", "newman-ci"]
+              }
+            }')
+
+          # ── Create Jira issue ──────────────────────────────────────────────
+          CREATE_RESP=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d "$PAYLOAD" \
+            "$JIRA_ISSUE_API")
+
+          JIRA_KEY=$(echo "$CREATE_RESP" | jq -r '.key // empty')
+
+          if [ -z "$JIRA_KEY" ]; then
+            echo "Failed to create Jira issue."
+            echo "Response: $(echo "$CREATE_RESP" | jq -c '.')"
+            exit 1
+          fi
+
+          echo "Jira Task created: ${JIRA_KEY}"
+          echo "Link: ${JIRA_BASE}/browse/${JIRA_KEY}"
+
+          # ── Assign to active Sprint ────────────────────────────────────────
+          if [ -n "$ACTIVE_SPRINT_ID" ]; then
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              -d "{\"issues\": [\"${JIRA_KEY}\"]}" \
+              "${JIRA_AGILE_API}/sprint/${ACTIVE_SPRINT_ID}/issue")
+            [ "$HTTP_CODE" = "204" ] && echo "Sprint assigned OK" || echo "Sprint assign: HTTP ${HTTP_CODE}"
+          fi
+
+          # ── Transition: TO DO → TESTING → BUG FOUND ───────────────────────
+          sleep 1
+          TRANS_RESP=$(curl -s \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions")
+
+          START_ID=$(echo "$TRANS_RESP" | jq -r '
+            .transitions[] | select(.name | test("Start Work|Start"; "i")) | .id
+          ' | head -1)
+
+          if [ -n "$START_ID" ]; then
+            curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              -d "{\"transition\":{\"id\":\"${START_ID}\"}}" \
+              "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions" > /dev/null
+            echo "Transitioned: TO DO -> TESTING"
+
+            sleep 1
+            TRANS_RESP2=$(curl -s \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions")
+
+            BUG_ID=$(echo "$TRANS_RESP2" | jq -r '
+              .transitions[] | select(.name | test("Bug Found|BUG FOUND"; "i")) | .id
+            ' | head -1)
+
+            if [ -n "$BUG_ID" ]; then
+              curl -s -X POST \
+                -H "Content-Type: application/json" \
+                -u "$JIRA_USER:$JIRA_API_TOKEN" \
+                -d "{\"transition\":{\"id\":\"${BUG_ID}\"}}" \
+                "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions" > /dev/null
+              echo "Transitioned: TESTING -> BUG FOUND"
+              echo "${JIRA_KEY} is now BUG FOUND on the board."
+            fi
+          fi
+
+          echo "========================================================"
+          echo "Summary: ${JIRA_KEY} | ${JIRA_BASE}/browse/${JIRA_KEY}"
+          echo "========================================================"
+
+      - name: Stop Backend
+        if: always()
+        working-directory: backend
+        run: kill $(cat backend.pid) 2>/dev/null || true

@@ -1,0 +1,5 @@
+case_name,expected_status,username,password,email,fullName,role
+valid_patient,201,{{random_username}},password123,{{random_email}},Auto Test User,PATIENT
+missing_username,400,,password123,bad@test.com,No Username,
+invalid_email,400,baduser01,password123,not-an-email,Bad Email,
+short_password,400,shortpw01,123,short@test.com,Short PW,

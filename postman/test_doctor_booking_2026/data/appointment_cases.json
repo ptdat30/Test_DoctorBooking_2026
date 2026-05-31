@@ -1,0 +1,34 @@
+[
+  {
+    "case_name": "valid_cash",
+    "expected_status": 201,
+    "doctorId": "{{doctorId}}",
+    "appointmentDate": "{{tomorrow_date}}",
+    "appointmentTime": "09:00:00",
+    "notes": "Automation test booking",
+    "paymentMethod": "CASH"
+  },
+  {
+    "case_name": "missing_doctorId",
+    "expected_status": 400,
+    "appointmentDate": "{{tomorrow_date}}",
+    "appointmentTime": "10:00:00",
+    "paymentMethod": "CASH"
+  },
+  {
+    "case_name": "invalid_time_format",
+    "expected_status": 400,
+    "doctorId": "{{doctorId}}",
+    "appointmentDate": "{{tomorrow_date}}",
+    "appointmentTime": "not-a-time",
+    "paymentMethod": "CASH"
+  },
+  {
+    "case_name": "past_date",
+    "expected_status": 400,
+    "doctorId": "{{doctorId}}",
+    "appointmentDate": "2020-01-01",
+    "appointmentTime": "09:00:00",
+    "paymentMethod": "CASH"
+  }
+]

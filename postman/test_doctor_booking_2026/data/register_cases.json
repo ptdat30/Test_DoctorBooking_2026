@@ -1,0 +1,35 @@
+[
+  {
+    "case_name": "valid_patient",
+    "expected_status": 201,
+    "username": "{{random_username}}",
+    "password": "password123",
+    "email": "{{random_email}}",
+    "fullName": "Auto Test User",
+    "phone": "0901234567",
+    "role": "PATIENT"
+  },
+  {
+    "case_name": "missing_username",
+    "expected_status": 400,
+    "password": "password123",
+    "email": "bad@test.com",
+    "fullName": "No Username"
+  },
+  {
+    "case_name": "invalid_email",
+    "expected_status": 400,
+    "username": "baduser01",
+    "password": "password123",
+    "email": "not-an-email",
+    "fullName": "Bad Email"
+  },
+  {
+    "case_name": "short_password",
+    "expected_status": 400,
+    "username": "shortpw01",
+    "password": "123",
+    "email": "short@test.com",
+    "fullName": "Short PW"
+  }
+]

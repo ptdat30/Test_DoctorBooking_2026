@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "required": ["id", "doctorId", "appointmentDate", "appointmentTime", "status"],
+  "properties": {
+    "id": { "type": "integer" },
+    "patientId": { "type": "integer" },
+    "doctorId": { "type": "integer" },
+    "doctorName": { "type": "string" },
+    "appointmentDate": { "type": "string" },
+    "appointmentTime": { "type": "string" },
+    "status": { "type": "string" },
+    "price": { "type": ["number", "string", "null"] },
+    "paymentStatus": { "type": "string" },
+    "paymentMethod": { "type": ["string", "null"] }
+  }
+}

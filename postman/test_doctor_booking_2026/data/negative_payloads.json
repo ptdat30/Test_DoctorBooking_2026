@@ -1,0 +1,28 @@
+[
+  {
+    "case_name": "sql_injection_username",
+    "endpoint": "login",
+    "expected_status": 401,
+    "username": "admin' OR '1'='1",
+    "password": "password123"
+  },
+  {
+    "case_name": "xss_fullname_register",
+    "endpoint": "register",
+    "expected_status": 201,
+    "username": "{{random_username}}",
+    "password": "password123",
+    "email": "{{random_email}}",
+    "fullName": "<script>alert(1)</script>",
+    "role": "PATIENT"
+  },
+  {
+    "case_name": "oversized_payload",
+    "endpoint": "register",
+    "expected_status": 400,
+    "username": "{{random_username}}",
+    "password": "password123",
+    "email": "{{random_email}}",
+    "fullName": "REPEAT_A_VERY_LONG_STRING_PLACEHOLDER"
+  }
+]

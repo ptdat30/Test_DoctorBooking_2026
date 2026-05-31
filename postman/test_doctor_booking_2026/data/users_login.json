@@ -1,0 +1,5 @@
+[
+  { "role": "PATIENT", "username": "patient1", "password": "password123", "expected_status": 200 },
+  { "role": "DOCTOR", "username": "doctor1", "password": "password123", "expected_status": 200 },
+  { "role": "ADMIN", "username": "admin", "password": "admin123", "expected_status": 200 }
+]
