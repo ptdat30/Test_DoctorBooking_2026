@@ -167,43 +167,7 @@ public class AppointmentService {
         appointment.setPaymentMethod(paymentMethod);
         
         // Xử lý thanh toán theo phương thức
-        if ("WALLET".equals(paymentMethod)) {
-            // Thanh toán bằng ví: Trừ tiền ngay
-            if (consultationFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
-                try {
-                    // Save appointment first to get ID
-                    appointment.setPaymentStatus(Appointment.PaymentStatus.PENDING);
-                    appointment = appointmentRepository.save(appointment);
-                    
-                    // Process wallet payment
-                    walletService.payForAppointment(
-                        patientId, 
-                        appointment.getId(), 
-                        consultationFee, 
-                        "Thanh toán phí khám bệnh - Dr. " + doctor.getFullName()
-                    );
-                    
-                    // Update payment status to PAID
-                    appointment.setPaymentStatus(Appointment.PaymentStatus.PAID);
-                    appointment = appointmentRepository.save(appointment);
-                } catch (Exception e) {
-                    throw new RuntimeException("Payment failed: " + e.getMessage());
-                }
-            } else {
-                // Miễn phí
-                appointment.setPaymentStatus(Appointment.PaymentStatus.PAID);
-                appointment = appointmentRepository.save(appointment);
-            }
-        } else if ("VNPAY".equals(paymentMethod)) {
-            // VNPAY: Save appointment với PENDING, Frontend sẽ redirect sang VNPAY
-            appointment.setPaymentStatus(Appointment.PaymentStatus.PENDING);
-            appointment = appointmentRepository.save(appointment);
-            // Note: Payment URL sẽ được tạo ở controller layer
-        } else {
-            // CASH: Payment status = PENDING
-            appointment.setPaymentStatus(Appointment.PaymentStatus.PENDING);
-            appointment = appointmentRepository.save(appointment);
-        }
+        appointment = resolvePaymentAndSave(appointment, patientId, doctor, consultationFee, paymentMethod);
         
         // Nếu đặt lịch cho người nhà (có familyMemberId), tạo record trong family_appointments
         if (request.getFamilyMemberId() != null) {
@@ -301,24 +265,10 @@ public class AppointmentService {
         // Tạo thông báo trong hệ thống (ngoài email)
         try {
             String notificationTitle = "Đặt lịch khám thành công";
-            String notificationMessage;
-            
-            if (familyMemberName != null && !familyMemberName.trim().isEmpty()) {
-                notificationMessage = String.format(
-                    "Bạn đã đặt lịch khám thành công cho %s với Bác sĩ %s vào %s lúc %s",
-                    familyMemberName,
-                    doctor.getFullName(),
-                    appointment.getAppointmentDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    appointment.getAppointmentTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
-                );
-            } else {
-                notificationMessage = String.format(
-                    "Bạn đã đặt lịch khám thành công với Bác sĩ %s vào %s lúc %s",
-                    doctor.getFullName(),
-                    appointment.getAppointmentDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    appointment.getAppointmentTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
-                );
-            }
+            String notificationMessage = buildBookingNotificationMessage(
+                familyMemberName, doctor.getFullName(),
+                appointment.getAppointmentDate(), appointment.getAppointmentTime()
+            );
             
             notificationService.createNotification(
                 patientId,
@@ -718,6 +668,51 @@ public class AppointmentService {
         }
 
         logger.info("Appointment cancelled by admin: appointmentId={}", appointmentId);
+    }
+
+    private Appointment resolvePaymentAndSave(Appointment appointment, Long patientId,
+                                               Doctor doctor, java.math.BigDecimal consultationFee,
+                                               String paymentMethod) {
+        if ("WALLET".equals(paymentMethod)) {
+            if (consultationFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                try {
+                    appointment.setPaymentStatus(Appointment.PaymentStatus.PENDING);
+                    appointment = appointmentRepository.save(appointment);
+                    walletService.payForAppointment(
+                        patientId,
+                        appointment.getId(),
+                        consultationFee,
+                        "Thanh toán phí khám bệnh - Dr. " + doctor.getFullName()
+                    );
+                    appointment.setPaymentStatus(Appointment.PaymentStatus.PAID);
+                    return appointmentRepository.save(appointment);
+                } catch (Exception e) {
+                    throw new RuntimeException("Payment failed: " + e.getMessage());
+                }
+            } else {
+                appointment.setPaymentStatus(Appointment.PaymentStatus.PAID);
+                return appointmentRepository.save(appointment);
+            }
+        }
+        // VNPAY or CASH: save with PENDING payment status
+        appointment.setPaymentStatus(Appointment.PaymentStatus.PENDING);
+        return appointmentRepository.save(appointment);
+    }
+
+    private String buildBookingNotificationMessage(String familyMemberName, String doctorFullName,
+                                                    LocalDate date, LocalTime time) {
+        String dateStr = date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String timeStr = time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        if (familyMemberName != null && !familyMemberName.trim().isEmpty()) {
+            return String.format(
+                "Bạn đã đặt lịch khám thành công cho %s với Bác sĩ %s vào %s lúc %s",
+                familyMemberName, doctorFullName, dateStr, timeStr
+            );
+        }
+        return String.format(
+            "Bạn đã đặt lịch khám thành công với Bác sĩ %s vào %s lúc %s",
+            doctorFullName, dateStr, timeStr
+        );
     }
 
     private void processRefundIfNeeded(Appointment appointment) {

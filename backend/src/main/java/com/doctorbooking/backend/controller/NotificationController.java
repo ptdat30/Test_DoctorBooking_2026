@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class NotificationController {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationController.class);
+    private static final String ERROR_KEY = "error";
 
     private final NotificationService notificationService;
     private final com.doctorbooking.backend.repository.PatientRepository patientRepository;
@@ -60,7 +61,7 @@ public class NotificationController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error getting notifications", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
         }
     }
 
@@ -80,7 +81,7 @@ public class NotificationController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error getting unread count", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
         }
     }
 
@@ -96,7 +97,7 @@ public class NotificationController {
             return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
         } catch (RuntimeException e) {
             logger.error("Error marking notification as read", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
         }
     }
 
@@ -112,7 +113,7 @@ public class NotificationController {
             return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
         } catch (Exception e) {
             logger.error("Error marking all notifications as read", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
         }
     }
 
@@ -128,7 +129,7 @@ public class NotificationController {
             return ResponseEntity.ok(Map.of("message", "Notification deleted"));
         } catch (RuntimeException e) {
             logger.error("Error deleting notification", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
         }
     }
 }
