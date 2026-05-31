@@ -28,6 +28,7 @@ public class FeedbackService {
 
     private static final Logger logger = LoggerFactory.getLogger(FeedbackService.class);
     private static final int EDIT_WINDOW_HOURS = 24;
+    private static final String FEEDBACK_NOT_FOUND = "Feedback not found";
 
     private final FeedbackRepository feedbackRepository;
     private final PatientRepository patientRepository;
@@ -82,7 +83,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse updateFeedback(Long patientId, Long feedbackId, UpdateFeedbackRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
 
         // Verify feedback belongs to patient
         if (!feedback.getPatient().getId().equals(patientId)) {
@@ -120,7 +121,7 @@ public class FeedbackService {
      */
     public FeedbackResponse getPatientFeedbackById(Long patientId, Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getPatient().getId().equals(patientId)) {
             throw new RuntimeException("This feedback does not belong to you");
@@ -156,7 +157,7 @@ public class FeedbackService {
      */
     public FeedbackResponse getDoctorFeedbackById(Long doctorId, Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getDoctor().getId().equals(doctorId)) {
             throw new RuntimeException("This feedback is not for you");
@@ -177,7 +178,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse replyToFeedback(Long doctorId, Long feedbackId, ReplyFeedbackRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getDoctor().getId().equals(doctorId)) {
             throw new RuntimeException("This feedback is not for you");
@@ -198,7 +199,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse updateDoctorReply(Long doctorId, Long feedbackId, ReplyFeedbackRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getDoctor().getId().equals(doctorId)) {
             throw new RuntimeException("This feedback is not for you");
@@ -287,7 +288,7 @@ public class FeedbackService {
      */
     public FeedbackResponse getFeedbackById(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
         
         // Mark as READ if still PENDING
         if (feedback.getStatus() == Feedback.FeedbackStatus.PENDING) {
@@ -304,7 +305,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse hideFeedback(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
         
         feedback.setIsHidden(true);
         feedback = feedbackRepository.save(feedback);
@@ -318,7 +319,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse unhideFeedback(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
         
         feedback.setIsHidden(false);
         feedback = feedbackRepository.save(feedback);
