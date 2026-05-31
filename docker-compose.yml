@@ -1,5 +1,10 @@
 # ══════════════════════════════════════════════════════════════
-# docker-compose.yml — DoctorBooking Production 2026
+# docker-compose.yml — DoctorBooking Base Configuration
+#
+# This is the BASE config. Use with environment-specific overrides:
+#   Staging:    docker compose -f docker-compose.yml -f docker-compose.staging.yml up
+#   Production: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+#   Local dev:  docker compose --profile local-db up
 #
 # Features:
 #  - Isolated networks (frontend-net, backend-net)
@@ -7,7 +12,7 @@
 #  - Healthchecks with proper start-period
 #  - Depends-on with condition: service_healthy
 #  - restart: unless-stopped
-#  - Profile "local-db" for local MySQL (default: Aiven Cloud)
+#  - Profile "local-db" for local MySQL
 #  - Named volume for MySQL data persistence
 # ══════════════════════════════════════════════════════════════
 
@@ -82,6 +87,8 @@ services:
       - DAC_OVERRIDE
 
   # ── Backend (Spring Boot 3.5 / Java 21) ────────────────────
+  # Note: env_file and environment overrides are in
+  # docker-compose.staging.yml / docker-compose.prod.yml
   backend:
     build:
       context: ./backend
@@ -91,10 +98,6 @@ services:
     networks:
       - frontend-net
       - backend-net
-    ports:
-      - "${BACKEND_PORT:-8080}:8080"
-    env_file:
-      - .env.production          # non-secret config (URLs, ports, flags)
     secrets:
       - db_password
       - jwt_secret
@@ -102,16 +105,6 @@ services:
       - groq_api_key
       - smtp_password
       - vnpay_hash_secret
-    environment:
-      # Logging: Spring Boot 3.4+ structured JSON → stdout
-      SPRING_LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
-      # Override DB URL for Aiven Cloud (production default)
-      DB_URL: ${DB_URL}
-      DB_USERNAME: ${DB_USERNAME}
-      # Disable mail health indicator — SMTP is external, not a container liveness concern
-      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
-      # Disable JPA open-in-view warning
-      SPRING_JPA_OPEN_IN_VIEW: "false"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
       interval: 30s
@@ -133,6 +126,7 @@ services:
         labels: "service=backend"
 
   # ── Frontend (React + Nginx Unprivileged) ───────────────────
+  # Note: ports and VITE_API_TARGET are in environment overrides
   frontend:
     build:
       context: ./frontend
@@ -143,11 +137,6 @@ services:
     restart: unless-stopped
     networks:
       - frontend-net
-    ports:
-      - "${FRONTEND_PORT:-80}:8080"
-    environment:
-      # nginx template substitution: proxy target for /api/
-      VITE_API_TARGET: http://backend:8080
     depends_on:
       backend:
         condition: service_healthy

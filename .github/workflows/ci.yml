@@ -1,0 +1,276 @@
+# .github/workflows/ci.yml
+# ══════════════════════════════════════════════════════════════
+# CI Pipeline — Runs on every PR to staging or main
+#
+# Jobs (parallel where possible):
+#   1. backend-build   — Maven compile + unit test
+#   2. frontend-build  — npm ci + npm run build
+#   3. sonar-gate      — SonarCloud scan + Quality Gate (after backend-build)
+#   4. integration-test — Start backend + Newman 23-folder API test suite
+# ══════════════════════════════════════════════════════════════
+
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [staging, main]
+
+jobs:
+  # ── Job 1: Backend Build + Unit Test ─────────────────────────
+  backend-build:
+    name: "Backend: Build & Unit Test"
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: doctor_booking
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build + Unit Test
+        working-directory: backend
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
+          JWT_EXPIRATION: '86400000'
+          JWT_REFRESH_EXPIRATION: '604800000'
+        run: |
+          chmod +x mvnw
+          ./mvnw clean verify -B --no-transfer-progress
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  # ── Job 2: Frontend Build (runs in parallel with backend) ────
+  frontend-build:
+    name: "Frontend: Build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build
+        working-directory: frontend
+        run: |
+          npm ci --prefer-offline --no-audit --no-fund
+          npm run build
+
+  # ── Job 3: SonarCloud Quality Gate (after backend compiles) ──
+  sonar-gate:
+    name: "SonarCloud: Scan & Quality Gate"
+    runs-on: ubuntu-latest
+    needs: backend-build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile for Sonar
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+          ./mvnw clean compile -B --no-transfer-progress -q
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.jasmin.internal.disabled=true
+            -Dsonar.js.analyzeSecurity=false
+            -Dsonar.javascript.node.maxspace=4096
+
+      - name: Quality Gate Check
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ── Job 4: Integration Test — Newman Full Suite ──────────────
+  integration-test:
+    name: "Integration: Newman API Tests"
+    runs-on: ubuntu-latest
+    needs: backend-build
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: doctor_booking
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Start Backend
+        working-directory: backend
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
+          JWT_EXPIRATION: '86400000'
+          JWT_REFRESH_EXPIRATION: '604800000'
+          SKIP_AI_TESTS: 'true'
+        run: |
+          chmod +x mvnw
+          ./mvnw spring-boot:run -DskipTests &
+          echo $! > backend.pid
+
+      - name: Wait for API Health
+        run: |
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/public/health > /dev/null 2>&1; then
+              echo "✅ API is healthy (attempt $i)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "❌ API failed to start within 5 minutes"
+          exit 1
+
+      - name: Run Newman — All 23 Folders
+        run: |
+          cd postman/test_doctor_booking_2026
+          mkdir -p reports
+
+          # Prepare environment with correct base_url
+          cp test_doctor_booking_2026.postman_environment.json /tmp/ci-env.json
+          # Update base_url to localhost
+          node -e "
+            const fs = require('fs');
+            const env = JSON.parse(fs.readFileSync('/tmp/ci-env.json','utf8'));
+            env.values.forEach(v => {
+              if(v.key==='base_url') v.value='http://localhost:8080';
+              if(v.key==='skip_ai_tests') v.value='true';
+            });
+            fs.writeFileSync('/tmp/ci-env.json', JSON.stringify(env,null,2));
+          "
+
+          FOLDERS=(
+            "00_Setup" "01_Public" "02_Auth"
+            "03_Patient_Profile" "04_Patient_Doctors"
+            "05_Patient_Appointments" "06_Patient_Treatments"
+            "07_Patient_Feedbacks" "08_Patient_FamilyMembers"
+            "09_Patient_Wallet_Payments" "10_Patient_AI"
+            "11_Patient_Notifications" "12_Doctor_Profile"
+            "13_Doctor_Appointments" "14_Doctor_Treatments"
+            "15_Doctor_Patients" "16_Doctor_Medications_Feedbacks"
+            "17_Admin_Doctors" "18_Admin_Patients"
+            "19_Admin_Appointments" "20_Admin_Feedbacks"
+            "21_Admin_Users" "22_E2E_Flows"
+          )
+
+          FAILED=0
+          PASSED=0
+          FAILED_NAMES=""
+
+          for folder in "${FOLDERS[@]}"; do
+            echo ""
+            echo "══════════════════════════════════════════"
+            echo "  Running: $folder"
+            echo "══════════════════════════════════════════"
+
+            newman run test_doctor_booking_2026.postman_collection.json \
+              -e /tmp/ci-env.json \
+              --folder "$folder" \
+              --timeout-request 15000 \
+              --delay-request 200 \
+              --reporters cli,json \
+              --reporter-json-export "reports/ci-${folder}.json" \
+              --export-environment /tmp/ci-env.json
+
+            if [ $? -ne 0 ]; then
+              echo "  ❌ FAILED: $folder"
+              FAILED=$((FAILED + 1))
+              FAILED_NAMES="${FAILED_NAMES} ${folder}"
+            else
+              echo "  ✅ PASSED: $folder"
+              PASSED=$((PASSED + 1))
+            fi
+          done
+
+          echo ""
+          echo "══════════════════════════════════════════"
+          echo "  NEWMAN SUMMARY"
+          echo "══════════════════════════════════════════"
+          echo "  Passed: $PASSED"
+          echo "  Failed: $FAILED"
+          if [ $FAILED -gt 0 ]; then
+            echo "  Failed folders: $FAILED_NAMES"
+          fi
+          echo "══════════════════════════════════════════"
+
+          exit $FAILED
+
+      - name: Upload Newman Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-ci-reports
+          path: postman/test_doctor_booking_2026/reports/ci-*.json
+          retention-days: 7
+
+      - name: Stop Backend
+        if: always()
+        working-directory: backend
+        run: kill $(cat backend.pid) 2>/dev/null || true

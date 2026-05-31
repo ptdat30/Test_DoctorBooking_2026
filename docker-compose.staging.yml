@@ -1,0 +1,36 @@
+# ══════════════════════════════════════════════════════════════
+# docker-compose.staging.yml — Staging Environment Override
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+#
+# Overrides:
+#   - Backend: Aiven Cloud staging DB, reduced JVM memory
+#   - Frontend: staging API target
+# ══════════════════════════════════════════════════════════════
+
+services:
+
+  backend:
+    env_file:
+      - .env.staging
+    environment:
+      # Staging database on Aiven Cloud (separate from production)
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      # Reduced JVM memory for staging
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=50.0
+        -XX:+UseG1GC
+        -XX:+ExitOnOutOfMemoryError
+      # Disable structured logging for easier debugging on staging
+      SPRING_LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    environment:
+      VITE_API_TARGET: ${VITE_API_TARGET:-http://backend:8080}
+    ports:
+      - "${FRONTEND_PORT:-80}:8080"

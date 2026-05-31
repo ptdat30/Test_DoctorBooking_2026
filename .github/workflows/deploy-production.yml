@@ -1,0 +1,70 @@
+# .github/workflows/deploy-production.yml
+# ══════════════════════════════════════════════════════════════
+# Deploy to Production — Auto-triggers when code is merged into main
+#
+# Pipeline:
+#   1. Trigger Render Deploy Hooks (backend + frontend)
+#   2. Wait for deployment
+#   3. Health check production URL
+#   4. Notify on failure
+# ══════════════════════════════════════════════════════════════
+
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # Allow manual trigger for scheduled/emergency deploys
+
+jobs:
+  deploy:
+    name: Deploy to Render Production
+    runs-on: ubuntu-latest
+    # GitHub Environment with protection rules (optional: require approval)
+    environment: production
+    steps:
+      - name: Trigger Backend Deploy
+        run: |
+          echo "🚀 Deploying backend to production..."
+          HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X POST "${{ secrets.RENDER_PROD_BACKEND_HOOK }}")
+          echo "  Render backend hook response: HTTP $HTTP_CODE"
+
+      - name: Trigger Frontend Deploy
+        run: |
+          echo "🚀 Deploying frontend to production..."
+          HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X POST "${{ secrets.RENDER_PROD_FRONTEND_HOOK }}")
+          echo "  Render frontend hook response: HTTP $HTTP_CODE"
+
+      - name: Wait for Deployment (120s)
+        run: |
+          echo "Waiting 120 seconds for Render to build and deploy..."
+          sleep 120
+
+      - name: Health Check — Production Backend
+        run: |
+          PROD_URL="${{ secrets.PRODUCTION_URL }}"
+          # Fallback to known production URL if secret not set
+          PROD_URL="${PROD_URL:-https://doctor-booking-backend-yjpf.onrender.com}"
+
+          echo "Checking production health at: ${PROD_URL}/api/public/health"
+          for i in $(seq 1 30); do
+            RESP=$(curl -sf "${PROD_URL}/api/public/health" 2>/dev/null || echo "")
+            if echo "$RESP" | grep -q "UP"; then
+              echo "✅ Production backend is healthy (attempt $i)"
+              exit 0
+            fi
+            echo "  Attempt $i: waiting..."
+            sleep 10
+          done
+          echo "❌ Production health check failed after 5 minutes"
+          exit 1
+
+      - name: Health Check — Production Frontend
+        run: |
+          PROD_FE_URL="${{ secrets.PRODUCTION_FRONTEND_URL }}"
+          if [ -n "$PROD_FE_URL" ]; then
+            echo "Checking frontend at: ${PROD_FE_URL}"
+            curl -sf "$PROD_FE_URL" > /dev/null && echo "✅ Frontend is live" || echo "⚠️ Frontend check inconclusive"
+          else
+            echo "ℹ️ PRODUCTION_FRONTEND_URL not set, skipping frontend health check"
+          fi
