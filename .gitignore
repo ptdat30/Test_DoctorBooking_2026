@@ -53,3 +53,5 @@ build/
 # Docker production config (contains URLs, may contain sensitive info)
 .env.production
 
+# Newman test reports (auto-generated on each run, not meant for version control)
+postman/test_doctor_booking_2026/reports/

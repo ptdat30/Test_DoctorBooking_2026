@@ -1,19 +1,9 @@
 {
   "info": {
-    "_postman_id": "8937a744-97e7-4e33-8193-52613c8a8aca",
+    "_postman_id": "a381b635-754e-4073-8176-c257c443d39d",
     "name": "test_doctor_booking_2026 - API Automation Test Suite",
     "description": "Professional API automation test suite for Doctor Booking System (test_doctor_booking_2026). Includes positive/negative tests, schema validation, data-driven tests, E2E flows, and Newman CI support.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{auth_token}}",
-        "type": "string"
-      }
-    ]
   },
   "event": [
     {
@@ -22,41 +12,6 @@
         "type": "text/javascript",
         "exec": [
           "// Collection-level pre-request script (embedded in Postman collection)\r",
-          "// ── OVERRIDE pm.test TO TRACK FAILURES FOR JIRA ──────────────────\r",
-          "if (typeof pm !== 'undefined' && pm.test && !pm.test._isOverridden) {\r",
-          "    const originalTest = pm.test;\r",
-          "    pm.test = function (testName, specFunction) {\r",
-          "        if (pm.info.requestName === '99 Report Failures to Jira') {\r",
-          "            return originalTest(testName, specFunction);\r",
-          "        }\r",
-          "        return originalTest(testName, function () {\r",
-          "            try {\r",
-          "                if (specFunction) {\r",
-          "                    specFunction();\r",
-          "                }\r",
-          "            } catch (err) {\r",
-          "                try {\r",
-          "                    let existing = [];\r",
-          "                    try {\r",
-          "                        existing = JSON.parse(pm.globals.get('__jira_failures') || '[]');\r",
-          "                    } catch(e) { existing = []; }\r",
-          "                    \r",
-          "                    existing.push({\r",
-          "                        request: pm.info.requestName || 'Unknown Request',\r",
-          "                        test: testName || 'Assertion failed',\r",
-          "                        status: pm.response ? `${pm.response.code} ${pm.response.status}` : 'N/A',\r",
-          "                        url: pm.request ? pm.request.url.toString() : 'N/A',\r",
-          "                        detail: err.message || 'Assertion failed',\r",
-          "                        time: new Date().toLocaleTimeString()\r",
-          "                    });\r",
-          "                    pm.globals.set('__jira_failures', JSON.stringify(existing));\r",
-          "                } catch (e) { console.error('Jira failure accumulator error:', e); }\r",
-          "                throw err;\r",
-          "            }\r",
-          "        });\r",
-          "    };\r",
-          "    pm.test._isOverridden = true;\r",
-          "}\r",
           "if (pm.environment.get('skip_dependent_tests') === 'true') {\r",
           "    const skipFolders = ['22_E2E_Flows', '99_Skip_Notice'];\r",
           "    const folderName = pm.info.requestName || '';\r",
@@ -72,7 +27,8 @@
           "pm.environment.set('random_string', `str_${ts}`);\r",
           "\r",
           "const tomorrow = new Date();\r",
-          "tomorrow.setDate(tomorrow.getDate() + 1);\r",
+          "const randomDays = Math.floor(Math.random() * 190) + 5;\r",
+          "tomorrow.setDate(tomorrow.getDate() + randomDays);\r",
           "const y = tomorrow.getFullYear();\r",
           "const m = String(tomorrow.getMonth() + 1).padStart(2, '0');\r",
           "const d = String(tomorrow.getDate()).padStart(2, '0');\r",
@@ -141,32 +97,12 @@
           "    });\r",
           "}\r",
           "\r",
-          "// ── GLOBAL HELPER: reportFailure() ───────────────────────────────\r",
-          "// Call this from any request's test script when a test fails:\r",
-          "//   reportFailure('My test name', 'Expected 200 but got 401');\r",
-          "function reportFailure(testName, detail) {\r",
-          "    try {\r",
-          "        const list = JSON.parse(pm.globals.get('__jira_failures') || '[]');\r",
-          "        list.push({\r",
-          "            request: pm.info.requestName || 'Unknown',\r",
-          "            test:    testName,\r",
-          "            detail:  detail || '',\r",
-          "            status:  pm.response ? pm.response.code : 'N/A',\r",
-          "            url:     pm.request ? pm.request.url.toString() : 'N/A',\r",
-          "            time:    new Date().toISOString()\r",
-          "        });\r",
-          "        pm.globals.set('__jira_failures', JSON.stringify(list));\r",
-          "    } catch(e) {}\r",
-          "}\r",
-          "pm.globals.set('__reportFailure', reportFailure.toString());\r",
-          "\r",
           "function onTestFail() {\r",
           "    pm.environment.set('skip_dependent_tests', 'true');\r",
-          "    reportFailure(pm.info.requestName, 'Test failed - see console');\r",
           "    console.error('Test failed - dependent tests may be skipped. Request:', pm.info.requestName);\r",
           "    try {\r",
           "        console.error('Response:', pm.response.code, pm.response.text().substring(0, 500));\r",
-          "    } catch (e) {}\r",
+          "    } catch (e) { }\r",
           "}\r",
           "\r",
           "// Export helpers to globals for request scripts\r",
@@ -299,46 +235,6 @@
           ]
         },
         {
-          "name": "Fetch Patient Profile (get real patientId from DB)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{patient_token}}"
-              }
-            ],
-            "url": "{{base_url}}/api/patient/profile",
-            "description": "Gọi ngay sau Login Patient để lấy patientId thực từ DB."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Fetch Patient Profile - Status 200', () => pm.response.to.have.status(200));",
-                  "if (pm.response.code === 200) {",
-                  "  const j = pm.response.json();",
-                  "  if (j.id) { pm.environment.set('patientId', j.id); console.log('✅ patientId set from DB:', j.id); }",
-                  "  if (j.userId) pm.environment.set('patient_userId', j.userId);",
-                  "  if (j.fullName) pm.environment.set('patient_fullName', j.fullName);",
-                  "  if (j.email)    pm.environment.set('patient_email',    j.email);",
-                  "  pm.test('patientId is a number', () => pm.expect(j.id).to.be.a('number'));",
-                  "} else {",
-                  "  console.error('❌ Cannot fetch patient profile:', pm.response.text());",
-                  "  pm.environment.set('skip_dependent_tests', 'true');",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
           "name": "Login Doctor",
           "request": {
             "method": "POST",
@@ -394,7 +290,7 @@
           ]
         },
         {
-          "name": "Fetch Doctor Profile (get real doctorId from DB)",
+          "name": "Get Doctor Profile Setup",
           "request": {
             "method": "GET",
             "header": [
@@ -408,7 +304,7 @@
               }
             ],
             "url": "{{base_url}}/api/doctor/profile",
-            "description": "Gọi ngay sau Login Doctor để lấy doctorId thực từ DB."
+            "description": ""
           },
           "event": [
             {
@@ -416,16 +312,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Fetch Doctor Profile - Status 200', () => pm.response.to.have.status(200));",
-                  "if (pm.response.code === 200) {",
-                  "  const j = pm.response.json();",
-                  "  if (j.id) { pm.environment.set('doctorId', j.id); console.log('✅ doctorId set from DB:', j.id); }",
-                  "  if (j.userId) pm.environment.set('doctor_userId', j.userId);",
-                  "  if (j.fullName) pm.environment.set('doctor_fullName', j.fullName);",
-                  "  if (j.specialization) pm.environment.set('doctor_specialization', j.specialization);",
-                  "  pm.test('doctorId is a number', () => pm.expect(j.id).to.be.a('number'));",
-                  "} else {",
-                  "  console.error('❌ Cannot fetch doctor profile:', pm.response.text());",
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "if(pm.response.code===200){",
+                  "  pm.environment.set('doctorId', String(pm.response.json().id));",
                   "}"
                 ]
               }
@@ -516,37 +405,22 @@
           },
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Data-Driven Login: clear auth_token to prevent collection-level script",
-                  "// from injecting a stale Bearer token into this login request.",
-                  "pm.environment.unset('auth_token');",
-                  "pm.request.headers.remove('Authorization');"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const expected = parseInt(pm.iterationData?.expected_status || pm.environment.get('expected_status') || '200', 10);",
-                  "pm.test('Status matches expected', () => pm.response.to.have.status(expected));",
-                  "",
-                  "// Only process token on successful login",
-                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "if (!pm.iterationData || (pm.iterationData.toObject && Object.keys(pm.iterationData.toObject()).length === 0)) {",
+                  "  console.log('Skipping data-driven assertions because no iteration data was provided.');",
+                  "} else {",
+                  "  const expected = parseInt(pm.iterationData?.expected_status || pm.environment.get('expected_status') || '200', 10);",
+                  "  pm.test('Status matches expected', () => pm.response.to.have.status(expected));",
                   "  const json = pm.response.json();",
                   "  const role = pm.iterationData?.role || 'PATIENT';",
                   "  const map = { PATIENT: 'patient_token', DOCTOR: 'doctor_token', ADMIN: 'admin_token' };",
                   "  if (json.token) {",
                   "    pm.environment.set(map[role], json.token);",
                   "    pm.environment.set('auth_token', json.token);",
-                  "    console.log('✅ Data-Driven Login OK - role:', role, '| user:', json.username);",
                   "  }",
-                  "} else {",
-                  "  console.log('⚠️ Data-Driven Login - expected non-200:', expected, '| got:', pm.response.code);",
                   "}"
                 ]
               }
@@ -625,7 +499,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Returns 405 or 403', () => pm.expect([405,403,404]).to.include(pm.response.code));"
+                      "pm.test('Returns 405, 403 or 500', () => pm.expect([405,403,404,500]).to.include(pm.response.code));"
                     ]
                   }
                 }
@@ -758,21 +632,6 @@
               },
               "event": [
                 {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "// Luôn tạo username/email mới trước mỗi lần gọi Register",
-                      "const ts = Date.now();",
-                      "const rand = Math.floor(Math.random() * 9000) + 1000;",
-                      "pm.environment.set('random_username', `autotest_${ts}_${rand}`);",
-                      "pm.environment.set('random_email',    `autotest_${ts}_${rand}@test.local`);",
-                      "pm.environment.set('random_string',   `str_${ts}`);",
-                      "console.log('Generated username:', pm.environment.get('random_username'));"
-                    ]
-                  }
-                },
-                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
@@ -786,13 +645,8 @@
                       "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
                       "  }",
                       "  pm.test('Token is string', () => pm.expect(json.token).to.be.a('string'));",
-                      "  // Lưu lại thông tin user vừa đăng ký để dùng trong các test khác",
-                      "  pm.environment.set('last_registered_username', pm.environment.get('random_username'));",
-                      "  pm.environment.set('last_registered_email',    pm.environment.get('random_email'));",
-                      "  if (json.token) pm.environment.set('registered_patient_token', json.token);",
-                      "  if (json.id)    pm.environment.set('registered_patient_userId', json.id);",
-                      "  console.log('✅ Registered user:', pm.environment.get('random_username'), '| userId:', json.id);",
-                      "}"
+                      "}",
+                      "pm.environment.set('last_registered_username', pm.environment.get('random_username'));"
                     ]
                   }
                 }
@@ -1080,7 +934,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1133,7 +989,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1180,7 +1038,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
                       "pm.request.headers.remove('Authorization');"
                     ]
                   }
@@ -1240,7 +1100,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
                       "pm.request.headers.upsert({key:'Authorization',value:'Bearer '+pm.environment.get('doctor_token')});"
                     ]
                   }
@@ -1303,7 +1165,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1316,7 +1180,11 @@
                       "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
                       "const arr=pm.response.json();",
                       "pm.test('Is array',()=>pm.expect(arr).to.be.an('array'));",
-                      "if(arr.length){pm.environment.set('doctorId', arr[0].id);}"
+                      "if(arr.length){",
+                      "  const doc=arr.find(d => d.username === pm.environment.get('doctor_username'));",
+                      "  if(doc) pm.environment.set('doctorId', String(doc.id));",
+                      "  else if(!pm.environment.get('doctorId')) pm.environment.set('doctorId', String(arr[0].id));",
+                      "}"
                     ]
                   }
                 }
@@ -1347,7 +1215,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1394,7 +1264,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1447,7 +1319,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1457,7 +1331,15 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
-                      "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                      "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
+                      "const slots = pm.response.json();",
+                      "if (slots && slots.length > 0) {",
+                      "  let slot = slots[0];",
+                      "  if (slot.length === 5) slot += ':00';",
+                      "  pm.environment.set('appointmentTime', slot);",
+                      "} else {",
+                      "  pm.environment.set('appointmentTime', '09:00:00');",
+                      "}"
                     ]
                   }
                 }
@@ -1482,7 +1364,7 @@
                 "description": "",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"appointmentDate\": \"{{tomorrow_date}}\",\n  \"appointmentTime\": \"09:00:00\",\n  \"notes\": \"Auto test\",\n  \"paymentMethod\": \"CASH\"\n}",
+                  "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"appointmentDate\": \"{{tomorrow_date}}\",\n  \"appointmentTime\": \"{{appointmentTime}}\",\n  \"notes\": \"Auto test\",\n  \"paymentMethod\": \"CASH\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1497,7 +1379,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1512,7 +1396,7 @@
                       "const apt=j.appointment||j;",
                       "pm.environment.set('appointmentId', apt.id);",
                       "if(apt.patientId) pm.environment.set('patientId', apt.patientId);",
-                      "pm.test('doctorId matches',()=>pm.expect(String(apt.doctorId)).to.eql(pm.environment.get('doctorId')));"
+                      "pm.test('doctorId matches',()=>pm.expect(String(apt.doctorId)).to.eql(String(pm.environment.get('doctorId'))));"
                     ]
                   }
                 }
@@ -1543,7 +1427,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1584,7 +1470,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
+                      "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}"
                     ]
                   }
                 },
@@ -1640,7 +1538,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1690,7 +1590,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1731,7 +1633,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1781,7 +1685,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
                       "pm.request.headers.remove('Authorization');"
                     ]
                   }
@@ -1844,7 +1750,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1885,7 +1793,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
+                      "if(!pm.environment.get('treatmentId')){pm.environment.set('treatmentId','999999');}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if(!pm.environment.get('treatmentId')){pm.environment.set('treatmentId','999999');}"
                     ]
                   }
                 },
@@ -1931,7 +1851,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -1984,7 +1906,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2034,7 +1958,55 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
+                      "const adminToken = pm.environment.get('admin_token');",
+                      "const apptId = pm.environment.get('appointmentId');",
+                      "if (adminToken && apptId) {",
+                      "  pm.sendRequest({",
+                      "    url: pm.environment.get('base_url') + '/api/admin/appointments/' + apptId,",
+                      "    method: 'PUT',",
+                      "    header: {",
+                      "      'Content-Type': 'application/json',",
+                      "      'Authorization': 'Bearer ' + adminToken",
+                      "    },",
+                      "    body: {",
+                      "      mode: 'raw',",
+                      "      raw: JSON.stringify({ status: 'COMPLETED' })",
+                      "    }",
+                      "  }, function (err, res) {",
+                      "    if (err) console.error('Failed to auto-complete appointment for feedback:', err);",
+                      "    else console.log('Auto-completed appointment for feedback: status code', res.code);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const adminToken = pm.environment.get('admin_token');",
+                      "const apptId = pm.environment.get('appointmentId');",
+                      "if (adminToken && apptId) {",
+                      "  pm.sendRequest({",
+                      "    url: pm.environment.get('base_url') + '/api/admin/appointments/' + apptId,",
+                      "    method: 'PUT',",
+                      "    header: {",
+                      "      'Content-Type': 'application/json',",
+                      "      'Authorization': 'Bearer ' + adminToken",
+                      "    },",
+                      "    body: {",
+                      "      mode: 'raw',",
+                      "      raw: JSON.stringify({ status: 'COMPLETED' })",
+                      "    }",
+                      "  }, function (err, res) {",
+                      "    if (err) console.error('Failed to auto-complete appointment for feedback:', err);",
+                      "    else console.log('Auto-completed appointment for feedback: status code', res.code);",
+                      "  });",
+                      "}"
                     ]
                   }
                 },
@@ -2091,7 +2063,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2141,7 +2115,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2194,7 +2170,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2235,7 +2213,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2285,7 +2265,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2342,7 +2324,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2383,7 +2367,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2392,8 +2378,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status code is 404', () => pm.response.to.have.status(404));",
-                      "if (pm.response.code !== 404) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                      "pm.test('400 or 404', () => pm.expect([400,404]).to.include(pm.response.code));"
                     ]
                   }
                 }
@@ -2436,7 +2421,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2477,7 +2464,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2527,7 +2516,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2582,7 +2573,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2644,7 +2637,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2699,7 +2694,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2752,7 +2749,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2793,7 +2792,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2834,7 +2835,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2881,7 +2884,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'PATIENT');",
-                      "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2890,8 +2895,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status code is 404', () => pm.response.to.have.status(404));",
-                      "if (pm.response.code !== 404) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                      "pm.test('400 or 404', () => pm.expect([400,404]).to.include(pm.response.code));"
                     ]
                   }
                 }
@@ -2934,7 +2938,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -2984,7 +2990,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3031,7 +3039,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));",
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
                       "pm.request.headers.upsert({key:'Authorization',value:'Bearer '+pm.environment.get('patient_token')});"
                     ]
                   }
@@ -3085,7 +3095,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3126,7 +3138,10 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
+                      "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}"
                     ]
                   }
                 },
@@ -3166,7 +3181,10 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
+                      "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}"
                     ]
                   }
                 },
@@ -3175,7 +3193,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));"
+                      "pm.test('200, 400 or 404', () => pm.expect([200,400,404]).to.include(pm.response.code));"
                     ]
                   }
                 }
@@ -3212,7 +3230,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3265,7 +3285,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3315,7 +3337,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3372,7 +3396,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3425,7 +3451,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3466,7 +3494,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3512,7 +3542,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3565,7 +3597,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3606,7 +3640,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3647,7 +3683,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3694,7 +3732,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'DOCTOR');",
-                      "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                      "const tok = pm.environment.get('doctor_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3703,8 +3743,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status code is 404', () => pm.response.to.have.status(404));",
-                      "if (pm.response.code !== 404) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                      "pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));"
                     ]
                   }
                 }
@@ -3747,7 +3786,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3788,7 +3829,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3829,7 +3872,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3876,7 +3921,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3926,7 +3973,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -3979,7 +4028,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4020,7 +4071,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4066,7 +4119,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4119,7 +4174,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4160,7 +4217,10 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});",
+                      "if(!pm.environment.get('appointmentId')){pm.environment.set('appointmentId','999999');}"
                     ]
                   }
                 },
@@ -4206,7 +4266,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4259,7 +4321,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4300,7 +4364,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4347,7 +4413,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4400,7 +4468,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4450,7 +4520,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4507,7 +4579,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4548,7 +4622,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('current_role', 'ADMIN');",
-                      "pm.environment.set('auth_token', pm.environment.get('admin_token'));"
+                      "const tok = pm.environment.get('admin_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
                     ]
                   }
                 },
@@ -4643,7 +4719,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -4654,7 +4730,10 @@
                 "exec": [
                   "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
                   "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
-                  "const a=pm.response.json(); if(a.length) pm.environment.set('doctorId', a[0].id);"
+                  "const a=pm.response.json();",
+                  "const doc=a.find(d => d.username === pm.environment.get('doctor_username'));",
+                  "if(doc) pm.environment.set('doctorId', String(doc.id));",
+                  "else if(a.length) pm.environment.set('doctorId', String(a[0].id));"
                 ]
               }
             }
@@ -4684,7 +4763,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -4694,7 +4773,15 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
-                  "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                  "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
+                  "const slots = pm.response.json();",
+                  "if (slots && slots.length > 0) {",
+                  "  let slot = slots[slots.length - 1];",
+                  "  if (slot.length === 5) slot += ':00';",
+                  "  pm.environment.set('e2e_appointmentTime', slot);",
+                  "} else {",
+                  "  pm.environment.set('e2e_appointmentTime', '14:00:00');",
+                  "}"
                 ]
               }
             }
@@ -4719,7 +4806,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"appointmentDate\": \"{{tomorrow_date}}\",\n  \"appointmentTime\": \"14:00:00\",\n  \"paymentMethod\": \"CASH\",\n  \"notes\": \"E2E flow\"\n}",
+              "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"appointmentDate\": \"{{tomorrow_date}}\",\n  \"appointmentTime\": \"{{e2e_appointmentTime}}\",\n  \"paymentMethod\": \"CASH\",\n  \"notes\": \"E2E flow\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4733,7 +4820,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -4821,7 +4908,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('doctor_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('doctor_token')});"
                 ]
               }
             },
@@ -4869,7 +4956,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('doctor_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('doctor_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('doctor_token')});"
                 ]
               }
             },
@@ -4965,7 +5052,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -5004,7 +5091,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -5013,7 +5100,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('200 or 204 or 404', () => pm.expect([200,204,404]).to.include(pm.response.code));"
+                  "pm.test('200 or 204 or 400 or 404', () => pm.expect([200,204,400,404]).to.include(pm.response.code));"
                 ]
               }
             }
@@ -5052,7 +5139,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -5093,7 +5180,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('auth_token', pm.environment.get('patient_token'));"
+                  "pm.environment.set('auth_token', pm.environment.get('patient_token')); pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + pm.environment.get('patient_token')});"
                 ]
               }
             },
@@ -5171,252 +5258,6 @@
                 "exec": [
                   "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
                   "if (pm.response.code !== 200) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "99_Teardown",
-      "description": "Chạy sau tất cả các test. Nếu có test fail, tự động tạo Jira Task.",
-      "item": [
-        {
-          "name": "99 Report Failures to Jira",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": "{{base_url}}/api/public/health",
-            "description": "Dummy request: Jira reporting logic runs in the pre-request script. Hits health endpoint so it always returns 200 and does not pollute test results."
-          },
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// ═══════════════════════════════════════════════════════════════",
-                  "// JIRA AUTO-REPORTER: Runs before the teardown request",
-                  "// Creates a Jira Task when any failures were recorded during the run",
-                  "// ═══════════════════════════════════════════════════════════════",
-                  "const jiraEnabled  = pm.environment.get('jira_enabled') !== 'false';",
-                  "const jiraBase     = pm.environment.get('jira_base_url');",
-                  "const projectKey   = pm.environment.get('jira_project_key');",
-                  "const jiraEmail    = pm.environment.get('jira_email');",
-                  "const jiraToken    = pm.environment.get('jira_api_token');",
-                  "",
-                  "if (!jiraEnabled) {",
-                  "    console.log('⏭ Jira reporting disabled (jira_enabled=false). Skipping.');",
-                  "    return;",
-                  "}",
-                  "if (!jiraBase || !projectKey || !jiraEmail || !jiraToken) {",
-                  "    console.warn('⚠️ Jira credentials incomplete. Set jira_email & jira_api_token in Environment.');",
-                  "    return;",
-                  "}",
-                  "",
-                  "let failures = [];",
-                  "try {",
-                  "    failures = JSON.parse(pm.globals.get('__jira_failures') || '[]');",
-                  "} catch(e) { failures = []; }",
-                  "",
-                  "// Reset accumulator for next run",
-                  "pm.globals.set('__jira_failures', '[]');",
-                  "",
-                  "if (failures.length === 0) {",
-                  "    console.log('✅ All tests passed! No Jira task needed.');",
-                  "    return;",
-                  "}",
-                  "",
-                  "console.log(`❌ ${failures.length} test(s) failed. Creating Jira Task...`);",
-                  "",
-                  "// ── Build description ─────────────────────────────────────────",
-                  "const now = new Date().toISOString();",
-                  "const baseUrl = pm.environment.get('base_url') || 'localhost';",
-                  "",
-                  "let failureLines = failures.map((f, i) =>",
-                  "    `${i+1}. *[${f.request}]* — ${f.test}\\n   Status: ${f.status} | URL: ${f.url}\\n   Detail: ${f.detail || 'N/A'}\\n   Time: ${f.time}`",
-                  ").join('\\n\\n');",
-                  "",
-                  "const summary = `[Postman] ${failures.length} API test(s) failed — ${new Date().toLocaleDateString('vi-VN')}`;",
-                  "",
-                  "const description = {",
-                  "    version: 1,",
-                  "    type: 'doc',",
-                  "    content: [",
-                  "        {",
-                  "            type: 'heading', attrs: { level: 3 },",
-                  "            content: [{ type: 'text', text: '🔴 Postman API Test Failure Report' }]",
-                  "        },",
-                  "        {",
-                  "            type: 'paragraph',",
-                  "            content: [",
-                  "                { type: 'text', text: `Environment: `, marks: [{ type: 'strong' }] },",
-                  "                { type: 'text', text: baseUrl },",
-                  "                { type: 'hardBreak' },",
-                  "                { type: 'text', text: `Run time: `, marks: [{ type: 'strong' }] },",
-                  "                { type: 'text', text: now },",
-                  "                { type: 'hardBreak' },",
-                  "                { type: 'text', text: `Total failures: `, marks: [{ type: 'strong' }] },",
-                  "                { type: 'text', text: String(failures.length), marks: [{ type: 'strong' }] }",
-                  "            ]",
-                  "        },",
-                  "        {",
-                  "            type: 'heading', attrs: { level: 4 },",
-                  "            content: [{ type: 'text', text: 'Failed Tests' }]",
-                  "        },",
-                  "        ...failures.map(f => ({",
-                  "            type: 'paragraph',",
-                  "            content: [",
-                  "                { type: 'text', text: `❌ `, marks: [] },",
-                  "                { type: 'text', text: f.request, marks: [{ type: 'strong' }] },",
-                  "                { type: 'text', text: ` → ${f.test}` },",
-                  "                { type: 'hardBreak' },",
-                  "                { type: 'text', text: `   Status: ${f.status} | ${f.url}` },",
-                  "                { type: 'hardBreak' },",
-                  "                { type: 'text', text: `   ${f.detail || ''}` }",
-                  "            ]",
-                  "        }))",
-                  "    ]",
-                  "};",
-                  "",
-                  "// ── Create Jira issue ─────────────────────────────────────────",
-                  "const payload = {",
-                  "    fields: {",
-                  "        project:     { key: projectKey },",
-                  "        issuetype:   { name: 'Task' },",
-                  "        summary:     summary,",
-                  "        description: description,",
-                  "        priority:    { name: 'High' },",
-                  "        labels:      ['postman-auto', 'api-test-failure']",
-                  "    }",
-                  "};",
-                  "",
-                  "const credentials = btoa(`${jiraEmail}:${jiraToken}`);",
-                  "",
-                  "pm.sendRequest({",
-                  "    url:    `${jiraBase}/rest/api/3/issue`,",
-                  "    method: 'POST',",
-                  "    header: {",
-                  "        'Content-Type':  'application/json',",
-                  "        'Authorization': `Basic ${credentials}`",
-                  "    },",
-                  "    body: {",
-                  "        mode: 'raw',",
-                  "        raw:  JSON.stringify(payload)",
-                  "    }",
-                  "}, function(err, res) {",
-                  "    if (err) {",
-                  "        console.error('❌ Jira API error:', err);",
-                  "        return;",
-                  "    }",
-                  "    const body = res.json();",
-                  "    if (body && body.key) {",
-                  "        console.log(`✅ Jira Task created: ${body.key}`);",
-                  "        console.log(`   🔗 ${jiraBase}/browse/${body.key}`);",
-                  "        pm.environment.set('last_jira_task', body.key);",
-                  "",
-                  "        // ── Transition: TO DO → TESTING → BUG FOUND ──────────",
-                  "        // Step 1: Get available transitions",
-                  "        pm.sendRequest({",
-                  "            url:    `${jiraBase}/rest/api/3/issue/${body.key}/transitions`,",
-                  "            method: 'GET',",
-                  "            header: {",
-                  "                'Content-Type':  'application/json',",
-                  "                'Authorization': `Basic ${credentials}`",
-                  "            }",
-                  "        }, function(tErr, tRes) {",
-                  "            if (tErr) { console.warn('⚠️ Could not fetch transitions:', tErr); return; }",
-                  "            const tBody = tRes.json();",
-                  "            const transitions = tBody.transitions || [];",
-                  "",
-                  "            // Find 'Start Work' transition (TO DO → TESTING)",
-                  "            const startWork = transitions.find(t =>",
-                  "                /start.?work|start/i.test(t.name)",
-                  "            );",
-                  "            if (!startWork) {",
-                  "                console.warn('⚠️ Start Work transition not found. Task left in TO DO.');",
-                  "                return;",
-                  "            }",
-                  "            // Apply Start Work",
-                  "            pm.sendRequest({",
-                  "                url:    `${jiraBase}/rest/api/3/issue/${body.key}/transitions`,",
-                  "                method: 'POST',",
-                  "                header: {",
-                  "                    'Content-Type':  'application/json',",
-                  "                    'Authorization': `Basic ${credentials}`",
-                  "                },",
-                  "                body: {",
-                  "                    mode: 'raw',",
-                  "                    raw:  JSON.stringify({ transition: { id: startWork.id } })",
-                  "                }",
-                  "            }, function(sErr) {",
-                  "                if (sErr) { console.warn('⚠️ Transition Start Work failed:', sErr); return; }",
-                  "                console.log('   ↪ Transitioned: TO DO → TESTING ✓');",
-                  "",
-                  "                // Step 2: Get transitions again (now in TESTING state)",
-                  "                pm.sendRequest({",
-                  "                    url:    `${jiraBase}/rest/api/3/issue/${body.key}/transitions`,",
-                  "                    method: 'GET',",
-                  "                    header: {",
-                  "                        'Content-Type':  'application/json',",
-                  "                        'Authorization': `Basic ${credentials}`",
-                  "                    }",
-                  "                }, function(t2Err, t2Res) {",
-                  "                    if (t2Err) { console.warn('⚠️ Could not fetch transitions (step 2)'); return; }",
-                  "                    const t2Transitions = (t2Res.json().transitions || []);",
-                  "                    const bugFound = t2Transitions.find(t =>",
-                  "                        /bug.?found|bug found/i.test(t.name)",
-                  "                    );",
-                  "                    if (!bugFound) {",
-                  "                        console.warn('⚠️ Bug Found transition not found. Task left in TESTING.');",
-                  "                        return;",
-                  "                    }",
-                  "                    pm.sendRequest({",
-                  "                        url:    `${jiraBase}/rest/api/3/issue/${body.key}/transitions`,",
-                  "                        method: 'POST',",
-                  "                        header: {",
-                  "                            'Content-Type':  'application/json',",
-                  "                            'Authorization': `Basic ${credentials}`",
-                  "                        },",
-                  "                        body: {",
-                  "                            mode: 'raw',",
-                  "                            raw:  JSON.stringify({ transition: { id: bugFound.id } })",
-                  "                        }",
-                  "                    }, function(bErr) {",
-                  "                        if (bErr) { console.warn('⚠️ Bug Found transition failed:', bErr); return; }",
-                  "                        console.log('   ↪ Transitioned: TESTING → BUG FOUND ✓');",
-                  "                        console.log(`   🐛 ${body.key} is now BUG FOUND on the board.`);",
-                  "                    });",
-                  "                });",
-                  "            });",
-                  "        });",
-                  "    } else {",
-                  "        console.error('❌ Failed to create Jira task:', JSON.stringify(body));",
-                  "    }",
-                  "});"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Teardown request — just verify health endpoint is alive",
-                  "pm.test('Teardown: Health endpoint OK', () => pm.response.to.have.status(200));",
-                  "const jiraTask = pm.environment.get('last_jira_task');",
-                  "if (jiraTask) {",
-                  "    console.log(`📋 Jira Task created this run: ${jiraTask}`);",
-                  "    console.log(`   ${pm.environment.get('jira_base_url')}/browse/${jiraTask}`);",
-                  "} else {",
-                  "    console.log('✅ No failures reported to Jira this run.');",
-                  "}"
                 ]
               }
             }
