@@ -1,0 +1,196 @@
+# .github/workflows/jira-sync.yml
+# ══════════════════════════════════════════════════════════════
+# Jira ↔ GitHub Sync — Auto-transition Jira tickets based on PR events
+#
+# Behavior:
+#   PR opened/ready_for_review → Jira: IN PROGRESS → IN REVIEW
+#   PR merged                  → Jira: → DONE + add comment
+#   PR closed (not merged)     → Jira: → IN PROGRESS (back to dev)
+#
+# Extracts SCRUM-{id} from branch name (e.g. fix/SCRUM-55-auth-bug)
+# ══════════════════════════════════════════════════════════════
+
+name: Jira Sync
+
+on:
+  pull_request:
+    types: [opened, closed, ready_for_review, review_requested]
+    branches: [staging, main]
+
+env:
+  JIRA_URL: 'https://huynhphongdat2005.atlassian.net'
+  JIRA_PROJECT_KEY: 'SCRUM'
+
+jobs:
+  sync:
+    name: Sync PR → Jira
+    runs-on: ubuntu-latest
+    env:
+      JIRA_USER: ${{ secrets.JIRA_USER }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+    steps:
+      - name: Extract Jira Key from Branch Name
+        id: extract
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Branch: $BRANCH"
+
+          # Extract SCRUM-{number} from branch name
+          JIRA_KEY=$(echo "$BRANCH" | grep -oE '(SCRUM|${{ env.JIRA_PROJECT_KEY }})-[0-9]+' | head -1)
+
+          if [ -z "$JIRA_KEY" ]; then
+            echo "ℹ️ No Jira key found in branch name: $BRANCH"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Found Jira key: $JIRA_KEY"
+            echo "jira_key=$JIRA_KEY" >> $GITHUB_OUTPUT
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Transition Jira — PR Opened → IN REVIEW
+        if: |
+          steps.extract.outputs.skip != 'true' &&
+          github.event.action == 'opened' || github.event.action == 'ready_for_review' || github.event.action == 'review_requested'
+        run: |
+          JIRA_KEY="${{ steps.extract.outputs.jira_key }}"
+          JIRA_BASE="${{ env.JIRA_URL }}"
+
+          echo "Transitioning $JIRA_KEY → IN REVIEW"
+
+          # Get available transitions
+          TRANS=$(curl -s \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions")
+
+          # Find "In Review" or "Code Review" or similar transition
+          REVIEW_ID=$(echo "$TRANS" | jq -r '
+            .transitions[] |
+            select(.name | test("Review|In Review|Code Review|Peer Review"; "i")) |
+            .id
+          ' | head -1)
+
+          if [ -n "$REVIEW_ID" ]; then
+            curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              -d "{\"transition\":{\"id\":\"${REVIEW_ID}\"}}" \
+              "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions" > /dev/null
+            echo "✅ $JIRA_KEY transitioned to IN REVIEW"
+          else
+            echo "⚠️ No 'Review' transition found for $JIRA_KEY"
+            echo "Available transitions:"
+            echo "$TRANS" | jq -r '.transitions[] | "  \(.id): \(.name)"'
+          fi
+
+          # Add comment with PR link
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          COMMENT="🔀 *Pull Request Opened*\n\n[${PR_TITLE}|${PR_URL}]\n\nBranch: \`${{ github.head_ref }}\` → \`${{ github.base_ref }}\`\n\n_Auto-synced by GitHub Actions_"
+
+          jq -n --arg body "$COMMENT" '{"body": $body}' > /tmp/comment.json
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d @/tmp/comment.json \
+            "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/comment" > /dev/null
+          echo "💬 Comment added to $JIRA_KEY"
+
+      - name: Transition Jira — PR Merged → DONE
+        if: |
+          steps.extract.outputs.skip != 'true' &&
+          github.event.action == 'closed' &&
+          github.event.pull_request.merged == true
+        run: |
+          JIRA_KEY="${{ steps.extract.outputs.jira_key }}"
+          JIRA_BASE="${{ env.JIRA_URL }}"
+
+          echo "Transitioning $JIRA_KEY → DONE (PR merged)"
+
+          # Transition through intermediate states if needed
+          MAX_STEPS=5
+          for STEP in $(seq 1 $MAX_STEPS); do
+            # Get current status
+            STATUS=$(curl -s \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}?fields=status" | jq -r '.fields.status.name')
+
+            echo "  [Step $STEP] Current status: $STATUS"
+
+            # If already done, stop
+            if echo "$STATUS" | grep -qiE "Done|Closed|Resolved"; then
+              echo "✅ $JIRA_KEY is already DONE"
+              break
+            fi
+
+            # Get transitions
+            TRANS=$(curl -s \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions")
+
+            # Try Done/Resolve/Close/Pass transitions
+            DONE_ID=$(echo "$TRANS" | jq -r '
+              .transitions[] |
+              select(.name | test("Done|Resolve|Close|Pass|Complete|Verify"; "i")) |
+              .id
+            ' | head -1)
+
+            if [ -z "$DONE_ID" ]; then
+              # If no Done transition, try any available transition to move forward
+              DONE_ID=$(echo "$TRANS" | jq -r '.transitions[0].id // empty')
+              NEXT_NAME=$(echo "$TRANS" | jq -r '.transitions[0].name // "none"')
+              if [ -n "$DONE_ID" ]; then
+                echo "  → Moving forward: $NEXT_NAME"
+              else
+                echo "  ⚠️ No transitions available. Stopping."
+                break
+              fi
+            fi
+
+            curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -u "$JIRA_USER:$JIRA_API_TOKEN" \
+              -d "{\"transition\":{\"id\":\"${DONE_ID}\"}}" \
+              "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/transitions" > /dev/null
+
+            sleep 1
+          done
+
+          # Add merge comment
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          SHORT_SHA="${MERGE_SHA:0:7}"
+          COMMENT="✅ *Pull Request Merged*\n\n[PR #${{ github.event.pull_request.number }}|${PR_URL}] merged into \`${{ github.base_ref }}\`\n\nMerge commit: [${SHORT_SHA}|${{ github.server_url }}/${{ github.repository }}/commit/${MERGE_SHA}]\n\n_Status automatically updated to DONE by CI/CD pipeline._"
+
+          jq -n --arg body "$COMMENT" '{"body": $body}' > /tmp/comment.json
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d @/tmp/comment.json \
+            "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/comment" > /dev/null
+          echo "💬 Merge comment added to $JIRA_KEY"
+
+      - name: Transition Jira — PR Closed (not merged) → IN PROGRESS
+        if: |
+          steps.extract.outputs.skip != 'true' &&
+          github.event.action == 'closed' &&
+          github.event.pull_request.merged == false
+        run: |
+          JIRA_KEY="${{ steps.extract.outputs.jira_key }}"
+          JIRA_BASE="${{ env.JIRA_URL }}"
+
+          echo "PR closed without merge. Adding comment to $JIRA_KEY"
+
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          COMMENT="⚠️ *Pull Request Closed* (not merged)\n\n[PR #${{ github.event.pull_request.number }}|${PR_URL}] was closed without merging.\n\nPlease re-open or create a new PR when ready.\n\n_Auto-synced by GitHub Actions_"
+
+          jq -n --arg body "$COMMENT" '{"body": $body}' > /tmp/comment.json
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_USER:$JIRA_API_TOKEN" \
+            -d @/tmp/comment.json \
+            "${JIRA_BASE}/rest/api/2/issue/${JIRA_KEY}/comment" > /dev/null
+          echo "💬 Close comment added to $JIRA_KEY"

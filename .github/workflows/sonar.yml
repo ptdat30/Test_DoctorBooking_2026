@@ -1,0 +1,66 @@
+# .github/workflows/sonar.yml
+# ══════════════════════════════════════════════════════════════
+# SonarCloud Analysis — Scan code quality on push to main/staging
+#
+# What it does:
+#   - Runs SonarCloud scan on backend Java code
+#   - Checks Quality Gate (pass/fail)
+#   - Comments directly on PR with findings (SonarCloud GitHub App)
+#
+# What it does NOT do:
+#   - Does NOT create Jira tasks (removed to avoid backlog pollution)
+#   - Does NOT auto-import issues
+# ══════════════════════════════════════════════════════════════
+
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+env:
+  SONAR_PROJECT_KEY: 'ptdat30_Test_DoctorBooking_2026'
+  SONAR_ORG: 'ptdat30'
+
+jobs:
+  sonar-scan:
+    name: SonarCloud Scan & Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile Backend Code
+        run: |
+          cd backend
+          chmod +x mvnw
+          ./mvnw clean compile -B --no-transfer-progress -q
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.jasmin.internal.disabled=true
+            -Dsonar.js.analyzeSecurity=false
+            -Dsonar.javascript.node.maxspace=4096
+
+      - name: SonarCloud Quality Gate Check
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

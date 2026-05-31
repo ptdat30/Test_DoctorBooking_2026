@@ -1,0 +1,101 @@
+# .github/workflows/deploy-staging.yml
+# ══════════════════════════════════════════════════════════════
+# Deploy to Staging — Triggers when code is merged into staging
+#
+# Steps:
+#   1. Trigger Render Deploy Hooks (backend + frontend)
+#   2. Wait for deployment to complete
+#   3. Health check staging URL
+#   4. Run Newman smoke test (Setup + E2E only)
+# ══════════════════════════════════════════════════════════════
+
+name: Deploy Staging
+
+on:
+  push:
+    branches: [staging]
+
+env:
+  STAGING_BASE_URL: ${{ secrets.STAGING_URL }}
+
+jobs:
+  deploy:
+    name: Deploy to Render Staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Backend Deploy
+        run: |
+          echo "Deploying backend to staging..."
+          curl -sf -X POST "${{ secrets.RENDER_STAGING_BACKEND_HOOK }}" || true
+
+      - name: Trigger Frontend Deploy
+        run: |
+          echo "Deploying frontend to staging..."
+          curl -sf -X POST "${{ secrets.RENDER_STAGING_FRONTEND_HOOK }}" || true
+
+      - name: Wait for Deployment (90s)
+        run: |
+          echo "Waiting 90 seconds for Render to build and deploy..."
+          sleep 90
+
+      - name: Health Check — Staging Backend
+        run: |
+          echo "Checking staging health..."
+          for i in $(seq 1 30); do
+            RESP=$(curl -sf "${{ env.STAGING_BASE_URL }}/api/public/health" 2>/dev/null || echo "")
+            if echo "$RESP" | grep -q "UP"; then
+              echo "✅ Staging backend is healthy (attempt $i)"
+              exit 0
+            fi
+            echo "  Attempt $i: waiting..."
+            sleep 10
+          done
+          echo "❌ Staging health check failed after 5 minutes"
+          exit 1
+
+  smoke-test:
+    name: Smoke Test on Staging
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Run Smoke Test (Setup + E2E)
+        run: |
+          cd postman/test_doctor_booking_2026
+
+          # Patch environment with staging URL
+          node -e "
+            const fs = require('fs');
+            const env = JSON.parse(fs.readFileSync('test_doctor_booking_2026.postman_environment.json','utf8'));
+            env.values.forEach(v => {
+              if(v.key==='base_url') v.value='${{ env.STAGING_BASE_URL }}';
+              if(v.key==='skip_ai_tests') v.value='true';
+            });
+            fs.writeFileSync('/tmp/staging-env.json', JSON.stringify(env,null,2));
+          "
+
+          echo "Running 00_Setup..."
+          newman run test_doctor_booking_2026.postman_collection.json \
+            -e /tmp/staging-env.json \
+            --folder "00_Setup" \
+            --timeout-request 15000 \
+            --export-environment /tmp/staging-env.json \
+            --reporters cli
+
+          echo ""
+          echo "Running 22_E2E_Flows..."
+          newman run test_doctor_booking_2026.postman_collection.json \
+            -e /tmp/staging-env.json \
+            --folder "22_E2E_Flows" \
+            --timeout-request 15000 \
+            --export-environment /tmp/staging-env.json \
+            --reporters cli

@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+!.env.staging.example
 
 # Docker Secrets — NEVER commit actual secret values
 secrets/*.txt
@@ -14,6 +15,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 *.md
+!.github/**/*.md
 
 ### STS ###
 .apt_generated
