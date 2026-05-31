@@ -1,0 +1,56 @@
+# ══════════════════════════════════════════════════════════════
+# .dockerignore — Root level
+# Prevents secrets, IDE files, and large binaries from
+# being sent to the Docker daemon as build context.
+# ══════════════════════════════════════════════════════════════
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# IDE & editor
+.idea/
+.vscode/
+.cursor/
+*.iml
+*.iws
+*.ipr
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+
+# Secrets directory — MUST NEVER enter build context
+secrets/
+
+# Large binary files
+backgroundfe.mp4
+*.mp4
+*.mov
+
+# Documentation
+*.md
+DEVELOPMENT_PLAN.md
+
+# Logs
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# SonarQube
+sonar-project.properties
+.sonarwork/
+
+# Render.com config (not needed in Docker build)
+render.yaml
+
+# Postman/test files
+postman/
+
+# Database SQL dump docs
+database/

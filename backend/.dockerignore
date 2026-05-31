@@ -1,0 +1,50 @@
+# ══════════════════════════════════════════════════════════════
+# .dockerignore — Backend (Spring Boot / Maven)
+# Reduces build context size and prevents secret leaks
+# ══════════════════════════════════════════════════════════════
+
+# Maven build output
+target/
+
+# IDE & editor artifacts
+.idea/
+.vscode/
+.cursor/
+*.iml
+*.iws
+*.ipr
+*.class
+*.swp
+*.swo
+
+# Environment files with secrets — NEVER include in image
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (not needed in image)
+*.md
+abc.md
+
+# Logs
+*.log
+debug*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Node (shouldn't be here, but safeguard)
+node_modules/
+package-lock.json
+
+# Secrets directory
+secrets/
+
+# Test files (already excluded by -DskipTests, but keep context clean)
+src/test/

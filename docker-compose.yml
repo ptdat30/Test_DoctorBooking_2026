@@ -1,39 +1,172 @@
-version: '3.8'
+# ══════════════════════════════════════════════════════════════
+# docker-compose.yml — DoctorBooking Production 2026
+#
+# Features:
+#  - Isolated networks (frontend-net, backend-net)
+#  - Docker Secrets (no hardcoded passwords)
+#  - Healthchecks with proper start-period
+#  - Depends-on with condition: service_healthy
+#  - restart: unless-stopped
+#  - Profile "local-db" for local MySQL (default: Aiven Cloud)
+#  - Named volume for MySQL data persistence
+# ══════════════════════════════════════════════════════════════
 
+name: doctorbooking
+
+# ── Secrets (file-based, never in environment) ─────────────────
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  google_ai_api_key:
+    file: ./secrets/google_ai_api_key.txt
+  groq_api_key:
+    file: ./secrets/groq_api_key.txt
+  smtp_password:
+    file: ./secrets/smtp_password.txt
+  vnpay_hash_secret:
+    file: ./secrets/vnpay_hash_secret.txt
+
+# ── Networks (isolated) ────────────────────────────────────────
+networks:
+  frontend-net:
+    driver: bridge
+    name: doctorbooking_frontend
+  backend-net:
+    driver: bridge
+    name: doctorbooking_backend
+    internal: true      # DB network: no external access
+
+# ── Volumes ────────────────────────────────────────────────────
+volumes:
+  db_data:
+    name: doctorbooking_db_data
+
+# ══════════════════════════════════════════════════════════════
+# Services
+# ══════════════════════════════════════════════════════════════
 services:
+
+  # ── MySQL (local-db profile only) ──────────────────────────
   db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: doctor_booking
-    ports:
-      - "3307:3306"
+    profiles: [local-db]
+    image: mysql:8.0-debian
+    container_name: doctorbooking-db
+    restart: unless-stopped
+    networks:
+      - backend-net
     volumes:
       - db_data:/var/lib/mysql
-
-  backend:
-    build: ./backend
-    ports:
-      - "8080:8080"
-    env_file:
-      - ./backend/.env
     environment:
-      - DB_URL=jdbc:mysql://db:3306/doctor_booking
-      - DB_USERNAME=root
-      - DB_PASSWORD=root
-    depends_on:
-      - db
+      MYSQL_DATABASE: doctor_booking
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root",
+             "--password=$$(cat /run/secrets/db_password)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    # No ports exposed: DB only reachable within backend-net
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
 
+  # ── Backend (Spring Boot 3.5 / Java 21) ────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: doctorbooking-backend
+    restart: unless-stopped
+    networks:
+      - frontend-net
+      - backend-net
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    env_file:
+      - .env.production          # non-secret config (URLs, ports, flags)
+    secrets:
+      - db_password
+      - jwt_secret
+      - google_ai_api_key
+      - groq_api_key
+      - smtp_password
+      - vnpay_hash_secret
+    environment:
+      # Logging: Spring Boot 3.4+ structured JSON → stdout
+      SPRING_LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+      # Override DB URL for Aiven Cloud (production default)
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      # Disable mail health indicator — SMTP is external, not a container liveness concern
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      # Disable JPA open-in-view warning
+      SPRING_JPA_OPEN_IN_VIEW: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: false              # Spring needs /tmp write access
+    tmpfs:
+      - /tmp:size=256m,noexec,nosuid
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+        labels: "service=backend"
+
+  # ── Frontend (React + Nginx Unprivileged) ───────────────────
   frontend:
     build:
       context: ./frontend
-    environment:
-      - VITE_API_TARGET=http://backend:8080
-      - VITE_API_BASE_URL=/api
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: doctorbooking-frontend
+    restart: unless-stopped
+    networks:
+      - frontend-net
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT:-80}:8080"
+    environment:
+      # nginx template substitution: proxy target for /api/
+      VITE_API_TARGET: http://backend:8080
     depends_on:
-      - backend
-
-volumes:
-  db_data:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO/dev/null", "--tries=1", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Non-root nginx (UID 101) is sufficient; read_only breaks nginx template rendering
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=frontend"

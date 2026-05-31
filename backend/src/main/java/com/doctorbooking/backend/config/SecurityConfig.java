@@ -64,6 +64,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Cho phép OPTIONS requests (preflight) cho tất cả endpoints
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Actuator health/info — Docker healthcheck & monitoring (không cần auth)
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Cho phép các endpoint authentication không cần xác thực
                         .requestMatchers("/api/auth/**").permitAll()
                         // VNPAY callback endpoints - không cần authentication

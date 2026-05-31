@@ -1,0 +1,40 @@
+# ══════════════════════════════════════════════════════════════
+# .dockerignore — Frontend (Node / Vite / React)
+# ══════════════════════════════════════════════════════════════
+
+# Dependencies (rebuilt in Docker via npm ci)
+node_modules/
+
+# Build output (rebuilt in Docker)
+dist/
+
+# IDE & editor artifacts
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+
+# Logs
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+coverage/
+.nyc_output/
