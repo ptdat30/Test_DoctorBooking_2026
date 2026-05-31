@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": ["id", "userId", "username"],
+  "properties": {
+    "id": { "type": "integer" },
+    "userId": { "type": "integer" },
+    "username": { "type": "string" },
+    "email": { "type": "string" },
+    "fullName": { "type": "string" },
+    "phone": { "type": ["string", "null"] },
+    "address": { "type": ["string", "null"] }
+  }
+}
