@@ -1,4 +1,10 @@
 .env
+.env.*
+!.env.example
+
+# Docker Secrets — NEVER commit actual secret values
+secrets/*.txt
+!secrets/*.txt.example
 
 ###############################################################################
 
@@ -43,4 +49,7 @@ build/
 
 .DS_Store
 *.class
+
+# Docker production config (contains URLs, may contain sensitive info)
+.env.production
 
