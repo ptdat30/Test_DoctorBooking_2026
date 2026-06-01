@@ -5,15 +5,37 @@
 Tạo file `.env` trong thư mục `backend/` với nội dung sau:
 
 ```env
+<!-- AUTO-GENERATED-START: ENV -->
 # Database Configuration
-DB_URL=jdbc:mysql://your-database-host:port/database_name?ssl-mode=REQUIRED
-DB_USERNAME=your_username
-DB_PASSWORD=your_aiven_password_here
+DB_URL=jdbc:mysql://localhost:3306/doctor_booking
+DB_USERNAME=root
+DB_PASSWORD=root
 
 # JWT Configuration
-JWT_SECRET=defaultSecretKeyForDevelopmentOnlyChangeThisInProduction123456789012345678901234567890
+JWT_SECRET=your_jwt_secret_key_here_must_be_very_long_and_secure
 JWT_EXPIRATION=86400000
 JWT_REFRESH_EXPIRATION=604800000
+
+# Groq AI
+GROQ_API_KEY=your_groq_api_key
+
+# VNPAY Configuration
+VNPAY_TMN_CODE=your_vnpay_tmn_code
+VNPAY_HASH_SECRET=your_vnpay_hash_secret
+VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+VNPAY_RETURN_URL=http://localhost:5173/patient/wallet/payment/result
+VNPAY_APPOINTMENT_RETURN_URL=http://localhost:5173/patient/appointment/payment/result
+
+# Email Configuration
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+EMAIL_FROM=Doctor Booking System <your_email@gmail.com>
+
+# Application Configuration
+FRONTEND_URL=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,https://sandbox.vnpayment.vn
+
+<!-- AUTO-GENERATED-END: ENV -->
 ```
 
 ## Hoặc set Environment Variables

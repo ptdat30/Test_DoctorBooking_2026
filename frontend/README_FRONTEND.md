@@ -2,31 +2,40 @@
 
 ## Đã hoàn thành Phase 1: Setup & Authentication
 
-### Cấu trúc đã tạo:
+### Cấu trúc thư mục:
+<!-- AUTO-GENERATED-START: FOLDER_TREE -->
 ```
-frontend/src/
-├── config/
-│   └── api.js              # Axios configuration với interceptors
-├── contexts/
-│   └── AuthContext.jsx     # Authentication context và provider
-├── services/
-│   └── authService.js      # Authentication service
-├── components/
-│   └── common/
-│       ├── ProtectedRoute.jsx   # Route protection component
-│       ├── Loading.jsx           # Loading component
-│       └── ErrorMessage.jsx     # Error message component
-├── pages/
-│   ├── Login.jsx           # Login page
-│   ├── Register.jsx        # Register page
-│   └── NotFound.jsx        # 404 page
-├── utils/
-│   ├── constants.js        # Constants
-│   ├── formatDate.js       # Date formatting utilities
-│   └── formatTime.js      # Time formatting utilities
-├── App.jsx                 # Main app component with routing
-└── main.jsx                # Entry point
+Folder PATH listing for volume Windows-SSD
+Volume serial number is 0027-8218
+C:\USERS\DAT\ONEDRIVE - UT.EDU.VN\DOCUMENTS\DESKTOP\REPO\FRONTEND\SRC
++---assets
++---components
+|   +---admin
+|   +---common
+|   +---doctor
+|   \---patient
++---config
++---contexts
++---data
++---hooks
++---mockData
+|   +---admin
+|   +---doctor
+|   \---patient
++---pages
+|   +---admin
+|   |   +---appointments
+|   |   +---doctors
+|   |   +---patients
+|   |   \---users
+|   +---auth
+|   +---doctor
+|   \---patient
++---services
++---styles
+\---utils
 ```
+<!-- AUTO-GENERATED-END: FOLDER_TREE -->
 
 ## Cách chạy:
 

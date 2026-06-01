@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SEGESTA - Smart Doctor Booking. Find trusted specialists, see real-time availability, and book appointments instantly.">
+  <title>SEGESTA | Smart Doctor Booking</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#4FA9FF',      /* Electric Blue */
+              blueDark: '#0ea5e9',
+              mint: '#B2DFDB',      /* Mint */
+              mintDark: '#10b981',
+              lavender: '#D1D1F0',  /* Lavender */
+              lavenderDark: '#8b5cf6',
+              peach: '#FCE4EC',     /* Peach */
+              cyan: '#80DEEA',      /* Cyan */
+              charcoal: '#1f2937',  /* Slate */
+              slate: '#546E7A',
+              white: '#F8F9FA'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            poppins: ['Poppins', 'sans-serif'],
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.05)',
+            'glass-hover': '0 12px 40px 0 rgba(79, 169, 255, 0.15)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(79, 169, 255, 0.2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(79, 169, 255, 0.4);
+    }
+
+    /* Glassmorphism style */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(79, 169, 255, 0.2);
+    }
+    
+    /* Background Animation */
+    @keyframes gradient-move {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animated-bg {
+      background: linear-gradient(-45deg, #F8F9FA, #E0F2FF, #FCE4EC, #D1D1F0, #B2DFDB);
+      background-size: 300% 300%;
+      animation: gradient-move 18s ease infinite;
+    }
+
+    /* Floating Blobs Keyframes */
+    @keyframes blob-bounce-1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, -50px) scale(1.1); }
+    }
+    @keyframes blob-bounce-2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-30px, 40px) scale(0.9); }
+    }
+    
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+    @keyframes float-slow {
+      0%, 100% { transform: translateY(0px) rotate(-1deg); }
+      50% { transform: translateY(-15px) rotate(0deg); }
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+    }
+    .animate-float-slow {
+      animation: float-slow 8s ease-in-out infinite;
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 3s ease-in-out infinite;
+    }
+
+    /* Custom Dropdown arrow */
+    .custom-select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23546E7A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 14px center !important;
+      background-size: 16px !important;
+      padding-right: 40px !important;
+    }
+  </style>
+</head>
+<body class="animated-bg text-brand-charcoal min-h-screen relative overflow-x-hidden">
+
+  <!-- Ambient background blobs -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+    <div class="absolute top-[10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-brand-blue/35 blur-[120px]" style="animation: blob-bounce-1 25s infinite ease-in-out;"></div>
+    <div class="absolute bottom-[20%] right-[-10%] w-[45vw] h-[45vw] rounded-full bg-brand-peach/30 blur-[130px]" style="animation: blob-bounce-2 30s infinite ease-in-out;"></div>
+  </div>
+
+  <!-- HEADER / NAVIGATION -->
+  <header id="header" class="fixed top-0 left-0 w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-sky-100/65">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo -->
+        <div class="flex-shrink-0 flex flex-col">
+          <a href="#" onclick="navigateToHome(event)" class="flex items-center space-x-2">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-cyan flex items-center justify-center text-gray-900 shadow-md">
+              <i class="fa-solid fa-notes-medical text-lg"></i>
+            </div>
+            <div>
+              <span class="text-2xl font-bold tracking-tight text-brand-charcoal">SEGESTA</span>
+              <span class="block text-[10px] tracking-widest text-brand-blue uppercase font-semibold -mt-1">Doctor Booking</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex space-x-1 lg:space-x-2 items-center" id="nav-links-container">
+          <a href="#ourstory" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80 transition-all">OurStory</a>
+          <a href="#solutions" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80 transition-all">Solutions</a>
+          <a href="#clients" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80 transition-all">Clients</a>
+          <a href="#portfolio" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80 transition-all">Portfolio</a>
+          <a href="#blog" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80 transition-all">Blog</a>
+          <a href="#contactus" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80 transition-all">ContactUs</a>
+          <!-- Dynamic Dashboard link -->
+          <a href="#" id="nav-dashboard-link" onclick="navigateToDashboard(event)" class="hidden nav-link px-3 py-2 rounded-lg text-sm font-bold text-indigo-600 hover:bg-indigo-50 transition-all"><i class="fa-solid fa-gauge mr-1"></i> Dashboard</a>
+        </nav>
+
+        <!-- Right Header Items -->
+        <div class="flex items-center space-x-4">
+          <!-- CTA Button (Only show for guest) -->
+          <div class="hidden md:block" id="header-cta-btn">
+            <a href="#solutions" class="px-5 py-2.5 rounded-xl bg-brand-mint text-emerald-950 text-sm font-semibold border border-emerald-300 hover:bg-brand-lavender hover:text-indigo-950 transition-all duration-300 shadow-sm">
+              Book Now <i class="fa-solid fa-calendar-check ml-1.5"></i>
+            </a>
+          </div>
+
+          <!-- User Profile Avatar & Dropdown -->
+          <div class="relative" id="avatar-container">
+            <button id="avatar-btn" class="flex items-center space-x-2 focus:outline-none p-1.5 rounded-xl hover:bg-sky-50/50 transition-all border border-sky-100 bg-white/40">
+              <img id="avatar-img" class="w-8 h-8 rounded-full object-cover border border-sky-200" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100" alt="Guest User">
+              <span id="avatar-name" class="text-xs font-bold text-gray-700 hidden sm:inline">Guest</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="avatar-dropdown" class="absolute right-0 mt-2.5 w-64 bg-white/95 backdrop-blur-md rounded-2xl border border-sky-100 shadow-xl py-2 hidden">
+              <div class="px-4 py-3 border-b border-sky-50">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Profile Account</p>
+                <p class="text-sm font-bold text-gray-800" id="dropdown-user-name">Guest User</p>
+                <p class="text-[11px] text-brand-blue font-semibold mt-0.5" id="dropdown-user-role">Role: Guest</p>
+              </div>
+              <div class="py-1.5">
+                <a href="#" onclick="showMockAlert('Profile Detail View')" class="flex items-center px-4 py-2 text-xs font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/50 transition-all"><i class="fa-solid fa-circle-user mr-2.5 w-4 text-center"></i> My Profile</a>
+                <a href="#" onclick="navigateToDashboard(event)" class="flex items-center px-4 py-2 text-xs font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/50 transition-all"><i class="fa-solid fa-calendar-check mr-2.5 w-4 text-center"></i> My Workspace</a>
+                <a href="#" onclick="showMockAlert('Settings view')" class="flex items-center px-4 py-2 text-xs font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/50 transition-all"><i class="fa-solid fa-cog mr-2.5 w-4 text-center"></i> Settings</a>
+              </div>
+              <div class="border-t border-sky-50 pt-1.5 px-4 pb-2">
+                <label class="block text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Select Role (Demo):</label>
+                <select onchange="handleRoleChange(this.value)" id="dropdown-role-select" class="w-full bg-sky-50/50 border border-sky-100 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue cursor-pointer">
+                  <option value="guest">Guest (Homepage)</option>
+                  <option value="patient">Patient (Jane)</option>
+                  <option value="doctor">Doctor (Sophia)</option>
+                  <option value="admin">Admin (Chief)</option>
+                </select>
+              </div>
+              <div class="border-t border-sky-50 pt-1.5">
+                <a href="#" onclick="handleLogout(event)" class="flex items-center px-4 py-2 text-xs font-bold text-rose-500 hover:bg-rose-50/50 transition-all"><i class="fa-solid fa-sign-out-alt mr-2.5 w-4 text-center"></i> Logout</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile Menu Button -->
+          <div class="md:hidden flex items-center">
+            <button id="mobile-menu-button" class="text-gray-600 hover:text-brand-blue focus:outline-none p-2 rounded-lg hover:bg-sky-50/50 transition-all" aria-label="Toggle Menu">
+              <i class="fa-solid fa-bars text-xl" id="menu-icon"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-sky-100 transition-all duration-300 shadow-lg">
+      <div class="px-4 pt-2 pb-6 space-y-2">
+        <a href="#ourstory" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80">Our Story</a>
+        <a href="#solutions" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80">Solutions</a>
+        <a href="#clients" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80">Clients</a>
+        <a href="#portfolio" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80">Portfolio</a>
+        <a href="#blog" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80">Blog</a>
+        <a href="#contactus" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:text-brand-blue hover:bg-sky-50/80">Contact Us</a>
+        <a href="#" id="mobile-dashboard-link" onclick="navigateToDashboard(event)" class="hidden mobile-nav-link block px-4 py-3 rounded-lg text-base font-bold text-indigo-600 hover:bg-indigo-50">Dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= HOMEPAGE VIEW CONTAINER ================= -->
+  <div id="home-view" class="space-y-0 pt-20">
+    
+    <!-- HERO SECTION -->
+    <section class="relative py-16 md:py-24 overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <!-- Left Text Content -->
+          <div class="lg:col-span-5 text-center lg:text-left space-y-6">
+            <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase tracking-wider animate-pulse-subtle">
+              <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Real-time Doctor Availability</span>
+            </div>
+            
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-brand-charcoal leading-tight">
+              Book the Right <br class="hidden sm:inline">
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-mintDark">Doctor</span> in Seconds.
+            </h1>
+            
+            <p class="text-base sm:text-lg text-brand-slate max-w-xl mx-auto lg:mx-0 font-light leading-relaxed">
+              Smart Doctor Booking – Compassionate Care. Find trusted specialists, see real-time availability, and manage appointments from anywhere.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <a href="#solutions" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-brand-blue to-brand-blueDark text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-sky-500/20 hover:-translate-y-0.5 transition-all text-center">
+                Find a Doctor <i class="fa-solid fa-magnifying-glass ml-2"></i>
+              </a>
+              <a href="#ourstory" class="w-full sm:w-auto px-8 py-4 rounded-xl glass-card text-brand-charcoal border border-sky-100/50 font-semibold hover:bg-sky-50/50 hover:border-sky-300 transition-all text-center">
+                Our Story <i class="fa-solid fa-arrow-right ml-2 text-brand-blue"></i>
+              </a>
+            </div>
+            
+            <!-- Rating badge -->
+            <div class="pt-6 flex items-center justify-center lg:justify-start space-x-6 text-sm text-brand-slate">
+              <div class="flex -space-x-2">
+                <img class="w-9 h-9 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="Patient 1">
+                <img class="w-9 h-9 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100" alt="Patient 2">
+                <img class="w-9 h-9 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100" alt="Patient 3">
+              </div>
+              <div>
+                <div class="flex items-center text-amber-500 text-xs">
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star-half-stroke"></i>
+                  <span class="ml-1.5 font-bold text-gray-700">4.9/5</span>
+                </div>
+                <p class="text-xs">Based on 12k+ verified reviews</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Isometric SVG Illustration -->
+          <div class="lg:col-span-7 flex justify-center relative">
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] bg-blue-100/30 rounded-full blur-3xl -z-10"></div>
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" class="w-full max-w-[550px] drop-shadow-xl animate-float">
+              <defs>
+                <linearGradient id="phone-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" />
+                  <stop offset="100%" stop-color="#f0f9ff" />
+                </linearGradient>
+                <linearGradient id="mint-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#d1fae5" />
+                  <stop offset="100%" stop-color="#a7f3d0" />
+                </linearGradient>
+                <linearGradient id="lavender-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ede9fe" />
+                  <stop offset="100%" stop-color="#c4b5fd" />
+                </linearGradient>
+              </defs>
+
+              <g opacity="0.15">
+                <path d="M 0 100 L 600 400" stroke="#0284c7" stroke-width="0.5" stroke-dasharray="5 5"/>
+                <path d="M 0 200 L 600 500" stroke="#0284c7" stroke-width="0.5" stroke-dasharray="5 5"/>
+                <path d="M 600 100 L 0 400" stroke="#0284c7" stroke-width="0.5" stroke-dasharray="5 5"/>
+                <path d="M 600 200 L 0 500" stroke="#0284c7" stroke-width="0.5" stroke-dasharray="5 5"/>
+              </g>
+
+              <!-- Botanicals -->
+              <g class="animate-float-slow">
+                <path d="M 120 340 C 90 280, 110 220, 160 210 C 180 250, 160 310, 120 340 Z" fill="#d1fae5" opacity="0.6"/>
+                <path d="M 120 340 C 135 285, 145 240, 160 210" stroke="#10b981" stroke-width="1.5" opacity="0.3"/>
+                <path d="M 450 320 C 490 270, 520 280, 510 330 C 470 350, 440 340, 450 320 Z" fill="#d1fae5" opacity="0.5"/>
+              </g>
+
+              <!-- Heart Pulse Line -->
+              <g opacity="0.25" stroke="#4FA9FF" stroke-width="2" fill="none">
+                <path d="M 50 220 L 120 220 L 130 190 L 140 250 L 150 210 L 160 230 L 170 220 L 250 220" />
+                <circle cx="140" cy="250" r="4" fill="#4FA9FF" />
+              </g>
+
+              <!-- central smartphone -->
+              <g>
+                <polygon points="200,420 380,310 440,360 260,470" fill="#1e293b" opacity="0.2"/>
+                <polygon points="200,410 380,300 440,350 260,460" fill="#1f2937" />
+                <polygon points="204,411 376,306 434,352 262,457" fill="#374151" />
+                <polygon points="208,409 372,310 430,350 266,449" fill="url(#phone-grad)" />
+
+                <!-- Mock screen UI -->
+                <polygon points="255,340 360,277 385,296 280,359" fill="#e2e8f0" />
+                <polygon points="245,365 305,329 320,340 260,376" fill="#4FA9FF" opacity="0.8"/>
+                <circle cx="280" cy="385" r="4" fill="#cbd5e1" />
+                <circle cx="315" cy="385" r="4" fill="#4FA9FF" />
+                <polygon points="325,410 395,368 415,383 345,425" fill="#a7f3d0" opacity="0.9"/>
+                <path d="M 360 401 L 368 407 L 385 391" stroke="#065f46" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </g>
+
+              <!-- Clock icon -->
+              <g class="animate-float" opacity="0.9">
+                <circle cx="132" cy="252" r="22" fill="#c4b5fd" opacity="0.4"/>
+                <circle cx="132" cy="252" r="18" fill="none" stroke="#8b5cf6" stroke-width="2.5" />
+                <line x1="132" y1="252" x2="132" y2="242" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="132" y1="252" x2="142" y2="252" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round"/>
+              </g>
+
+              <!-- Profile Card 1 -->
+              <g filter="url(#shadow)" class="animate-float">
+                <polygon points="320,240 460,155 520,200 380,285" fill="#ffffff" />
+                <polygon points="320,240 460,155 520,200 380,285" fill="url(#lavender-grad)" opacity="0.15" />
+                <circle cx="375" cy="205" r="18" fill="#c4b5fd" />
+                <circle cx="375" cy="201" r="9" fill="#ffe4e6" />
+                <path d="M 362 218 C 362 208, 388 208, 388 218 Z" fill="#8b5cf6" />
+                <line x1="405" y1="190" x2="480" y2="145" stroke="#1f2937" stroke-width="4.5" stroke-linecap="round" />
+                <line x1="405" y1="205" x2="465" y2="168" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round" />
+              </g>
+
+              <!-- Profile Card 2 -->
+              <g class="animate-float-slow">
+                <polygon points="170,200 300,120 360,160 230,240" fill="#ffffff" />
+                <polygon points="170,200 300,120 360,160 230,240" fill="url(#mint-grad)" opacity="0.2" />
+                <circle cx="220" cy="168" r="16" fill="#a7f3d0" />
+                <circle cx="220" cy="164" r="8" fill="#ffedd5" />
+                <path d="M 209 180 C 209 171, 231 171, 231 180 Z" fill="#10b981" />
+                <line x1="248" y1="152" x2="310" y2="114" stroke="#1f2937" stroke-width="4.5" stroke-linecap="round" />
+                <circle cx="320" cy="148" r="6" fill="#10b981" class="animate-pulse-subtle" />
+              </g>
+            </svg>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- OUR STORY SECTION -->
+    <section id="ourstory" class="py-20 bg-white/70 backdrop-blur-md relative border-y border-sky-100/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <div class="lg:col-span-6 relative">
+            <div class="absolute -top-6 -left-6 w-72 h-72 bg-gradient-to-tr from-brand-lavender to-brand-peach rounded-3xl -z-10 opacity-70"></div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-4">
+                <div class="rounded-2xl overflow-hidden shadow-md transform hover:scale-[1.02] transition-all duration-300">
+                  <img class="w-full h-48 object-cover" src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400" alt="Doctor consulting">
+                </div>
+                <div class="glass-card p-6 rounded-2xl border border-sky-100 flex flex-col items-center text-center">
+                  <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
+                  </div>
+                  <h4 class="font-bold text-gray-800 text-sm">HIPAA Secure</h4>
+                  <p class="text-xs text-gray-500 mt-1">Your health data is fully encrypted & safe.</p>
+                </div>
+              </div>
+              <div class="space-y-4 pt-8">
+                <div class="glass-card p-6 rounded-2xl border border-sky-100 flex flex-col items-center text-center">
+                  <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-headset text-xl"></i>
+                  </div>
+                  <h4 class="font-bold text-gray-800 text-sm">24/7 Support</h4>
+                  <p class="text-xs text-gray-500 mt-1">Always available for booking issues.</p>
+                </div>
+                <div class="rounded-2xl overflow-hidden shadow-md transform hover:scale-[1.02] transition-all duration-300">
+                  <img class="w-full h-48 object-cover" src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400" alt="Tablet appointment">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-6 space-y-6">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-semibold uppercase tracking-wider">
+              <i class="fa-solid fa-history mr-1"></i> Our Mission
+            </div>
+            
+            <h2 class="text-3xl sm:text-4xl font-bold text-brand-charcoal tracking-tight">
+              Our Story – Bridging Patients & Trusted Doctors.
+            </h2>
+            
+            <p class="text-brand-slate font-light leading-relaxed text-sm sm:text-base">
+              Segesta was founded with a single mission: to eliminate waiting rooms and make quality healthcare accessible to everyone. We noticed that patients spent hours calling clinics, navigating outdated schedules, and waiting weeks to see specialists. 
+            </p>
+            
+            <p class="text-brand-slate font-light leading-relaxed text-sm sm:text-base">
+              By building an intelligent, real-time doctor booking framework, we bridge the gap between clinics and communities. Today, patients can find the best practitioners, check actual live calendars, and schedule instant telehealth or in-person checkups in under 30 seconds.
+            </p>
+            
+            <!-- Key Stats Grid -->
+            <div class="grid grid-cols-3 gap-6 pt-6 border-t border-sky-100/50">
+              <div class="space-y-1">
+                <span class="block text-3xl font-extrabold text-brand-blue tracking-tight">500+</span>
+                <span class="block text-xs uppercase tracking-wider text-gray-400 font-semibold">Trusted Doctors</span>
+              </div>
+              <div class="space-y-1">
+                <span class="block text-3xl font-extrabold text-brand-mintDark tracking-tight">10k+</span>
+                <span class="block text-xs uppercase tracking-wider text-gray-400 font-semibold">Bookings Completed</span>
+              </div>
+              <div class="space-y-1">
+                <span class="block text-3xl font-extrabold text-brand-lavenderDark tracking-tight">24/7</span>
+                <span class="block text-xs uppercase tracking-wider text-gray-400 font-semibold">Online Scheduling</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SOLUTIONS SECTION (FEATURES) -->
+    <section id="solutions" class="py-20 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Section Header -->
+        <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase tracking-wider">
+            <i class="fa-solid fa-toolbox mr-1"></i> Core Offerings
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-bold text-brand-charcoal tracking-tight">
+            Intelligent Solutions for Easy Booking
+          </h2>
+          <p class="text-brand-slate font-light text-sm sm:text-base">
+            Explore the features engineered to provide a seamless, stress-free health booking experience.
+          </p>
+        </div>
+
+        <!-- Live Search Widget -->
+        <div class="glass-card border border-sky-100 rounded-3xl p-6 sm:p-8 shadow-glass max-w-4xl mx-auto mb-16 relative overflow-hidden bg-white/60">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-brand-mint/20 rounded-bl-full -z-10"></div>
+          <div class="absolute bottom-0 left-0 w-16 h-16 bg-brand-peach/20 rounded-tr-full -z-10"></div>
+
+          <h3 class="text-lg font-semibold text-brand-charcoal mb-4 flex items-center">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2.5 animate-pulse"></span>
+            Try It Yourself: Live Appointment Search
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Specialty Select -->
+            <div class="relative">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Specialty</label>
+              <div class="relative">
+                <select id="search-specialty" class="custom-select w-full bg-white border border-sky-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer">
+                  <option value="all">All Specialties</option>
+                  <option value="Cardiologist">Cardiologist (Tim mạch)</option>
+                  <option value="Dermatologist">Dermatologist (Da liễu)</option>
+                  <option value="Pediatrician">Pediatrician (Nhi khoa)</option>
+                  <option value="Neurologist">Neurologist (Thần kinh)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Location Select -->
+            <div class="relative">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">City Location</label>
+              <div class="relative">
+                <select id="search-location" class="custom-select w-full bg-white border border-sky-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer">
+                  <option value="all">All Cities</option>
+                  <option value="New York">New York</option>
+                  <option value="Los Angeles">Los Angeles</option>
+                  <option value="San Francisco">San Francisco</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Date picker input -->
+            <div class="relative">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Preferred Date</label>
+              <input type="date" id="search-date" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer" style="height: 46px;">
+            </div>
+
+            <!-- Filter Button -->
+            <div class="flex items-end">
+              <button id="search-btn" class="w-full bg-gradient-to-r from-brand-blue to-brand-blueDark text-gray-900 font-bold rounded-xl py-3 px-6 hover:shadow-lg hover:shadow-sky-500/20 active:translate-y-0.5 transition-all text-sm h-[46px] flex items-center justify-center">
+                Search <i class="fa-solid fa-magnifying-glass ml-2"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Doctor Results -->
+          <div class="mt-8 border-t border-sky-100/60 pt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400">Search Results (<span id="results-count">3</span>)</h4>
+              <span class="text-xs text-brand-blue hover:underline cursor-pointer" id="reset-filter">Clear Filters</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="doctors-list">
+              <!-- Doctor Card 1 -->
+              <div class="bg-white border border-sky-50 p-5 rounded-2xl shadow-sm hover:shadow-md hover:border-sky-100 transition-all flex flex-col" data-specialty="Cardiologist" data-location="San Francisco">
+                <div class="flex items-center space-x-3.5">
+                  <div class="relative">
+                    <img class="w-12 h-12 rounded-xl object-cover" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=150" alt="Dr. Sophia">
+                    <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-emerald-500 border-2 border-white"></span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-gray-800 text-sm">Dr. Sophia Nguyen</h4>
+                    <p class="text-xs text-brand-blue font-medium">Cardiologist • SF</p>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between text-xs text-gray-500 bg-sky-50/50 px-3 py-2 rounded-xl">
+                  <span><i class="fa-solid fa-calendar text-emerald-500 mr-1"></i> Today Available</span>
+                  <span class="font-bold text-gray-700">3 slots left</span>
+                </div>
+                <button onclick="openBookingModal('Dr. Sophia Nguyen', 'Cardiologist', ['09:00 AM', '10:30 AM', '02:00 PM'])" class="mt-4 w-full py-2.5 px-4 text-xs font-semibold rounded-xl bg-brand-mint text-emerald-950 hover:bg-brand-lavender hover:text-indigo-950 transition-all border border-emerald-350">
+                  Book Appointment
+                </button>
+              </div>
+
+              <!-- Doctor Card 2 -->
+              <div class="bg-white border border-sky-50 p-5 rounded-2xl shadow-sm hover:shadow-md hover:border-sky-100 transition-all flex flex-col" data-specialty="Pediatrician" data-location="New York">
+                <div class="flex items-center space-x-3.5">
+                  <div class="relative">
+                    <img class="w-12 h-12 rounded-xl object-cover" src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=150" alt="Dr. James">
+                    <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-amber-500 border-2 border-white"></span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-gray-800 text-sm">Dr. James Wilson</h4>
+                    <p class="text-xs text-brand-blue font-medium">Pediatrician • NY</p>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between text-xs text-gray-500 bg-sky-50/50 px-3 py-2 rounded-xl">
+                  <span><i class="fa-solid fa-calendar text-amber-500 mr-1"></i> Tomorrow Available</span>
+                  <span class="font-bold text-gray-700">5 slots left</span>
+                </div>
+                <button onclick="openBookingModal('Dr. James Wilson', 'Pediatrician', ['08:00 AM', '11:00 AM', '03:30 PM'])" class="mt-4 w-full py-2.5 px-4 text-xs font-semibold rounded-xl bg-brand-mint text-emerald-950 hover:bg-brand-lavender hover:text-indigo-950 transition-all border border-emerald-350">
+                  Book Appointment
+                </button>
+              </div>
+
+              <!-- Doctor Card 3 -->
+              <div class="bg-white border border-sky-50 p-5 rounded-2xl shadow-sm hover:shadow-md hover:border-sky-100 transition-all flex flex-col" data-specialty="Dermatologist" data-location="Los Angeles">
+                <div class="flex items-center space-x-3.5">
+                  <div class="relative">
+                    <img class="w-12 h-12 rounded-xl object-cover" src="https://images.unsplash.com/photo-1594824813573-246434e3b96f?auto=format&fit=crop&q=80&w=150" alt="Dr. Lisa">
+                    <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-emerald-500 border-2 border-white"></span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-gray-800 text-sm">Dr. Lisa Patel</h4>
+                    <p class="text-xs text-brand-blue font-medium">Dermatologist • LA</p>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between text-xs text-gray-500 bg-sky-50/50 px-3 py-2 rounded-xl">
+                  <span><i class="fa-solid fa-calendar text-emerald-500 mr-1"></i> Today Available</span>
+                  <span class="font-bold text-gray-700">2 slots left</span>
+                </div>
+                <button onclick="openBookingModal('Dr. Lisa Patel', 'Dermatologist', ['01:00 PM', '04:15 PM'])" class="mt-4 w-full py-2.5 px-4 text-xs font-semibold rounded-xl bg-brand-mint text-emerald-950 hover:bg-brand-lavender hover:text-indigo-950 transition-all border border-emerald-350">
+                  Book Appointment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Feature Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <!-- Feature 1 -->
+          <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transform hover:-translate-y-1.5 transition-all duration-300 flex flex-col bg-white/60">
+            <div class="w-14 h-14 rounded-2xl bg-sky-100 text-brand-blue flex items-center justify-center mb-6">
+              <i class="fa-solid fa-sliders text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Smart Search & Filter</h3>
+            <p class="text-brand-slate text-sm font-light leading-relaxed flex-grow">
+              Instantly search doctors by specialty, medical location, insurance network, and availability criteria.
+            </p>
+          </div>
+          <!-- Feature 2 -->
+          <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transform hover:-translate-y-1.5 transition-all duration-300 flex flex-col bg-white/60">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6">
+              <i class="fa-solid fa-calendar-days text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Real-time Availability</h3>
+            <p class="text-brand-slate text-sm font-light leading-relaxed flex-grow">
+              Check actual real-time calendar openings. Lock in your consultation instantly without any callbacks.
+            </p>
+          </div>
+          <!-- Feature 3 -->
+          <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transform hover:-translate-y-1.5 transition-all duration-300 flex flex-col bg-white/60">
+            <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-6">
+              <i class="fa-solid fa-video text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Video Consult Integration</h3>
+            <p class="text-brand-slate text-sm font-light leading-relaxed flex-grow">
+              Telehealth ready. Join encrypted high-definition video consultations directly inside the app.
+            </p>
+          </div>
+          <!-- Feature 4 -->
+          <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transform hover:-translate-y-1.5 transition-all duration-300 flex flex-col bg-white/60">
+            <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-500 flex items-center justify-center mb-6">
+              <i class="fa-solid fa-star-half-stroke text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Reviews & Ratings</h3>
+            <p class="text-brand-slate text-sm font-light leading-relaxed flex-grow">
+              Read verified reviews from real patients. Leave ratings after your consultation to help others.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CLIENTS SECTION -->
+    <section id="clients" class="py-16 bg-white/50 border-y border-sky-100/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-xl mx-auto mb-10">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400">Trusted by Top Clinics & Hospitals</h2>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-12 sm:gap-16 opacity-60">
+          <div class="flex items-center space-x-2 text-gray-500 hover:text-brand-blue transition-colors cursor-default">
+            <i class="fa-solid fa-hospital-user text-2xl"></i>
+            <span class="font-poppins font-semibold text-lg tracking-tight">City Medical</span>
+          </div>
+          <div class="flex items-center space-x-2 text-gray-500 hover:text-brand-blue transition-colors cursor-default">
+            <i class="fa-solid fa-square-plus text-2xl"></i>
+            <span class="font-poppins font-semibold text-lg tracking-tight">HealthPlus</span>
+          </div>
+          <div class="flex items-center space-x-2 text-gray-500 hover:text-brand-blue transition-colors cursor-default">
+            <i class="fa-solid fa-heart-pulse text-2xl"></i>
+            <span class="font-poppins font-semibold text-lg tracking-tight">Wellness Network</span>
+          </div>
+          <div class="flex items-center space-x-2 text-gray-500 hover:text-brand-blue transition-colors cursor-default">
+            <i class="fa-solid fa-baby text-2xl"></i>
+            <span class="font-poppins font-semibold text-lg tracking-tight">Pediatric Care</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PORTFOLIO SECTION -->
+    <section id="portfolio" class="py-20 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-semibold uppercase tracking-wider">
+            <i class="fa-solid fa-folder-open mr-1"></i> Success Stories
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-bold text-brand-charcoal tracking-tight">
+            Success Stories in Digital Booking
+          </h2>
+          <p class="text-brand-slate font-light text-sm sm:text-base">
+            See how our platforms and implementations have optimized operations for clinics and changed patient experience.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Case 1 -->
+          <div class="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-sky-100 hover:border-sky-300 transition-all duration-300 flex flex-col">
+            <div class="h-52 overflow-hidden relative">
+              <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=600" alt="Hospital desk">
+              <div class="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-80"></div>
+              <span class="absolute bottom-4 left-4 bg-brand-blue text-gray-900 text-xs font-bold px-3 py-1.5 rounded-lg">Case Study</span>
+            </div>
+            <div class="p-6 flex-grow flex flex-col justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-brand-blue transition-colors">Smart Triage System</h3>
+                <p class="text-brand-slate text-sm font-light leading-relaxed">
+                  Implemented AI-driven symptoms check routing. Reduced clinic reception congestion and wait times by 60%.
+                </p>
+              </div>
+              <div class="pt-6 mt-6 border-t border-sky-50 flex items-center justify-between text-xs text-gray-400">
+                <span>Client: City Medical</span>
+                <span class="font-bold text-emerald-500">-60% Wait Time</span>
+              </div>
+            </div>
+          </div>
+          <!-- Case 2 -->
+          <div class="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-sky-100 hover:border-sky-300 transition-all duration-300 flex flex-col">
+            <div class="h-52 overflow-hidden relative">
+              <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" src="https://images.unsplash.com/photo-1504813184591-015556c5c50f?auto=format&fit=crop&q=80&w=600" alt="Multi-doctor Office">
+              <div class="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-80"></div>
+              <span class="absolute bottom-4 left-4 bg-brand-blue text-gray-900 text-xs font-bold px-3 py-1.5 rounded-lg">Case Study</span>
+            </div>
+            <div class="p-6 flex-grow flex flex-col justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-brand-blue transition-colors">Multi-doctor Practice</h3>
+                <p class="text-brand-slate text-sm font-light leading-relaxed">
+                  Deployed digital booking for a network of 40+ doctors. Reached 95% online patient scheduling adoption within 3 months.
+                </p>
+              </div>
+              <div class="pt-6 mt-6 border-t border-sky-50 flex items-center justify-between text-xs text-gray-400">
+                <span>Client: Wellness Network</span>
+                <span class="font-bold text-indigo-500">95% Adoption</span>
+              </div>
+            </div>
+          </div>
+          <!-- Case 3 -->
+          <div class="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-sky-100 hover:border-sky-300 transition-all duration-300 flex flex-col">
+            <div class="h-52 overflow-hidden relative">
+              <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=600" alt="EHR server screen">
+              <div class="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-80"></div>
+              <span class="absolute bottom-4 left-4 bg-brand-blue text-gray-900 text-xs font-bold px-3 py-1.5 rounded-lg">Case Study</span>
+            </div>
+            <div class="p-6 flex-grow flex flex-col justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-brand-blue transition-colors">API Integration with EHR</h3>
+                <p class="text-brand-slate text-sm font-light leading-relaxed">
+                  Created a custom secure API integration linking Segesta calendar grids directly with local EHR hospital records.
+                </p>
+              </div>
+              <div class="pt-6 mt-6 border-t border-sky-50 flex items-center justify-between text-xs text-gray-400">
+                <span>Client: HealthPlus Hospital</span>
+                <span class="font-bold text-brand-blue">Real-time Sync</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOG SECTION -->
+    <section id="blog" class="py-20 bg-white/50 backdrop-blur-md relative border-y border-sky-100/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase tracking-wider">
+            <i class="fa-solid fa-newspaper mr-1"></i> Articles & Tips
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-bold text-brand-charcoal tracking-tight">
+            Insights for Better Healthcare Access
+          </h2>
+          <p class="text-brand-slate font-light text-sm sm:text-base">
+            Read professional articles on booking optimizations, telemedicine trends, and smart healthcare habits.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Blog 1 -->
+          <article class="glass-card rounded-3xl overflow-hidden border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transition-all duration-300 flex flex-col justify-between bg-white/60">
+            <div class="p-6 sm:p-8 space-y-4">
+              <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+                <span>Health Guide</span>
+                <span>May 25, 2026</span>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 hover:text-brand-blue transition-colors">
+                <a href="#blog">How to Choose the Right Doctor Online</a>
+              </h3>
+              <p class="text-brand-slate text-sm font-light leading-relaxed">
+                Tips on filtering by verified qualifications, understanding reviews, and evaluating convenience factors like location.
+              </p>
+            </div>
+            <div class="p-6 sm:p-8 bg-sky-50/30 border-t border-sky-50/60 flex items-center justify-between">
+              <span class="text-xs font-bold text-brand-blue uppercase tracking-wider">Read Article</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs text-gray-400"></i>
+            </div>
+          </article>
+          <!-- Blog 2 -->
+          <article class="glass-card rounded-3xl overflow-hidden border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transition-all duration-300 flex flex-col justify-between bg-white/60">
+            <div class="p-6 sm:p-8 space-y-4">
+              <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+                <span>Technology</span>
+                <span>May 18, 2026</span>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 hover:text-brand-blue transition-colors">
+                <a href="#blog">The Future of AI in Appointment Scheduling</a>
+              </h3>
+              <p class="text-brand-slate text-sm font-light leading-relaxed">
+                How deep learning networks predict appointment cancellation rates and dynamically adjust slot intervals to maximize efficiency.
+              </p>
+            </div>
+            <div class="p-6 sm:p-8 bg-sky-50/30 border-t border-sky-50/60 flex items-center justify-between">
+              <span class="text-xs font-bold text-brand-blue uppercase tracking-wider">Read Article</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs text-gray-400"></i>
+            </div>
+          </article>
+          <!-- Blog 3 -->
+          <article class="glass-card rounded-3xl overflow-hidden border border-sky-100 hover:border-sky-300 shadow-glass hover:shadow-glass-hover transition-all duration-300 flex flex-col justify-between bg-white/60">
+            <div class="p-6 sm:p-8 space-y-4">
+              <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+                <span>Trends</span>
+                <span>May 10, 2026</span>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 hover:text-brand-blue transition-colors">
+                <a href="#blog">Telemedicine vs In-Person: What Patients Prefer</a>
+              </h3>
+              <p class="text-brand-slate text-sm font-light leading-relaxed">
+                Analyzing user polling data on digital video consult preference patterns vs standard in-person physical checks.
+              </p>
+            </div>
+            <div class="p-6 sm:p-8 bg-sky-50/30 border-t border-sky-50/60 flex items-center justify-between">
+              <span class="text-xs font-bold text-brand-blue uppercase tracking-wider">Read Article</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs text-gray-400"></i>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT US SECTION -->
+    <section id="contactus" class="py-20 relative overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <!-- Left Side: Form Details (FIXED OVERLAPPING INPUTS) -->
+          <div class="lg:col-span-7">
+            <div class="glass-card p-8 sm:p-10 rounded-3xl border border-sky-100 shadow-glass bg-white/60">
+              <h2 class="text-2xl sm:text-3xl font-bold text-brand-charcoal tracking-tight mb-2">Have Questions? Let’s Talk.</h2>
+              <p class="text-brand-slate font-light text-sm mb-6">Drop us a line and our clinic relations team will get back to you within 24 hours.</p>
+              
+              <form id="contact-form" onsubmit="handleContactSubmit(event)" class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div class="flex flex-col">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Full Name</label>
+                    <input type="text" required class="w-full bg-white border border-sky-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" placeholder="John Doe">
+                  </div>
+                  <div class="flex flex-col">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Email Address</label>
+                    <input type="email" required class="w-full bg-white border border-sky-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" placeholder="john@example.com">
+                  </div>
+                </div>
+                
+                <div class="flex flex-col">
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Message</label>
+                  <textarea required rows="4" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" placeholder="Tell us how we can help..."></textarea>
+                </div>
+                
+                <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-brand-blue to-brand-blueDark text-gray-900 font-bold rounded-xl hover:shadow-lg hover:shadow-sky-500/20 active:translate-y-0.5 transition-all text-sm">
+                  Send Message <i class="fa-solid fa-paper-plane ml-1.5"></i>
+                </button>
+              </form>
+              
+              <!-- Success message container (initially hidden) -->
+              <div id="form-success" class="hidden mt-6 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-center space-x-3">
+                <i class="fa-solid fa-circle-check text-xl text-emerald-500 flex-shrink-0"></i>
+                <div>
+                  <h4 class="font-bold text-sm">Message Sent Successfully!</h4>
+                  <p class="text-xs text-emerald-600">Thank you. Our support specialist will reach out to you shortly.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Side: Graphic Info -->
+          <div class="lg:col-span-5 space-y-8 lg:pl-6 text-center lg:text-left">
+            <div class="flex justify-center lg:justify-start">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-40 h-40 animate-float">
+                <polygon points="50,140 120,95 160,120 90,165" fill="#e0f2fe" />
+                <polygon points="50,140 120,95 130,101 60,146" fill="#4FA9FF" />
+                <polygon points="80,90 140,50 170,70 110,110" fill="#ffffff" />
+                <polygon points="78,90 80,90 110,110 108,110" fill="#10b981" />
+                <circle cx="115" cy="78" r="10" fill="#a7f3d0" />
+                <path d="M 112 78 Q 115 81 118 78" stroke="#047857" stroke-width="1.5" fill="none"/>
+              </svg>
+            </div>
+            
+            <div class="space-y-4">
+              <h3 class="text-xl font-bold text-gray-800">Support & Business Contacts</h3>
+              <p class="text-brand-slate font-light text-sm leading-relaxed">
+                Are you a clinic owner or hospital administrator looking to integrate Segesta's real-time booking grid? Contact our partnerships division directly.
+              </p>
+            </div>
+            
+            <div class="space-y-3.5 text-sm text-gray-600 flex flex-col items-center lg:items-start">
+              <a href="mailto:support@segesta.com" class="flex items-center space-x-2.5 hover:text-brand-blue transition-colors">
+                <i class="fa-solid fa-envelope text-brand-blue text-base w-5"></i>
+                <span>support@segesta.com</span>
+              </a>
+              <div class="flex items-center space-x-2.5">
+                <i class="fa-solid fa-phone text-emerald-500 text-base w-5"></i>
+                <span>+1 (800) 555-0199</span>
+              </div>
+              <div class="flex items-center space-x-2.5">
+                <i class="fa-solid fa-location-dot text-violet-500 text-base w-5"></i>
+                <span>100 Health Plaza, Suite 400, San Francisco</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <!-- ================= /HOMEPAGE VIEW CONTAINER ================= -->
+
+  <!-- ================= PORTAL DASHBOARD VIEW CONTAINER ================= -->
+  <div id="dashboard-view" class="hidden pt-28 pb-20 relative">
+    
+    <!-- PATIENT DASHBOARD LAYOUT -->
+    <div id="patient-dashboard" class="hidden space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Welcome Banner -->
+      <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/60 shadow-sm">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-blue">Workspace Dashboard</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-brand-charcoal mt-1">Hello, <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-lavenderDark" id="patient-display-name">Jane Cooper</span> 👋</h2>
+          <p class="text-brand-slate text-sm mt-1">Welcome back. You have upcoming appointments waiting in your timeline.</p>
+        </div>
+        <div>
+          <button onclick="scrollToSearch()" class="px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blueDark text-gray-900 font-bold text-xs hover:shadow-lg transition-all">
+            <i class="fa-solid fa-calendar-plus mr-1.5"></i> Book New Appointment
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Upcoming Appointments (Col 8) -->
+        <div class="lg:col-span-8 space-y-6">
+          <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fa-solid fa-clock-rotate-left mr-2.5 text-brand-blue"></i> Upcoming Appointments
+              </h3>
+              <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-sky-50 text-brand-blue border border-sky-100">Patient Record</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-sky-100 text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    <th class="pb-3 pr-4 font-semibold">Doctor</th>
+                    <th class="pb-3 pr-4 font-semibold">Specialty</th>
+                    <th class="pb-3 pr-4 font-semibold">Date & Time</th>
+                    <th class="pb-3 pr-4 font-semibold">Status</th>
+                    <th class="pb-3 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="patient-appointments-list" class="divide-y divide-sky-50/50 text-xs">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Medical records vitals -->
+          <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm">
+            <h3 class="text-base font-bold text-gray-800 flex items-center mb-6">
+              <i class="fa-solid fa-file-medical mr-2.5 text-emerald-500"></i> Medical Records & Vitals
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div class="bg-sky-50/30 border border-sky-100/50 p-4 rounded-2xl flex flex-col justify-between">
+                <div>
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Blood Pressure</p>
+                  <p class="text-lg font-extrabold text-gray-700 mt-1">120 / 80 <span class="text-xs font-medium text-gray-400">mmHg</span></p>
+                </div>
+                <span class="text-[10px] text-emerald-600 font-bold mt-4 flex items-center"><i class="fa-solid fa-circle-check mr-1"></i> Normal Range</span>
+              </div>
+              <div class="bg-emerald-50/30 border border-emerald-100/50 p-4 rounded-2xl flex flex-col justify-between">
+                <div>
+                  <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Recent Lab Test</p>
+                  <p class="text-sm font-bold text-gray-700 mt-1">Lipid Panel Screen</p>
+                  <p class="text-[10px] text-gray-400">Completed May 15, 2026</p>
+                </div>
+                <span onclick="showMockAlert('Downloading Lipid Panel Lab Results...')" class="text-[10px] text-brand-blue font-bold mt-4 cursor-pointer hover:underline flex items-center"><i class="fa-solid fa-download mr-1"></i> Download PDF</span>
+              </div>
+              <div class="bg-purple-50/30 border border-purple-100/50 p-4 rounded-2xl flex flex-col justify-between">
+                <div>
+                  <p class="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Active Prescriptions</p>
+                  <p class="text-xs font-bold text-gray-700 mt-1">Lisinopril 10mg</p>
+                  <p class="text-[10px] text-gray-400">1 Refill remaining</p>
+                </div>
+                <span onclick="showMockAlert('Displaying prescription directions...')" class="text-[10px] text-purple-600 font-bold mt-4 cursor-pointer hover:underline flex items-center"><i class="fa-solid fa-prescription-bottle mr-1"></i> Instructions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Patient Info (Col 4) -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm text-center">
+            <div class="relative inline-block">
+              <img id="patient-portal-avatar" class="w-20 h-20 rounded-full border-4 border-white mx-auto shadow-md object-cover" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150" alt="Jane Cooper">
+              <span class="absolute bottom-0 right-1 block h-4.5 w-4.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mt-3" id="patient-card-name">Jane Cooper</h3>
+            <p class="text-xs text-gray-400 font-light">Patient ID: #PAT-2026-981</p>
+            
+            <div class="mt-6 pt-6 border-t border-sky-100 grid grid-cols-2 gap-4 text-left">
+              <div>
+                <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-poppins">Age / Gender</p>
+                <p class="text-xs font-bold text-gray-700 mt-0.5">28 Yrs / Female</p>
+              </div>
+              <div>
+                <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-poppins">Blood Type</p>
+                <p class="text-xs font-bold text-gray-700 mt-0.5">O Positive (O+)</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-poppins">Email Address</p>
+                <p class="text-xs font-bold text-gray-700 mt-0.5">jane.cooper@example.com</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Balance Wallet Card -->
+          <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-gradient-to-tr from-brand-blue to-brand-blueDark text-gray-900 shadow-md relative overflow-hidden">
+            <div class="absolute right-[-10%] top-[-10%] w-32 h-32 bg-white/10 rounded-full pointer-events-none"></div>
+            <p class="text-xs font-bold tracking-wider uppercase opacity-85">Health Wallet Balance</p>
+            <h3 class="text-3xl font-extrabold tracking-tight mt-1.5">$350.00</h3>
+            <p class="text-[10px] opacity-75 mt-1">Available for copays, lab fees & medical checks</p>
+            <button onclick="showMockAlert('Top-up wallet flow')" class="mt-6 w-full py-2 bg-white/30 hover:bg-white/40 transition-all rounded-xl text-xs font-bold border border-white/20">
+              <i class="fa-solid fa-credit-card mr-1.5"></i> Top Up Balance
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DOCTOR DASHBOARD LAYOUT -->
+    <div id="doctor-dashboard" class="hidden space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Welcome Banner -->
+      <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/60 shadow-sm">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-lavenderDark">Doctor Workspace</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-brand-charcoal mt-1">Welcome Back, <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blueDark to-brand-lavenderDark">Dr. Sophia Nguyen</span> 🩺</h2>
+          <p class="text-brand-slate text-sm mt-1">Specialization: Cardiology | Status: Active Duty</p>
+        </div>
+        <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl">
+          <span class="flex h-2.5 w-2.5 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span class="text-xs font-bold text-emerald-800">Accepting Virtual Visits</span>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Appointments Today</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1" id="doc-today-appointments-count">3</h3>
+          <p class="text-[9px] text-emerald-500 font-semibold mt-1.5"><i class="fa-solid fa-arrow-trend-up"></i> +12% vs yesterday</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Total Consultations</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1">1,242</h3>
+          <p class="text-[9px] text-gray-400 mt-1.5">Last 12 months stats</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Monthly Earnings</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1">$4,850</h3>
+          <p class="text-[9px] text-indigo-500 font-semibold mt-1.5"><i class="fa-solid fa-arrow-trend-up"></i> +8% vs last month</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Average Rating</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1">4.9 / 5</h3>
+          <div class="flex items-center text-amber-500 text-[10px] mt-1.5">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            <span class="text-gray-400 ml-1.5 font-sans">(120 reviews)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Table -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Today Schedule List -->
+        <div class="lg:col-span-8 space-y-6">
+          <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fa-solid fa-calendar-days mr-2.5 text-indigo-500"></i> Today's Schedule
+              </h3>
+              <span class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl font-bold font-poppins" id="doc-today-date">May 30, 2026</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-sky-100 text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    <th class="pb-3 pr-4 font-semibold">Patient</th>
+                    <th class="pb-3 pr-4 font-semibold">Time Slot</th>
+                    <th class="pb-3 pr-4 font-semibold">Reason</th>
+                    <th class="pb-3 pr-4 font-semibold">Status</th>
+                    <th class="pb-3 font-semibold text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="doctor-appointments-list" class="divide-y divide-sky-50/50 text-xs">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Doctor Profile Card -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm text-center">
+            <div class="relative inline-block">
+              <img class="w-20 h-20 rounded-full border-4 border-white mx-auto shadow-md object-cover" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=150" alt="Dr. Sophia">
+              <span class="absolute bottom-0 right-1 block h-4.5 w-4.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mt-3">Dr. Sophia Nguyen</h3>
+            <p class="text-xs text-indigo-500 font-medium font-poppins">Chief of Cardiology</p>
+            
+            <div class="mt-6 pt-6 border-t border-sky-100 grid grid-cols-2 gap-4 text-left">
+              <div>
+                <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-poppins">Department</p>
+                <p class="text-xs font-bold text-gray-700 mt-0.5">Cardiology Center</p>
+              </div>
+              <div>
+                <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-poppins">Experience</p>
+                <p class="text-xs font-bold text-gray-700 mt-0.5">12+ Years</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-poppins">Office Address</p>
+                <p class="text-xs font-bold text-gray-700 mt-0.5">Suite 405, Clinic Bldg B</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ADMIN DASHBOARD LAYOUT -->
+    <div id="admin-dashboard" class="hidden space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Welcome Banner -->
+      <div class="glass-card p-6 sm:p-8 rounded-3xl border border-sky-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/60 shadow-sm">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-rose-500">System Control Panel</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-brand-charcoal mt-1">Hello, <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-indigo-500">Admin Chief</span> ⚙️</h2>
+          <p class="text-brand-slate text-sm mt-1">Server status: Active | Database backup completed 2 hours ago</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAddDoctorModal()" class="px-4 py-2 text-xs font-bold rounded-xl bg-brand-blue text-gray-900 border border-sky-200 hover:bg-brand-blueDark transition-all">
+            <i class="fa-solid fa-plus-circle mr-1"></i> Add Doctor
+          </button>
+          <button onclick="showMockAlert('Manage Specialities Dialog')" class="px-4 py-2 text-xs font-bold rounded-xl bg-white border border-sky-100 text-gray-700 hover:bg-sky-50 transition-all">
+            Manage Specialties
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Total Doctors</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1" id="admin-total-doctors-metric">48</h3>
+          <p class="text-[9px] text-emerald-500 font-semibold mt-1.5"><i class="fa-solid fa-arrow-trend-up"></i> +12% this month</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Total Patients</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1">3,420</h3>
+          <p class="text-[9px] text-emerald-500 font-semibold mt-1.5"><i class="fa-solid fa-arrow-trend-up"></i> +8% this month</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Appointments Today</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1" id="admin-today-appointments-metric">142</h3>
+          <p class="text-[9px] text-indigo-500 font-semibold mt-1.5"><i class="fa-solid fa-circle-check"></i> System load normal</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-sky-100 bg-white/60 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Today's Revenue</p>
+          <h3 class="text-2xl font-extrabold text-gray-700 mt-1">$18,450</h3>
+          <p class="text-[9px] text-emerald-500 font-semibold mt-1.5"><i class="fa-solid fa-arrow-trend-up"></i> +15% vs target</p>
+        </div>
+      </div>
+
+      <!-- Approvals and Registrations Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Pending Approvals -->
+        <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-base font-bold text-gray-800 flex items-center">
+              <i class="fa-solid fa-user-check mr-2.5 text-brand-blue"></i> Doctor Registrations Pending
+            </h3>
+            <span class="px-2 py-0.5 text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-md">Review needed</span>
+          </div>
+          
+          <div class="divide-y divide-sky-100/60 text-xs" id="admin-pending-approvals-list">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Recent Registrations -->
+        <div class="glass-card p-6 rounded-3xl border border-sky-100 bg-white/60 shadow-sm">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-base font-bold text-gray-800 flex items-center">
+              <i class="fa-solid fa-clock-rotate-left mr-2.5 text-emerald-500"></i> Recent Registrations Activity
+            </h3>
+            <span class="text-xs text-gray-400"><i class="fa-solid fa-sync animate-spin mr-1"></i> Live</span>
+          </div>
+          
+          <div class="divide-y divide-sky-100/60 text-xs space-y-4" id="admin-recent-registrations-list">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  <!-- ================= /PORTAL DASHBOARD VIEW CONTAINER ================= -->
+
+  <!-- FOOTER -->
+  <footer class="bg-brand-charcoal text-white pt-16 pb-8 border-t border-gray-850 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 pb-12 border-b border-gray-800">
+        
+        <!-- Logo and About -->
+        <div class="md:col-span-5 space-y-4">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-blue to-brand-cyan flex items-center justify-center text-gray-900 shadow-md">
+              <i class="fa-solid fa-notes-medical text-sm"></i>
+            </div>
+            <span class="text-xl font-bold tracking-tight">SEGESTA</span>
+          </div>
+          <p class="text-gray-400 text-xs sm:text-sm font-light leading-relaxed max-w-sm">
+            Modern, intelligent doctor scheduling framework designed to bridge patients and trusted clinic specialists in seconds. Built with privacy and ease in mind.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="md:col-span-3 space-y-3">
+          <h4 class="text-xs uppercase tracking-widest text-gray-400 font-bold">Quick Links</h4>
+          <ul class="space-y-2 text-xs sm:text-sm text-gray-400">
+            <li><a href="#ourstory" onclick="navigateToHome(event)" class="hover:text-white transition-colors">Our Story</a></li>
+            <li><a href="#solutions" onclick="navigateToHome(event)" class="hover:text-white transition-colors">Solutions</a></li>
+            <li><a href="#portfolio" onclick="navigateToHome(event)" class="hover:text-white transition-colors">Success Portfolio</a></li>
+          </ul>
+        </div>
+
+        <!-- Legal Links -->
+        <div class="md:col-span-2 space-y-3">
+          <h4 class="text-xs uppercase tracking-widest text-gray-400 font-bold">Legal</h4>
+          <ul class="space-y-2 text-xs sm:text-sm text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+          </ul>
+        </div>
+
+        <!-- Social Icons -->
+        <div class="md:col-span-2 space-y-3">
+          <h4 class="text-xs uppercase tracking-widest text-gray-400 font-bold">Connect With Us</h4>
+          <div class="flex space-x-3">
+            <a href="#" class="w-8 h-8 rounded-lg bg-gray-800 hover:bg-brand-blue flex items-center justify-center text-gray-400 hover:text-white transition-colors" aria-label="Facebook">
+              <i class="fa-brands fa-facebook-f text-sm"></i>
+            </a>
+            <a href="#" class="w-8 h-8 rounded-lg bg-gray-800 hover:bg-brand-blue flex items-center justify-center text-gray-400 hover:text-white transition-colors" aria-label="Twitter">
+              <i class="fa-brands fa-twitter text-sm"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Copyright -->
+      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+        <p>© 2026 Segesta – Doctor Booking. All rights reserved.</p>
+        <p class="mt-2 sm:mt-0">Designed for modern clinics & smart healthcare access.</p>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- FLOATING ROLE SELECTOR (DEMO ONLY) -->
+  <div class="fixed bottom-6 right-6 z-40 bg-white/95 backdrop-blur-md rounded-2xl border border-sky-100 shadow-xl p-3 flex items-center space-x-3">
+    <span class="text-xs font-bold text-gray-500"><i class="fa-solid fa-user-gear text-brand-blue mr-1"></i> Demo Switcher:</span>
+    <select onchange="handleRoleChange(this.value)" id="floating-role-select" class="bg-sky-50/50 border border-sky-100 rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-brand-blue cursor-pointer">
+      <option value="guest">Guest (Home)</option>
+      <option value="patient">Patient (Jane)</option>
+      <option value="doctor">Doctor (Sophia)</option>
+      <option value="admin">Admin (Chief)</option>
+    </select>
+  </div>
+
+  <!-- BOOKING MODAL -->
+  <div id="booking-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div id="modal-overlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-sky-100">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-brand-blue to-brand-blueDark px-6 py-5 text-gray-900 flex justify-between items-center">
+          <div>
+            <h3 class="text-lg font-semibold font-poppins text-gray-900" id="modal-doctor-name">Dr. Sophia Nguyen</h3>
+            <p class="text-xs text-gray-700" id="modal-doctor-specialty">Cardiologist</p>
+          </div>
+          <button onclick="closeBookingModal()" class="text-gray-900/80 hover:text-gray-900 focus:outline-none p-1 rounded-full hover:bg-black/5">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+
+        <!-- Body Form -->
+        <div class="p-6 space-y-5">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">1. Choose Date</label>
+            <input type="date" id="booking-date" required class="w-full bg-sky-50/50 border border-sky-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">2. Available Time Slots</label>
+            <div class="grid grid-cols-3 gap-2.5" id="modal-time-slots">
+              <!-- Filled via JS -->
+            </div>
+            <input type="hidden" id="selected-time-slot" value="">
+          </div>
+          <div class="space-y-3">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400">3. Patient Details</label>
+            <input type="text" id="patient-name" required placeholder="Patient's Full Name" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+            <input type="tel" id="patient-phone" required placeholder="Phone Number" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-3 border-t border-sky-100">
+          <button onclick="submitBooking()" class="w-full sm:w-auto px-6 py-2.5 bg-brand-blue hover:bg-brand-blueDark text-gray-900 font-bold rounded-xl text-xs transition-all shadow-sm">
+            Confirm Booking
+          </button>
+          <button onclick="closeBookingModal()" class="w-full sm:w-auto px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-xs hover:bg-gray-50 transition-all">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING SUCCESS MODAL -->
+  <div id="success-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div id="success-overlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      
+      <div class="inline-block align-middle bg-white rounded-3xl p-6 sm:p-8 text-center overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-sky-100">
+        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+          <i class="fa-solid fa-calendar-check text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Appointment Booked!</h3>
+        <p class="text-gray-500 text-sm font-light mb-6">
+          Your appointment has been successfully scheduled.
+        </p>
+
+        <div class="bg-sky-50/50 rounded-2xl p-4 mb-6 text-left text-sm space-y-2 border border-sky-100">
+          <p class="text-gray-700"><span class="font-semibold text-gray-500">Doctor:</span> <span id="success-doc-name">Dr. Sophia Nguyen</span></p>
+          <p class="text-gray-700"><span class="font-semibold text-gray-500">Date:</span> <span id="success-date">May 30, 2026</span></p>
+          <p class="text-gray-700"><span class="font-semibold text-gray-500">Time Slot:</span> <span id="success-time">10:30 AM</span></p>
+          <p class="text-gray-700"><span class="font-semibold text-gray-500">Patient:</span> <span id="success-pat-name">John Doe</span></p>
+        </div>
+        <button onclick="closeSuccessModal()" class="w-full py-3 bg-brand-blue hover:bg-brand-blueDark text-gray-900 font-bold rounded-xl text-sm transition-all shadow-md">
+          Great, Thank You
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOCK VIRTUAL CONSULTATION (VIDEO CALL CALLING MODAL) -->
+  <div id="video-consult-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-900/85 backdrop-blur-md transition-opacity"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block align-middle bg-brand-charcoal text-white rounded-3xl overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-sky-100/20 relative">
+        <!-- Remote Video Feed (Unsplash Photo Placeholder) -->
+        <div class="w-full h-96 relative bg-gray-800 flex items-center justify-center overflow-hidden">
+          <img id="video-remote-img" class="w-full h-full object-cover opacity-80" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600" alt="Remote Video">
+          
+          <!-- Local Video Feed overlay -->
+          <div class="absolute bottom-4 right-4 w-32 h-44 rounded-2xl border-2 border-white/40 overflow-hidden bg-black/60 shadow-lg">
+            <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Self Video">
+          </div>
+
+          <!-- Video status overlay -->
+          <div class="absolute top-4 left-4 bg-black/55 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs flex items-center space-x-2">
+            <span class="block h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+            <span class="font-bold tracking-wide uppercase text-[10px]">Live Consult</span>
+            <span class="text-gray-300 border-l border-white/20 pl-2" id="video-timer">00:00</span>
+          </div>
+
+          <!-- Remote Label -->
+          <div class="absolute bottom-4 left-4 bg-black/55 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs">
+            <span id="video-remote-name">Dr. Sophia Nguyen</span>
+          </div>
+        </div>
+
+        <!-- Controls panel -->
+        <div class="bg-gray-900 py-6 px-4 flex justify-center items-center space-x-6">
+          <button onclick="showMockAlert('Microphone Muted')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center text-white"><i class="fa-solid fa-microphone text-lg"></i></button>
+          <button onclick="showMockAlert('Camera Disabled')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center text-white"><i class="fa-solid fa-video text-lg"></i></button>
+          <button onclick="endVideoCall()" class="w-14 h-14 rounded-full bg-rose-500 hover:bg-rose-600 transition-all flex items-center justify-center text-white shadow-lg"><i class="fa-solid fa-phone-slash text-xl"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ADD DOCTOR MODAL -->
+  <div id="add-doctor-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div id="doctor-modal-overlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-sky-100">
+        <div class="bg-gradient-to-r from-brand-blue to-brand-blueDark px-6 py-5 text-gray-900 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-gray-900">Add New Doctor</h3>
+          <button onclick="closeAddDoctorModal()" class="text-gray-900/80 hover:text-gray-900 focus:outline-none p-1 rounded-full hover:bg-black/5">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+
+        <form id="add-doctor-form" onsubmit="submitAddDoctor(event)" class="p-6 space-y-4">
+          <div class="flex flex-col">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Doctor Full Name</label>
+            <input type="text" id="new-doc-name" required placeholder="e.g. Dr. Arthur Pendragon" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+          </div>
+          <div class="flex flex-col">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Specialty</label>
+            <select id="new-doc-specialty" required class="custom-select w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer">
+              <option value="Cardiologist">Cardiologist (Tim mạch)</option>
+              <option value="Dermatologist">Dermatologist (Da liễu)</option>
+              <option value="Pediatrician">Pediatrician (Nhi khoa)</option>
+              <option value="Neurologist">Neurologist (Thần kinh)</option>
+            </select>
+          </div>
+          <div class="flex flex-col">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Medical School / University</label>
+            <input type="text" id="new-doc-university" required placeholder="e.g. Harvard Medical" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+          </div>
+          <div class="flex flex-col">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Office Address</label>
+            <input type="text" id="new-doc-address" placeholder="e.g. Suite 405, Clinic Bldg B" class="w-full bg-white border border-sky-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+          </div>
+
+          <div class="pt-4 flex flex-col sm:flex-row-reverse gap-3 border-t border-sky-50 mt-4">
+            <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-brand-blue hover:bg-brand-blueDark text-gray-900 font-bold rounded-xl text-xs transition-all shadow-sm">
+              Register Doctor
+            </button>
+            <button type="button" onclick="closeAddDoctorModal()" class="w-full sm:w-auto px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-xs hover:bg-gray-50 transition-all">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT FOR ROUTING & SIMULATION -->
+  <script>
+    // State management
+    let currentRole = 'guest';
+    let activeView = 'home'; // home | dashboard
+    
+    // Mock Data Store
+    let appointments = [
+      { id: 1, docName: 'Dr. Sophia Nguyen', specialty: 'Cardiologist', time: '09:00 AM', date: '2026-05-30', patientName: 'Jane Cooper', status: 'Confirmed' },
+      { id: 2, docName: 'Dr. Lisa Patel', specialty: 'Dermatologist', time: '02:30 PM', date: '2026-05-31', patientName: 'Jane Cooper', status: 'Pending' }
+    ];
+
+    let pendingApprovals = [
+      { id: 1, name: 'Dr. Arthur Pendragon', specialty: 'General Practitioner', university: 'Oxford Medical', avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=100' },
+      { id: 2, name: 'Dr. Helen Cho', specialty: 'Genetic Specialist', university: 'Seoul National', avatar: 'https://images.unsplash.com/photo-1594824813573-246434e3b96f?auto=format&fit=crop&q=80&w=100' }
+    ];
+
+    let recentRegistrations = [
+      { name: 'Marcus Aurelius', type: 'Patient', time: '5 mins ago' },
+      { name: 'Dr. Alan Grant', type: 'Doctor', time: '12 mins ago' },
+      { name: 'Sarah Connor', type: 'Patient', time: '1 hr ago' }
+    ];
+
+    let totalDoctorsCount = 48;
+    let videoTimerInterval = null;
+
+    // Header scroll background modification
+    window.addEventListener('scroll', function() {
+      const header = document.getElementById('header');
+      if (window.scrollY > 50) {
+        header.classList.add('shadow-md', 'bg-white/95');
+        header.classList.remove('bg-white/80');
+      } else {
+        header.classList.remove('shadow-md', 'bg-white/95');
+        header.classList.add('bg-white/80');
+      }
+    });
+
+    // Mobile Menu Toggle
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      if (mobileMenu.classList.contains('hidden')) {
+        menuIcon.className = 'fa-solid fa-bars text-xl';
+      } else {
+        menuIcon.className = 'fa-solid fa-xmark text-xl';
+      }
+    });
+
+    // Close menu on mobile nav link click
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        menuIcon.className = 'fa-solid fa-bars text-xl';
+      });
+    });
+
+    // User Profile Dropdown Toggle
+    const avatarBtn = document.getElementById('avatar-btn');
+    const avatarDropdown = document.getElementById('avatar-dropdown');
+
+    avatarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      avatarDropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!avatarDropdown.classList.contains('hidden') && !avatarDropdown.contains(e.target) && e.target !== avatarBtn) {
+        avatarDropdown.classList.add('hidden');
+      }
+    });
+
+    // Active Navigation Link on Scroll
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    window.addEventListener('scroll', () => {
+      if (activeView !== 'home') return;
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.scrollY >= (sectionTop - 120)) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('text-brand-blue', 'bg-sky-50/50');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('text-brand-blue', 'bg-sky-50/50');
+        }
+      });
+    });
+
+    // Specialty & City Location Search Filter
+    const searchSpecialty = document.getElementById('search-specialty');
+    const searchLocation = document.getElementById('search-location');
+    const searchBtn = document.getElementById('search-btn');
+    const resetFilter = document.getElementById('reset-filter');
+    const doctorCards = document.querySelectorAll('#doctors-list > div');
+    const resultsCount = document.getElementById('results-count');
+
+    function filterDoctors() {
+      const selectedSpec = searchSpecialty.value;
+      const selectedLoc = searchLocation.value;
+      let count = 0;
+
+      doctorCards.forEach(card => {
+        const spec = card.getAttribute('data-specialty');
+        const loc = card.getAttribute('data-location');
+        
+        const specMatch = (selectedSpec === 'all' || spec === selectedSpec);
+        const locMatch = (selectedLoc === 'all' || loc === selectedLoc);
+
+        if (specMatch && locMatch) {
+          card.style.display = 'flex';
+          count++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      resultsCount.textContent = count;
+    }
+
+    searchBtn.addEventListener('click', filterDoctors);
+    resetFilter.addEventListener('click', () => {
+      searchSpecialty.value = 'all';
+      searchLocation.value = 'all';
+      document.getElementById('search-date').value = '';
+      filterDoctors();
+    });
+
+    // ================= DYNAMIC ROUTER LOGIC =================
+    function navigateToHome(e) {
+      if (e) e.preventDefault();
+      activeView = 'home';
+      document.getElementById('home-view').classList.remove('hidden');
+      document.getElementById('dashboard-view').classList.add('hidden');
+      
+      // Update Navigation links active state
+      navLinks.forEach(link => link.classList.remove('text-brand-blue', 'bg-sky-50/50'));
+      document.querySelector('[href="#solutions"]').classList.add('text-brand-blue', 'bg-sky-50/50');
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function navigateToDashboard(e) {
+      if (e) e.preventDefault();
+      if (currentRole === 'guest') {
+        alert('Please select a profile role (Patient / Doctor / Admin) from the demo switcher in the bottom-right first!');
+        return;
+      }
+      activeView = 'dashboard';
+      document.getElementById('home-view').classList.add('hidden');
+      document.getElementById('dashboard-view').classList.remove('hidden');
+      
+      // Show correct dashboard sub-section
+      showDashboardForRole(currentRole);
+      
+      // Highlight dashboard navigation
+      navLinks.forEach(link => link.classList.remove('text-brand-blue', 'bg-sky-50/50'));
+      document.getElementById('nav-dashboard-link').classList.add('text-brand-blue', 'bg-sky-50/50');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showDashboardForRole(role) {
+      // Hide all dashboards first
+      document.getElementById('patient-dashboard').classList.add('hidden');
+      document.getElementById('doctor-dashboard').classList.add('hidden');
+      document.getElementById('admin-dashboard').classList.add('hidden');
+      
+      // Show specific role dashboard
+      if (role === 'patient') {
+        document.getElementById('patient-dashboard').classList.remove('hidden');
+        renderPatientDashboard();
+      } else if (role === 'doctor') {
+        document.getElementById('doctor-dashboard').classList.remove('hidden');
+        renderDoctorDashboard();
+      } else if (role === 'admin') {
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        renderAdminDashboard();
+      }
+    }
+
+    // Role changer logic
+    function handleRoleChange(role) {
+      currentRole = role;
+      
+      // Synchronize role selectors
+      document.getElementById('dropdown-role-select').value = role;
+      document.getElementById('floating-role-select').value = role;
+      
+      const avatarImg = document.getElementById('avatar-img');
+      const avatarName = document.getElementById('avatar-name');
+      const dropdownName = document.getElementById('dropdown-user-name');
+      const dropdownRole = document.getElementById('dropdown-user-role');
+      const dashboardLink = document.getElementById('nav-dashboard-link');
+      const mobileDashboardLink = document.getElementById('mobile-dashboard-link');
+      const headerCta = document.getElementById('header-cta-btn');
+
+      if (role === 'guest') {
+        // Set header avatar to guest
+        avatarImg.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100';
+        avatarName.textContent = 'Guest';
+        dropdownName.textContent = 'Guest User';
+        dropdownRole.textContent = 'Role: Guest';
+        
+        dashboardLink.classList.add('hidden');
+        mobileDashboardLink.classList.add('hidden');
+        headerCta.classList.remove('hidden');
+        
+        // Redirect to homepage if currently viewing dashboards
+        if (activeView === 'dashboard') {
+          navigateToHome();
+        }
+      } else {
+        dashboardLink.classList.remove('hidden');
+        mobileDashboardLink.classList.remove('hidden');
+        headerCta.classList.add('hidden');
+
+        if (role === 'patient') {
+          avatarImg.src = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100';
+          avatarName.textContent = 'Jane Cooper';
+          dropdownName.textContent = 'Jane Cooper';
+          dropdownRole.textContent = 'Patient Account';
+        } else if (role === 'doctor') {
+          avatarImg.src = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=100';
+          avatarName.textContent = 'Dr. Sophia';
+          dropdownName.textContent = 'Dr. Sophia Nguyen';
+          dropdownRole.textContent = 'Cardiologist Team';
+        } else if (role === 'admin') {
+          avatarImg.src = 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=100';
+          avatarName.textContent = 'Admin Chief';
+          dropdownName.textContent = 'Admin Chief';
+          dropdownRole.textContent = 'System Administrator';
+        }
+
+        // Navigate directly to dashboard view
+        navigateToDashboard();
+      }
+
+      avatarDropdown.classList.add('hidden');
+    }
+
+    function handleLogout(e) {
+      if (e) e.preventDefault();
+      handleRoleChange('guest');
+    }
+
+    function scrollToSearch() {
+      // Force return to homepage first
+      navigateToHome();
+      setTimeout(() => {
+        const solutionsSection = document.getElementById('solutions');
+        solutionsSection.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+
+    // ================= PORTAL RENDERING LOGIC =================
+
+    // 1. Patient Portal Rendering
+    function renderPatientDashboard() {
+      const appointmentsList = document.getElementById('patient-appointments-list');
+      appointmentsList.innerHTML = '';
+      
+      const patientAppointments = appointments.filter(a => a.patientName === 'Jane Cooper');
+      
+      if (patientAppointments.length === 0) {
+        appointmentsList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-400">No upcoming appointments found. Click "Book New Appointment" to schedule one.</td></tr>`;
+        return;
+      }
+      
+      patientAppointments.forEach(appt => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-sky-50/50 hover:bg-sky-50/30 transition-colors';
+        
+        let statusColor = appt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+        
+        tr.innerHTML = `
+          <td class="py-4 pr-4 font-bold text-gray-700 flex items-center space-x-2">
+            <span class="w-7 h-7 rounded-full bg-brand-blue/20 text-brand-blue flex items-center justify-center text-[10px]"><i class="fa-solid fa-user-md"></i></span>
+            <span>${appt.docName}</span>
+          </td>
+          <td class="py-4 pr-4 text-brand-slate font-medium">${appt.specialty}</td>
+          <td class="py-4 pr-4 font-semibold text-gray-600">${appt.date} • ${appt.time}</td>
+          <td class="py-4 pr-4">
+            <span class="px-2 py-0.5 rounded-lg border text-[10px] font-bold ${statusColor}">${appt.status}</span>
+          </td>
+          <td class="py-4 text-right space-x-1.5">
+            <button onclick="startVideoCall('${appt.docName}', 'patient')" class="px-3 py-1.5 bg-brand-mint hover:bg-brand-mint/80 border border-emerald-300 text-emerald-950 font-bold rounded-lg text-[10px] transition-all"><i class="fa-solid fa-video mr-1"></i> Join Call</button>
+            <button onclick="confirmCancelAppointment(${appt.id})" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-lg text-[10px] transition-all"><i class="fa-solid fa-trash-can"></i> Cancel</button>
+          </td>
+        `;
+        appointmentsList.appendChild(tr);
+      });
+    }
+
+    // 2. Doctor Portal Rendering
+    function renderDoctorDashboard() {
+      const scheduleList = document.getElementById('doctor-appointments-list');
+      scheduleList.innerHTML = '';
+      
+      const doctorAppointments = appointments.filter(a => a.docName === 'Dr. Sophia Nguyen');
+      
+      // Update count badge
+      document.getElementById('doc-today-appointments-count').textContent = doctorAppointments.length;
+      
+      if (doctorAppointments.length === 0) {
+        scheduleList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-400">No scheduled consultations for today.</td></tr>`;
+        return;
+      }
+      
+      doctorAppointments.forEach(appt => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-sky-50/50 hover:bg-sky-50/30 transition-colors';
+        
+        let statusColor = appt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+        
+        tr.innerHTML = `
+          <td class="py-4 pr-4 font-bold text-gray-700 flex items-center space-x-2">
+            <span class="w-7 h-7 rounded-full bg-brand-lavender/30 text-indigo-600 flex items-center justify-center text-[10px]"><i class="fa-solid fa-user-injured"></i></span>
+            <span>${appt.patientName}</span>
+          </td>
+          <td class="py-4 pr-4 font-semibold text-gray-600">${appt.time}</td>
+          <td class="py-4 pr-4 text-brand-slate font-light">Routine health checkup & consult</td>
+          <td class="py-4 pr-4">
+            <span class="px-2 py-0.5 rounded-lg border text-[10px] font-bold ${statusColor}">${appt.status}</span>
+          </td>
+          <td class="py-4 text-right">
+            <button onclick="startVideoCall('${appt.patientName}', 'doctor')" class="px-3.5 py-1.5 bg-brand-blue hover:bg-brand-blueDark text-gray-900 border border-sky-200 font-bold rounded-lg text-[10px] transition-all"><i class="fa-solid fa-play-circle mr-1"></i> Start Visit</button>
+          </td>
+        `;
+        scheduleList.appendChild(tr);
+      });
+    }
+
+    // 3. Admin Portal Rendering
+    function renderAdminDashboard() {
+      // Approvals
+      const approvalsList = document.getElementById('admin-pending-approvals-list');
+      approvalsList.innerHTML = '';
+      
+      if (pendingApprovals.length === 0) {
+        approvalsList.innerHTML = `<div class="py-6 text-center text-gray-400">All doctor registration applications approved!</div>`;
+      } else {
+        pendingApprovals.forEach(doc => {
+          const div = document.createElement('div');
+          div.className = 'py-4 flex items-center justify-between gap-4';
+          div.innerHTML = `
+            <div class="flex items-center space-x-3">
+              <img class="w-10 h-10 rounded-xl object-cover" src="${doc.avatar}" alt="${doc.name}">
+              <div>
+                <h4 class="font-bold text-gray-800 text-sm">${doc.name}</h4>
+                <p class="text-[10px] text-brand-blue font-semibold">${doc.specialty} • <span class="text-gray-400 font-normal">${doc.university}</span></p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="approveDoctor(${doc.id}, '${doc.name}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold rounded-lg text-[10px] transition-all"><i class="fa-solid fa-check"></i> Approve</button>
+              <button onclick="rejectDoctor(${doc.id}, '${doc.name}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-lg text-[10px] transition-all"><i class="fa-solid fa-times"></i> Reject</button>
+            </div>
+          `;
+          approvalsList.appendChild(div);
+        });
+      }
+
+      // Registrations
+      const registrationsList = document.getElementById('admin-recent-registrations-list');
+      registrationsList.innerHTML = '';
+      
+      recentRegistrations.forEach(reg => {
+        const div = document.createElement('div');
+        div.className = 'py-3 flex items-center justify-between gap-4';
+        
+        let typeColor = reg.type === 'Patient' ? 'bg-sky-50 text-brand-blue border-sky-100' : 'bg-emerald-50 text-emerald-700 border-emerald-150';
+        
+        div.innerHTML = `
+          <div class="flex items-center space-x-2.5">
+            <span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"><i class="fa-solid fa-user-circle"></i></span>
+            <div>
+              <p class="font-bold text-gray-700">${reg.name}</p>
+              <span class="px-1.5 py-0.5 rounded border text-[9px] font-bold inline-block mt-0.5 ${typeColor}">${reg.type}</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-gray-400 font-light"><i class="fa-solid fa-clock mr-1"></i> ${reg.time}</span>
+        `;
+        registrationsList.appendChild(div);
+      });
+
+      // Update counters
+      document.getElementById('admin-total-doctors-metric').textContent = totalDoctorsCount;
+      document.getElementById('admin-today-appointments-metric').textContent = appointments.length * 3 + 12;
+    }
+
+    // Admin Add Doctor Flow
+    const addDoctorModal = document.getElementById('add-doctor-modal');
+    
+    function openAddDoctorModal() {
+      addDoctorModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+    
+    function closeAddDoctorModal() {
+      addDoctorModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function submitAddDoctor(e) {
+      e.preventDefault();
+      const docName = document.getElementById('new-doc-name').value.trim();
+      const specialty = document.getElementById('new-doc-specialty').value;
+      const university = document.getElementById('new-doc-university').value.trim();
+
+      if (!docName || !specialty || !university) {
+        alert('Please fill out all required doctor registration fields!');
+        return;
+      }
+
+      // Add doctor to stats
+      totalDoctorsCount++;
+      
+      // Add to registrations list
+      recentRegistrations.unshift({
+        name: docName,
+        type: 'Doctor',
+        time: 'Just now'
+      });
+
+      closeAddDoctorModal();
+      renderAdminDashboard();
+      
+      // Clear Form
+      document.getElementById('add-doctor-form').reset();
+      showMockAlert(`Successfully registered ${docName} to the clinic system!`);
+    }
+
+    // Approvals logic
+    function approveDoctor(id, name) {
+      pendingApprovals = pendingApprovals.filter(p => p.id !== id);
+      totalDoctorsCount++;
+      recentRegistrations.unshift({
+        name: name,
+        type: 'Doctor',
+        time: 'Just now'
+      });
+      renderAdminDashboard();
+      showMockAlert(`Approved and onboarded ${name}!`);
+    }
+
+    function rejectDoctor(id, name) {
+      pendingApprovals = pendingApprovals.filter(p => p.id !== id);
+      renderAdminDashboard();
+      showMockAlert(`Rejected registration application for ${name}.`);
+    }
+
+    // Cancellation logic
+    function confirmCancelAppointment(id) {
+      const confirmCancel = confirm("Are you sure you want to cancel this scheduled medical appointment?");
+      if (confirmCancel) {
+        appointments = appointments.filter(a => a.id !== id);
+        renderPatientDashboard();
+        renderDoctorDashboard();
+        showMockAlert("Appointment cancelled successfully.");
+      }
+    }
+
+    // ================= SIMULATE VIDEO CONSULTATION =================
+    const videoConsultModal = document.getElementById('video-consult-modal');
+    const videoRemoteImg = document.getElementById('video-remote-img');
+    const videoRemoteName = document.getElementById('video-remote-name');
+    const videoTimer = document.getElementById('video-timer');
+
+    function startVideoCall(name, role) {
+      videoRemoteName.textContent = name;
+      
+      if (role === 'patient') {
+        // Patient calls doctor - remote image is doctor
+        videoRemoteImg.src = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600';
+      } else {
+        // Doctor calls patient - remote image is patient
+        videoRemoteImg.src = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=600';
+      }
+
+      videoConsultModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+
+      // Start timer
+      let seconds = 0;
+      videoTimer.textContent = '00:00';
+      
+      videoTimerInterval = setInterval(() => {
+        seconds++;
+        let min = String(Math.floor(seconds / 60)).padStart(2, '0');
+        let sec = String(seconds % 60).padStart(2, '0');
+        videoTimer.textContent = `${min}:${sec}`;
+      }, 1000);
+    }
+
+    function endVideoCall() {
+      videoConsultModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+      clearInterval(videoTimerInterval);
+    }
+
+    // ================= BOOKING MODAL ACTIONS =================
+    const bookingModal = document.getElementById('booking-modal');
+    const successModal = document.getElementById('success-modal');
+    const modalDocName = document.getElementById('modal-doctor-name');
+    const modalDocSpecialty = document.getElementById('modal-doctor-specialty');
+    const modalTimeSlots = document.getElementById('modal-time-slots');
+    const selectedTimeSlotInput = document.getElementById('selected-time-slot');
+    const bookingDateInput = document.getElementById('booking-date');
+    const patientNameInput = document.getElementById('patient-name');
+    const patientPhoneInput = document.getElementById('patient-phone');
+
+    // Success modal fields
+    const successDocName = document.getElementById('success-doc-name');
+    const successDate = document.getElementById('success-date');
+    const successTime = document.getElementById('success-time');
+    const successPatName = document.getElementById('success-pat-name');
+
+    // Set default date input today min limit
+    const todayStr = new Date().toISOString().split('T')[0];
+    bookingDateInput.min = todayStr;
+    bookingDateInput.value = todayStr;
+
+    function openBookingModal(name, specialty, slots) {
+      modalDocName.textContent = name;
+      modalDocSpecialty.textContent = specialty;
+      
+      // Clear previous inputs
+      modalTimeSlots.innerHTML = '';
+      selectedTimeSlotInput.value = '';
+      
+      // Build slots buttons
+      slots.forEach(slot => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = slot;
+        btn.className = 'py-2 px-3 text-xs font-semibold rounded-xl border border-sky-100 hover:border-brand-blue bg-white text-gray-700 hover:text-brand-blue hover:bg-sky-50/50 transition-all text-center';
+        
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#modal-time-slots button').forEach(b => {
+            b.classList.remove('bg-brand-blue', 'text-white', 'border-brand-blue');
+            b.classList.add('bg-white', 'text-gray-700', 'border-sky-100');
+          });
+          btn.classList.remove('bg-white', 'text-gray-700', 'border-sky-100');
+          btn.classList.add('bg-brand-blue', 'text-white', 'border-brand-blue');
+          selectedTimeSlotInput.value = slot;
+        });
+        
+        modalTimeSlots.appendChild(btn);
+      });
+
+      bookingModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeBookingModal() {
+      bookingModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function submitBooking() {
+      const docName = modalDocName.textContent;
+      const date = bookingDateInput.value;
+      const slot = selectedTimeSlotInput.value;
+      const patName = patientNameInput.value.trim();
+      const patPhone = patientPhoneInput.value.trim();
+
+      if (!date) {
+        alert('Please choose an appointment date!');
+        return;
+      }
+      if (!slot) {
+        alert('Please select an available appointment time slot!');
+        return;
+      }
+      if (!patName) {
+        alert('Please enter patient\'s full name details!');
+        return;
+      }
+      if (!patPhone) {
+        alert('Please enter a callback phone number!');
+        return;
+      }
+
+      // Close modal
+      closeBookingModal();
+
+      // Show Success Modal
+      successDocName.textContent = docName;
+      const formattedDate = new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      successDate.textContent = formattedDate;
+      successTime.textContent = slot;
+      successPatName.textContent = patName;
+
+      successModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+
+      // Insert booking into global appointments state
+      const newApptId = appointments.length ? Math.max(...appointments.map(a => a.id)) + 1 : 1;
+      appointments.push({
+        id: newApptId,
+        docName: docName,
+        specialty: modalDocSpecialty.textContent.split(' •')[0],
+        time: slot,
+        date: date,
+        patientName: 'Jane Cooper', // Bind to Jane Cooper profile for demo
+        status: 'Confirmed'
+      });
+
+      // Clear fields
+      patientNameInput.value = '';
+      patientPhoneInput.value = '';
+    }
+
+    function closeSuccessModal() {
+      successModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+      
+      // If we are logged in as patient, update dashboard lists
+      if (currentRole === 'patient') {
+        renderPatientDashboard();
+      }
+    }
+
+    // Modal click out bounds overlay listeners
+    document.getElementById('modal-overlay').addEventListener('click', closeBookingModal);
+    document.getElementById('success-overlay').addEventListener('click', closeSuccessModal);
+    document.getElementById('doctor-modal-overlay').addEventListener('click', closeAddDoctorModal);
+
+    // Help Alerts Mock Helper
+    function showMockAlert(message) {
+      alert(`[Simulation Alert]: ${message}`);
+    }
+
+    // Contact Form submit helper
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      document.getElementById('contact-form').classList.add('hidden');
+      document.getElementById('form-success').classList.remove('hidden');
+      e.target.reset();
+    }
+  </script>
+</body>
+</html>

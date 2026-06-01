@@ -401,6 +401,7 @@ docker-compose up -d
 ---
 
 ## API Endpoints
+<!-- AUTO-GENERATED-START: API_ENDPOINTS -->
 
 ### Authentication
 
@@ -474,6 +475,7 @@ GET    /api/admin/appointments                       # Danh sach lich hen
 PUT    /api/admin/appointments/:id                   # Cap nhat lich hen
 GET    /api/admin/feedbacks                          # Danh sach phan hoi
 ```
+<!-- AUTO-GENERATED-END: API_ENDPOINTS -->
 
 ---
 
