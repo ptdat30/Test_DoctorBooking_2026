@@ -34,7 +34,7 @@ function onTestFail() {
     console.error('Test failed - dependent tests may be skipped. Request:', pm.info.requestName);
     try {
         console.error('Response:', pm.response.code, pm.response.text().substring(0, 500));
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Export helpers to globals for request scripts
