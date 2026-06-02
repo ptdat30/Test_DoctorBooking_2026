@@ -29,33 +29,7 @@ body {
   position: relative;
 }
 
-/* Light background blobs */
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(120px);
-  z-index: -10;
-  pointer-events: none;
-}
-body::before {
-  top: 10%;
-  left: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: rgba(99, 102, 241, 0.15);
-  animation: blob-bounce 25s infinite ease-in-out;
-}
-body::after {
-  bottom: 10%;
-  right: -10%;
-  width: 45vw;
-  height: 45vw;
-  background: rgba(59, 130, 246, 0.15);
-  animation: blob-bounce 30s infinite ease-in-out;
-  animation-delay: 2s;
-}
+/* Light background blobs - removed blur filter for better contrast */
 
 #root {
   width: 100%;
@@ -219,31 +193,95 @@ select option,
 /* Ensure patient-main background is transparent even after PatientLayout.css loads */
 .patient-layout .patient-main,
 .patient-main {
-  background: transparent !important;
+  background: #f1f5f9 !important;
 }
 
-/* Fix main-header dark background */
+/* Fix main-header background */
 .patient-layout .main-header,
 .patient-main .main-header {
-  background: rgba(30, 58, 95, 0.95) !important;
-  backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 /* Fix sidebar toggle and notification bell colors */
 .patient-layout .main-header .sidebar-toggle,
 .patient-layout .main-header .notification-bell {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  color: #e0e0e0 !important;
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
 }
 
 /* Fix all text within main-header */
 .patient-layout .main-header * {
-  color: #e0e0e0 !important;
+  color: #1e293b !important;
 }
 
-/* Sidebars and Navigation headers styling */
+/* ── PATIENT: Force Light Mode ── */
+.patient-page,
+.patient-layout,
+.patient-main,
+.futuristic-dashboard {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+.patient-page .card-title,
+.patient-page .dashboard-title,
+.patient-page .chart-title,
+.patient-page .section-title {
+  color: #1e293b !important;
+}
+.patient-page .dashboard-subtitle,
+.patient-page .chart-subtitle,
+.patient-page .stat-card-label,
+.patient-page .empty-state p {
+  color: #64748b !important;
+}
+.patient-page .chart-card,
+.patient-page .activity-card,
+.patient-page .table-card,
+.patient-page .action-card,
+.patient-page .kpi-card,
+.patient-page .stat-card,
+.patient-page .patient-card,
+.patient-page .info-card {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+.patient-page .chart-card:hover,
+.patient-page .activity-card:hover,
+.patient-page .table-card:hover,
+.patient-page .action-card:hover,
+.patient-page .kpi-card:hover,
+.patient-page .stat-card:hover,
+.patient-page .patient-card:hover {
+  background: #f8fafc !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+.patient-page table {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.patient-page thead {
+  background: #f8fafc !important;
+}
+.patient-page th {
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.patient-page td {
+  color: #475569 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+.patient-page .table-row:hover {
+  background: #f8fafc !important;
+}
+
+/* Sidebars and Navigation headers styling - ADMIN / DOCTOR / PORTAL only */
 .admin-sidebar,
 .doctor-sidebar,
 .portal-header,
@@ -298,49 +336,61 @@ select option,
   filter: none !important; /* Keep original colored logo */
 }
 
-/* Typography headers color redirection */
-.logo-text,
-.welcome-screen h2,
-.patient-page h1,
-.patient-page h2,
-.patient-page h3,
-.admin-page-title,
-.dashboard-title,
-.chart-title,
-.card-title,
-.section-title {
+/* Typography headers color redirection - ADMIN / DOCTOR / PORTAL */
+.admin-page .admin-page-title,
+.admin-page .dashboard-title,
+.admin-page .chart-title,
+.admin-page .card-title,
+.admin-page .section-title,
+.doctor-page .dashboard-title,
+.doctor-page .chart-title,
+.doctor-page .card-title,
+.doctor-page .section-title,
+.portal-page .dashboard-title,
+.portal-page .chart-title,
+.portal-page .card-title,
+.portal-page .section-title,
+.welcome-screen h2 {
   color: #f5f5f5 !important;
 }
 
-/* Secondary descriptions colors */
-.admin-page-subtitle,
-.dashboard-subtitle,
-.chart-subtitle,
-.stat-card-label,
-.history-preview,
-.history-time,
-.patient-phone,
-.empty-state p {
+/* Secondary descriptions colors - ADMIN / DOCTOR / PORTAL */
+.admin-page .admin-page-subtitle,
+.admin-page .dashboard-subtitle,
+.admin-page .chart-subtitle,
+.admin-page .stat-card-label,
+.doctor-page .dashboard-subtitle,
+.doctor-page .chart-subtitle,
+.doctor-page .stat-card-label,
+.portal-page .dashboard-subtitle,
+.portal-page .chart-subtitle,
+.portal-page .stat-card-label {
   color: #a0a0a0 !important;
 }
 
-/* Glassmorphic dashboard cards override */
-.patient-card,
-.stat-card,
-.action-card,
-.admin-card,
-.chart-card,
-.dashboard-card,
-.appointment-card,
-.welcome-screen,
-.message-text,
-.quick-action-btn,
-.info-card,
-.suggestion-item,
-.wallet-card,
-.family-member-card,
-.ai-chat-container,
-.ai-symptom-checker {
+/* Glassmorphic dashboard cards override - ADMIN / DOCTOR / PORTAL */
+.admin-page .admin-card,
+.admin-page .dashboard-card,
+.admin-page .appointment-card,
+.doctor-page .stat-card,
+.doctor-page .chart-card,
+.doctor-page .dashboard-card,
+.doctor-page .appointment-card,
+.portal-page .patient-card,
+.portal-page .stat-card,
+.portal-page .action-card,
+.portal-page .chart-card,
+.portal-page .dashboard-card,
+.portal-page .appointment-card,
+.portal-page .welcome-screen,
+.portal-page .message-text,
+.portal-page .quick-action-btn,
+.portal-page .info-card,
+.portal-page .suggestion-item,
+.portal-page .wallet-card,
+.portal-page .family-member-card,
+.portal-page .ai-chat-container,
+.portal-page .ai-symptom-checker {
   background: rgba(255, 255, 255, 0.12) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
@@ -351,20 +401,26 @@ select option,
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-/* Interactive card hover shadows */
-.patient-card:hover,
-.stat-card:hover,
-.action-card:hover,
-.admin-card:hover,
-.chart-card:hover,
-.dashboard-card:hover,
-.appointment-card:hover,
-.quick-action-btn:hover,
-.info-card:hover,
-.suggestion-item:hover,
-.wallet-card:hover,
-.family-member-card:hover,
-.ai-symptom-checker:hover {
+/* Interactive card hover shadows - ADMIN / DOCTOR / PORTAL */
+.admin-page .admin-card:hover,
+.admin-page .dashboard-card:hover,
+.admin-page .appointment-card:hover,
+.doctor-page .stat-card:hover,
+.doctor-page .chart-card:hover,
+.doctor-page .dashboard-card:hover,
+.doctor-page .appointment-card:hover,
+.portal-page .patient-card:hover,
+.portal-page .stat-card:hover,
+.portal-page .action-card:hover,
+.portal-page .chart-card:hover,
+.portal-page .dashboard-card:hover,
+.portal-page .appointment-card:hover,
+.portal-page .quick-action-btn:hover,
+.portal-page .info-card:hover,
+.portal-page .suggestion-item:hover,
+.portal-page .wallet-card:hover,
+.portal-page .family-member-card:hover,
+.portal-page .ai-symptom-checker:hover {
   background: rgba(255, 255, 255, 0.18) !important;
   border-color: rgba(46, 204, 113, 0.4) !important;
   box-shadow: 
@@ -373,68 +429,70 @@ select option,
   transform: translateY(-2px) !important;
 }
 
-/* Tables visual enhancements for dark mode contrast */
-.patient-page table,
+/* Tables visual enhancements for dark mode contrast - ADMIN / DOCTOR / PORTAL */
 .admin-page table,
-.admin-table {
+.admin-page .admin-table {
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 12px !important;
   overflow: hidden !important;
 }
-
-.patient-page thead,
 .admin-page thead {
   background: rgba(46, 204, 113, 0.15) !important;
 }
-
-.patient-page th,
-.admin-page th,
-.admin-th {
+.admin-page th {
   color: #f5f5f5 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
   font-weight: 600 !important;
   padding: 12px 16px !important;
 }
-
-.patient-page td,
-.admin-page td,
-.admin-td {
+.admin-page td {
   color: #d0d0d0 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   padding: 12px 16px !important;
 }
-
-.patient-page tbody tr:hover,
 .admin-page tbody tr:hover {
   background: rgba(46, 204, 113, 0.08) !important;
 }
 
-/* Chat interfaces overrides */
-.message-text {
+/* Chat interfaces overrides - ADMIN / DOCTOR / PORTAL */
+.admin-page .message-text,
+.doctor-page .message-text,
+.portal-page .message-text {
   background: rgba(255, 255, 255, 0.1) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
   color: #e0e0e0 !important;
 }
 
-.message.user .message-text {
+.admin-page .message.user .message-text,
+.doctor-page .message.user .message-text,
+.portal-page .message.user .message-text {
   background: linear-gradient(135deg, rgba(46, 204, 113, 0.25) 0%, rgba(46, 204, 113, 0.15) 100%) !important;
   border-color: rgba(46, 204, 113, 0.4) !important;
 }
 
-.chat-input-wrapper {
+.admin-page .chat-input-wrapper,
+.doctor-page .chat-input-wrapper,
+.portal-page .chat-input-wrapper {
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-.chat-input {
+.admin-page .chat-input,
+.doctor-page .chat-input,
+.portal-page .chat-input {
   color: #e0e0e0 !important;
 }
 
 /* Portal Secondary & Danger Buttons overrides */
-.btn-secondary,
-.admin-btn-secondary,
-.back-btn {
+.admin-page .btn-secondary,
+.admin-page .admin-btn-secondary,
+.admin-page .back-btn,
+.doctor-page .btn-secondary,
+.doctor-page .back-btn,
+.portal-page .btn-secondary,
+.portal-page .admin-btn-secondary,
+.portal-page .back-btn {
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 12px !important;
@@ -443,9 +501,14 @@ select option,
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-.btn-secondary:hover,
-.admin-btn-secondary:hover,
-.back-btn:hover {
+.admin-page .btn-secondary:hover,
+.admin-page .admin-btn-secondary:hover,
+.admin-page .back-btn:hover,
+.doctor-page .btn-secondary:hover,
+.doctor-page .back-btn:hover,
+.portal-page .btn-secondary:hover,
+.portal-page .admin-btn-secondary:hover,
+.portal-page .back-btn:hover {
   background: rgba(255, 255, 255, 0.18) !important;
   border-color: rgba(46, 204, 113, 0.4) !important;
   color: #ffffff !important;
@@ -453,8 +516,11 @@ select option,
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
-.btn-danger,
-.admin-btn-danger {
+.admin-page .btn-danger,
+.admin-page .admin-btn-danger,
+.doctor-page .btn-danger,
+.portal-page .btn-danger,
+.portal-page .admin-btn-danger {
   background: rgba(231, 76, 60, 0.2) !important;
   border: 1px solid rgba(231, 76, 60, 0.4) !important;
   border-radius: 12px !important;
@@ -463,8 +529,11 @@ select option,
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-.btn-danger:hover,
-.admin-btn-danger:hover {
+.admin-page .btn-danger:hover,
+.admin-page .admin-btn-danger:hover,
+.doctor-page .btn-danger:hover,
+.portal-page .btn-danger:hover,
+.portal-page .admin-btn-danger:hover {
   background: rgba(231, 76, 60, 0.3) !important;
   border-color: #e74c3c !important;
   transform: translateY(-1.5px) !important;
@@ -472,7 +541,9 @@ select option,
 }
 
 /* Calendar styling details overrides */
-.rbc-calendar {
+.admin-page .rbc-calendar,
+.doctor-page .rbc-calendar,
+.portal-page .rbc-calendar {
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 16px !important;
@@ -489,23 +560,17 @@ select option,
   border-radius: 6px !important;
 }
 
-/* Global dashboard text color overrides for readability on dark backgrounds */
-.admin-layout, .doctor-layout, .patient-layout,
-.admin-dashboard, .doctor-dashboard, .futuristic-dashboard,
-.admin-card, .doctor-card, .patient-card, .stat-card, .chart-card, .dashboard-card,
+/* Global dashboard text color overrides - ADMIN / DOCTOR / PORTAL only */
+.admin-layout, .doctor-layout,
+.admin-dashboard, .doctor-dashboard,
+.admin-card, .doctor-card, .stat-card, .chart-card, .dashboard-card,
 .dashboard-grid, .kpi-grid, .activity-list, .data-table-container {
-  color: #e0e0e0 !important; /* text-gray-200 */
+  color: #e0e0e0 !important;
 }
 
-/* Ensure headings, paragraphs, spans and lists within layouts/dashboards also inherit readable colors */
+/* Ensure headings, paragraphs, spans and lists within layouts/dashboards also inherit readable colors - ADMIN / DOCTOR / PORTAL */
 .admin-layout h1, .admin-layout h2, .admin-layout h3, .admin-layout h4, .admin-layout h5, .admin-layout h6,
 .doctor-layout h1, .doctor-layout h2, .doctor-layout h3, .doctor-layout h4, .doctor-layout h5, .doctor-layout h6,
-.patient-layout h1, .patient-layout h2, .patient-layout h3, .patient-layout h4, .patient-layout h5, .patient-layout h6,
-.admin-layout p, .doctor-layout p, .patient-layout p,
-.admin-layout td, .doctor-layout td, .patient-layout td,
-.admin-layout th, .doctor-layout th, .patient-layout th,
-.futuristic-dashboard h1, .futuristic-dashboard h2, .futuristic-dashboard h3, .futuristic-dashboard h4,
-.futuristic-dashboard p, .futuristic-dashboard span, .futuristic-dashboard div:not(.pulse-dot),
 .doctor-dashboard h1, .doctor-dashboard h2, .doctor-dashboard h3, .doctor-dashboard h4,
 .doctor-dashboard p, .doctor-dashboard span,
 .admin-dashboard h1, .admin-dashboard h2, .admin-dashboard h3, .admin-dashboard h4,
@@ -550,5 +615,39 @@ select option,
   border-color: rgba(46, 204, 113, 0.5) !important;
   transform: translateY(-1.5px) !important;
   box-shadow: 0 8px 16px rgba(46, 204, 113, 0.4) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PATIENT PAGES: Force Light Theme (highest priority)
+   ═══════════════════════════════════════════════════════ */
+.patient-page,
+.patient-layout,
+.patient-main,
+.futuristic-dashboard {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+.patient-page h1, .patient-page h2, .patient-page h3,
+.futuristic-dashboard h1, .futuristic-dashboard h2, .futuristic-dashboard h3 {
+  color: #1e293b !important;
+}
+.patient-page p, .patient-page span, .patient-page td,
+.futuristic-dashboard p, .futuristic-dashboard span {
+  color: #475569 !important;
+}
+.patient-page .chart-card,
+.patient-page .activity-card,
+.patient-page .table-card,
+.patient-page .action-card,
+.patient-page .kpi-card,
+.patient-page .stat-card,
+.patient-page .patient-card,
+.patient-page .info-card {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
 }
 
