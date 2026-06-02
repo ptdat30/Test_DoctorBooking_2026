@@ -173,7 +173,7 @@ const PatientDashboard = () => {
 
   return (
     <PatientLayout>
-      <div className="futuristic-dashboard text-slate-800">
+      <div className="futuristic-dashboard">
         {/* Header Section */}
         <div className="dashboard-header">
           <div className="header-left">

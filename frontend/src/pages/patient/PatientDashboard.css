@@ -3,7 +3,7 @@
 
 .futuristic-dashboard {
   padding: 2rem;
-  background: #0a0a0a;
+  background: #1a2a3a;
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -15,7 +15,7 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .header-left {
@@ -27,18 +27,14 @@
 .dashboard-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #f5f5f5;
   margin: 0;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #FFFFFF 0%, #A5B4FC 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .dashboard-subtitle {
-  font-size: 0.9rem;
-  color: #94A3B8;
+  font-size: 1rem;
+  color: #aaaaaa;
   margin: 0;
   font-weight: 400;
 }
@@ -60,16 +56,16 @@
   left: 1rem;
   width: 18px;
   height: 18px;
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.5);
   pointer-events: none;
 }
 
 .global-search {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
   padding: 0.75rem 1rem 0.75rem 2.75rem;
-  color: #E2E8F0;
+  color: #FFFFFF;
   font-size: 0.9rem;
   width: 300px;
   transition: all 0.3s;
@@ -78,13 +74,13 @@
 
 .global-search:focus {
   outline: none;
-  border-color: #3B82F6;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #2ecc71;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.15);
 }
 
 .global-search::placeholder {
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .notification-bell {
@@ -94,22 +90,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .notification-bell:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .notification-bell i {
   width: 20px;
   height: 20px;
-  color: #E2E8F0;
+  color: #FFFFFF;
 }
 
 .notification-dot {
@@ -163,9 +159,9 @@
 }
 
 .kpi-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
   padding: 1.5rem;
   transition: all 0.3s;
@@ -186,10 +182,10 @@
 }
 
 .kpi-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px var(--card-color, rgba(59, 130, 246, 0.2));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px var(--card-color, rgba(46, 204, 113, 0.2));
 }
 
 .kpi-card:hover::before {
@@ -258,7 +254,7 @@
 
 .kpi-label {
   font-size: 0.85rem;
-  color: #94A3B8;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
 }
 
@@ -300,9 +296,9 @@
 /* Chart Card */
 .chart-card,
 .activity-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
   padding: 1.5rem;
   transition: all 0.3s;
@@ -310,7 +306,7 @@
 
 .chart-card:hover,
 .activity-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -321,7 +317,7 @@
   align-items: flex-start;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .card-title {
@@ -333,7 +329,7 @@
 
 .card-subtitle {
   font-size: 0.85rem;
-  color: #94A3B8;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
 }
 
@@ -348,18 +344,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: #94A3B8;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #E2E8F0;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
 }
 
 .icon-btn i {
@@ -409,7 +405,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .legend-item {
@@ -422,14 +418,14 @@
 
 .legend-date {
   font-size: 0.75rem;
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .legend-value {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #E2E8F0;
+  color: #FFFFFF;
 }
 
 /* Activity List */
@@ -444,15 +440,15 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   transition: all 0.2s;
 }
 
 .activity-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
   transform: translateX(4px);
 }
 
@@ -472,13 +468,13 @@
 .activity-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #E2E8F0;
+  color: #FFFFFF;
   margin-bottom: 0.25rem;
 }
 
 .activity-meta {
   font-size: 0.8rem;
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.7);
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -496,7 +492,7 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.6);
   text-align: center;
 }
 
@@ -504,14 +500,14 @@
   width: 48px;
   height: 48px;
   margin-bottom: 1rem;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 /* Data Table */
 .table-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -519,7 +515,7 @@
 }
 
 .table-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -535,7 +531,7 @@
 }
 
 .data-table thead {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .data-table th {
@@ -543,15 +539,16 @@
   text-align: left;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #94A3B8;
+  color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .data-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .table-row {
@@ -559,15 +556,15 @@
 }
 
 .table-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .table-row:nth-child(even) {
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .table-row:nth-child(even):hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .table-cell-content {
@@ -578,13 +575,13 @@
 
 .table-primary {
   font-weight: 600;
-  color: #E2E8F0;
+  color: #FFFFFF;
 }
 
 .monospace {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.9rem;
-  color: #94A3B8;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .status-badge {
@@ -602,14 +599,14 @@
 .empty-table {
   text-align: center;
   padding: 3rem;
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .empty-table i {
   width: 48px;
   height: 48px;
   margin-bottom: 1rem;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 /* Actions Grid */
@@ -624,9 +621,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
   text-decoration: none;
   color: inherit;
@@ -648,8 +645,8 @@
 }
 
 .action-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -683,25 +680,25 @@
 .action-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #E2E8F0;
+  color: #FFFFFF;
   margin-bottom: 0.25rem;
 }
 
 .action-subtitle {
   font-size: 0.85rem;
-  color: #94A3B8;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .action-arrow {
   width: 20px;
   height: 20px;
-  color: #64748B;
+  color: rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
   transition: all 0.3s;
 }
 
 .action-card:hover .action-arrow {
-  color: #E2E8F0;
+  color: #FFFFFF;
   transform: translateX(4px);
 }
 
