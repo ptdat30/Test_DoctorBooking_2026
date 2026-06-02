@@ -24,12 +24,12 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #1a2a3a !important;
-  color: #e0e0e0;
+  background: #f8fafc !important;
+  color: #1e293b;
   position: relative;
 }
 
-/* Dark background blobs */
+/* Light background blobs */
 body::before,
 body::after {
   content: "";
@@ -44,7 +44,7 @@ body::before {
   left: -10%;
   width: 50vw;
   height: 50vw;
-  background: rgba(30, 58, 95, 0.4);
+  background: rgba(99, 102, 241, 0.15);
   animation: blob-bounce 25s infinite ease-in-out;
 }
 body::after {
@@ -52,7 +52,7 @@ body::after {
   right: -10%;
   width: 45vw;
   height: 45vw;
-  background: rgba(15, 52, 96, 0.4);
+  background: rgba(59, 130, 246, 0.15);
   animation: blob-bounce 30s infinite ease-in-out;
   animation-delay: 2s;
 }
@@ -76,10 +76,10 @@ select,
 .admin-input,
 .admin-select,
 .admin-textarea {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
-  color: #e0e0e0 !important;
+  color: #1e293b !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   outline: none !important;
 }
@@ -97,8 +97,8 @@ select:hover:not(:focus),
 .admin-input:hover:not(:focus),
 .admin-select:hover:not(:focus),
 .admin-textarea:hover:not(:focus) {
-  background: rgba(255, 255, 255, 0.18) !important;
-  border-color: rgba(46, 204, 113, 0.5) !important;
+  background: #ffffff !important;
+  border-color: #3b82f6 !important;
 }
 
 input[type="text"]:focus,
@@ -114,11 +114,11 @@ select:focus,
 .admin-input:focus,
 .admin-select:focus,
 .admin-textarea:focus {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border-color: #2ecc71 !important;
+  background: #ffffff !important;
+  border-color: #3b82f6 !important;
   box-shadow: 
-    0 0 0 3px rgba(46, 204, 113, 0.2),
-    0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    0 0 0 3px rgba(59, 130, 246, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Custom premium styling for Select dropdowns with custom chevron-down arrow */
@@ -128,7 +128,7 @@ select,
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 14px center !important;
   background-size: 16px !important;
@@ -137,24 +137,24 @@ select,
 
 select option,
 .admin-select option {
-  background-color: #1a2a3a !important;
-  color: #e0e0e0 !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
 }
 
 /* Custom Global Premium Style Override for Buttons */
 .btn-primary,
 .admin-btn-primary,
 .send-btn {
-  background: linear-gradient(135deg, #4FA9FF 0%, #80DEEA 50%, #B2DFDB 100%) !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
   background-size: 200% auto !important;
   border: none !important;
   border-radius: 12px !important;
-  color: #0f172a !important;
+  color: #ffffff !important;
   font-weight: 700 !important;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   box-shadow: 
-    0 4px 15px rgba(80, 222, 234, 0.25),
-    0 2px 4px rgba(15, 23, 42, 0.08) !important;
+    0 4px 15px rgba(59, 130, 246, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.08) !important;
   position: relative !important;
   overflow: hidden !important;
 }
@@ -165,9 +165,9 @@ select option,
   background-position: right center !important;
   transform: translateY(-2px) !important;
   box-shadow: 
-    0 10px 20px rgba(80, 222, 234, 0.4),
-    0 4px 8px rgba(79, 169, 255, 0.15) !important;
-  color: #000000 !important;
+    0 10px 20px rgba(59, 130, 246, 0.4),
+    0 4px 8px rgba(59, 130, 246, 0.15) !important;
+  color: #ffffff !important;
 }
 
 .btn-primary:active,

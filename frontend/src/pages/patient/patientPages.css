@@ -1,4 +1,4 @@
-/* Patient Pages - Dark Mode Styling */
+/* Patient Pages - Light Theme Styling */
 .patient-page {
   max-width: 1400px;
   margin: 0 auto;
@@ -7,37 +7,38 @@
 .patient-page h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #f5f5f5;
+  color: #1e293b;
   margin-bottom: 2rem;
 }
 
 .patient-page h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #f5f5f5;
+  color: #1e293b;
   margin-bottom: 1.5rem;
 }
 
 .patient-page h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #f5f5f5;
+  color: #1e293b;
   margin-bottom: 1rem;
 }
 
 .patient-card {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   transition: all 0.3s;
-  color: #e0e0e0;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .patient-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(46, 204, 113, 0.3);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .patient-form {
@@ -54,17 +55,17 @@
 .form-group label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #d5d5d5;
+  color: #475569;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  color: #f0f0f0;
+  color: #1e293b;
   font-size: 1rem;
   font-family: inherit;
   transition: all 0.2s;
@@ -74,14 +75,13 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: rgba(46, 204, 113, 0.7);
-  background: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .form-group input::placeholder,
 .form-group textarea::placeholder {
-  color: #999999;
+  color: #94a3b8;
 }
 
 .btn {
@@ -99,45 +99,50 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
 }
 
 .btn-success:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
 }
 
 .btn-danger {
-  background: rgba(231, 76, 60, 0.2);
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  color: #e74c3c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
 }
 
 .btn-danger:hover {
-  background: rgba(231, 76, 60, 0.3);
-  border-color: rgba(231, 76, 60, 0.5);
+  background: #fee2e2;
+  border-color: #dc2626;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #f1f5f9;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 .alert {
@@ -148,21 +153,21 @@
 }
 
 .alert-error {
-  background: rgba(231, 76, 60, 0.1);
-  border-color: rgba(231, 76, 60, 0.3);
-  color: #e74c3c;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
 }
 
 .alert-success {
-  background: rgba(46, 204, 113, 0.1);
-  border-color: rgba(46, 204, 113, 0.3);
-  color: #2ecc71;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
 }
 
 .alert-info {
-  background: rgba(52, 152, 219, 0.1);
-  border-color: rgba(52, 152, 219, 0.3);
-  color: #3498db;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
 .stat-grid {
@@ -173,22 +178,23 @@
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .stat-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(46, 204, 113, 0.3);
+  border-color: #3b82f6;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .stat-card-label {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: #64748b;
   margin-bottom: 0.5rem;
   font-weight: 500;
 }
@@ -196,7 +202,7 @@
 .stat-card-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1e293b;
   margin-bottom: 0.5rem;
 }
 
@@ -212,25 +218,27 @@
 }
 
 .action-card {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
   text-decoration: none;
-  color: #ffffff;
+  color: #1e293b;
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .action-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(46, 204, 113, 0.3);
+  background: #ffffff;
+  border-color: #3b82f6;
   transform: translateY(-2px);
-  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  color: #1e293b;
 }
 
 .action-card-icon {
@@ -242,48 +250,48 @@
   font-weight: 600;
 }
 
-/* Data Table Dark Mode */
+/* Data Table Light Theme */
 .patient-page table {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.08);
+  background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid #e2e8f0;
 }
 
 .patient-page thead {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8fafc;
 }
 
 .patient-page th {
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: #ffffff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .patient-page td {
   padding: 1rem;
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .patient-page tbody tr:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8fafc;
 }
 
 /* Consultation Fee Card */
 .consultation-fee-card {
-  background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.15) 100%);
-  border: 1px solid rgba(46, 204, 113, 0.3);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
+  border: 1px solid #bfdbfe;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  backdrop-filter: blur(10px);
 }
 
 .consultation-fee-card .fee-label {
@@ -291,20 +299,20 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: #475569;
   font-weight: 500;
 }
 
 .consultation-fee-card .fee-label i {
   width: 24px;
   height: 24px;
-  color: #2ecc71;
+  color: #3b82f6;
 }
 
 .consultation-fee-card .fee-amount {
   font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1e293b;
 }
 
 /* Payment Method Label */
@@ -314,14 +322,14 @@
   gap: 0.75rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #1e293b;
   margin-bottom: 1rem;
 }
 
 .payment-method-label i {
   width: 20px;
   height: 20px;
-  color: #2ecc71;
+  color: #3b82f6;
 }
 
 /* Payment Methods Grid */
@@ -336,8 +344,8 @@
   display: flex;
   align-items: center;
   padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -351,7 +359,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(39, 174, 96, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -361,14 +369,14 @@
 }
 
 .payment-method-option:hover {
-  border-color: rgba(46, 204, 113, 0.4);
+  border-color: #3b82f6;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .payment-method-option.selected {
-  border-color: #2ecc71;
-  background: rgba(46, 204, 113, 0.1);
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
 }
 
 .payment-method-option.selected::before {
@@ -404,12 +412,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f1f5f9;
   transition: all 0.3s;
 }
 
 .payment-method-option.selected .payment-icon {
-  background: rgba(46, 204, 113, 0.2);
+  background: rgba(59, 130, 246, 0.1);
   transform: scale(1.05);
 }
 
@@ -420,23 +428,23 @@
 .payment-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #1e293b;
   margin-bottom: 0.25rem;
 }
 
 .payment-desc {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: #64748b;
   line-height: 1.4;
 }
 
 .payment-desc strong {
-  color: #ffffff;
+  color: #1e293b;
   font-weight: 600;
 }
 
 .insufficient-balance {
-  color: #fc8181;
+  color: #dc2626;
   font-weight: 500;
 }
 
@@ -451,7 +459,7 @@
 .payment-check i {
   width: 28px;
   height: 28px;
-  color: #2ecc71;
+  color: #3b82f6;
 }
 
 .payment-method-option.selected .payment-check {
