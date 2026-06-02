@@ -124,6 +124,15 @@ const DoctorLayout = ({ children }) => {
                     >
                         <i data-feather={sidebarOpen ? 'chevron-left' : 'chevron-right'}></i>
                     </button>
+                    <div className="header-actions flex items-center gap-4">
+                        <button className="notification-btn relative p-2 rounded-full hover:bg-slate-100/20 transition-colors text-slate-500">
+                            <i data-feather="bell" className="w-5 h-5"></i>
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+                        </button>
+                        <div className="header-avatar w-9 h-9 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm shadow-md cursor-pointer border-2 border-white/50">
+                            {user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'D'}
+                        </div>
+                    </div>
                 </div>
                 <div className="main-content">
                     {children}
