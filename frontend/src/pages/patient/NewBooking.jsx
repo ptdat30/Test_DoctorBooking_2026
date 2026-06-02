@@ -30,6 +30,8 @@ const NewBooking = () => {
     notes: '',
     paymentMethod: 'CASH', // CASH, VNPAY, WALLET
   });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [showPreview, setShowPreview] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [loadingFamilyMembers, setLoadingFamilyMembers] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -101,7 +103,7 @@ const NewBooking = () => {
       setDoctors(data);
       setError('');
     } catch (err) {
-      setError('Không thể tải danh sách bác sĩ');
+      setError('Unable to load doctors. Please refresh the page.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -114,6 +116,7 @@ const NewBooking = () => {
       ...formData,
       [name]: value,
     });
+    setFieldErrors(prev => ({ ...prev, [name]: '' }));
 
     // Khi chọn bác sĩ hoặc đổi ngày, load available slots
     if ((name === 'doctorId' || name === 'appointmentDate') && value) {
@@ -144,48 +147,67 @@ const NewBooking = () => {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.patientFor) {
+      errors.patientFor = 'Please select who the appointment is for';
+    }
+    if (!formData.doctorId) {
+      errors.doctorId = 'Please select a doctor';
+    }
+    if (!formData.appointmentDate) {
+      errors.appointmentDate = 'Please choose an appointment date';
+    }
+    if (!formData.appointmentTime) {
+      errors.appointmentTime = 'Please select a time slot';
+    }
+    const selectedDoctorForValidation = doctors.find(d => d.id === parseInt(formData.doctorId));
+    const currentFee = selectedDoctorForValidation?.consultationFee || 0;
+    if (currentFee > 0 && !formData.paymentMethod) {
+      errors.paymentMethod = 'Please choose a payment method';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🚀 Form submitted');
+    setError('');
+    setSuccess('');
+    setSubmitting(true);
+
+    if (!validateForm()) {
+      setSubmitting(false);
+      return;
+    }
+
+    setShowPreview(true);
+    setSubmitting(false);
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     setError('');
     setSuccess('');
     setSubmitting(true);
 
     try {
-      // Frontend validation
-      if (!formData.doctorId) {
-        setError('Vui lòng chọn bác sĩ');
-        setSubmitting(false);
-        return;
-      }
-      if (!formData.appointmentDate) {
-        setError('Vui lòng chọn ngày hẹn');
-        setSubmitting(false);
-        return;
-      }
-      if (!formData.appointmentTime) {
-        setError('Vui lòng chọn giờ hẹn');
-        setSubmitting(false);
-        return;
-      }
-
-      // Get selected doctor info
-      const selectedDoctor = doctors.find(d => d.id === parseInt(formData.doctorId));
-      const consultationFee = selectedDoctor?.consultationFee || 0;
+      const selectedDoctorInfo = doctors.find(d => d.id === parseInt(formData.doctorId));
+      const consultationFee = selectedDoctorInfo?.consultationFee || 0;
       console.log('💰 Consultation fee:', consultationFee);
       console.log('💳 Payment method:', formData.paymentMethod);
 
-      // Validate payment method với wallet balance
       if (formData.paymentMethod === 'WALLET' && walletBalance < consultationFee) {
-        const errorMsg = `Số dư ví không đủ. Bạn cần ${consultationFee.toLocaleString('vi-VN')} VNĐ nhưng chỉ có ${walletBalance.toLocaleString('vi-VN')} VNĐ`;
+        const errorMsg = `Insufficient wallet balance. You need ${consultationFee.toLocaleString('en-US')} VND but only have ${walletBalance.toLocaleString('en-US')} VND.`;
         console.error('❌ Wallet validation failed:', errorMsg);
         setError(errorMsg);
         setSubmitting(false);
         return;
       }
 
-      // Chuẩn bị request data
-      // appointmentTime từ dropdown là "HH:mm", cộng ":00" thành "HH:mm:ss" cho LocalTime
       const timeValue = formData.appointmentTime.includes(':') && formData.appointmentTime.split(':').length === 2
         ? formData.appointmentTime + ':00'
         : formData.appointmentTime;
@@ -198,7 +220,6 @@ const NewBooking = () => {
         paymentMethod: formData.paymentMethod || 'CASH',
       };
 
-      // Nếu đặt cho người nhà (không phải 'self'), thêm familyMemberId
       if (formData.patientFor !== 'self') {
         appointmentData.familyMemberId = parseInt(formData.patientFor);
         console.log('👨‍👩‍👧 Booking for family member:', appointmentData.familyMemberId);
@@ -209,20 +230,15 @@ const NewBooking = () => {
       console.log('📤 Request payload:', JSON.stringify(appointmentData, null, 2));
 
       const response = await patientService.createAppointment(appointmentData);
-
       console.log('✅ API response received:', response);
 
-      // Nếu chọn VNPAY, redirect sang trang thanh toán
       if (formData.paymentMethod === 'VNPAY' && response.paymentUrl) {
-        console.log('🏦 VNPAY payment URL received, redirecting...');
-        console.log('🔗 Payment URL:', response.paymentUrl);
-        // Redirect NGAY LẬP TỨC - không delay
         window.location.href = response.paymentUrl;
         return;
       }
 
-      console.log('✅ Appointment created successfully (non-VNPAY)');
-      setSuccess('Đặt lịch hẹn thành công!');
+      setSuccess('Appointment booked successfully!');
+      setShowPreview(false);
       setTimeout(() => {
         navigate('/patient/history');
       }, 2000);
@@ -232,8 +248,7 @@ const NewBooking = () => {
       console.error('❌ Error status:', err.response?.status);
       console.error('❌ Error headers:', err.response?.headers);
 
-      // Trích xuất error message từ nhiều format response khác nhau
-      let errorMessage = 'Không thể đặt lịch hẹn. Vui lòng thử lại.';
+      let errorMessage = 'Unable to create appointment. Please try again.';
       if (err.response?.data) {
         const data = err.response.data;
         if (typeof data === 'string') {
@@ -241,11 +256,10 @@ const NewBooking = () => {
         } else if (data.message) {
           errorMessage = data.message;
         } else if (data.errors) {
-          // Validation errors từ @Valid
           const errorDetails = Object.entries(data.errors)
             .map(([field, msg]) => `${field}: ${msg}`)
             .join('; ');
-          errorMessage = errorDetails || 'Dữ liệu không hợp lệ';
+          errorMessage = errorDetails || 'Invalid data';
         } else if (data.error) {
           errorMessage = data.error;
         }
@@ -263,6 +277,12 @@ const NewBooking = () => {
   // Get selected doctor info for rendering
   const selectedDoctor = doctors.find(d => d.id === parseInt(formData.doctorId));
   const consultationFee = selectedDoctor?.consultationFee || 0;
+  const selectedPatientLabel = formData.patientFor === 'self'
+    ? 'Myself'
+    : (familyMembers.find(m => String(m.id) === formData.patientFor)?.fullName || 'Family member');
+  const paymentMethodLabel = formData.paymentMethod === 'WALLET' ? 'Health Wallet'
+    : formData.paymentMethod === 'VNPAY' ? 'VNPAY'
+    : 'Cash';
 
   if (loading) {
     return (
@@ -285,8 +305,8 @@ const NewBooking = () => {
     <PatientLayout>
       <div className="new-booking-page">
         <div className="booking-header">
-          <h1>Đặt Lịch Khám Mới</h1>
-          <p className="booking-subtitle">Chọn bác sĩ, thời gian và phương thức thanh toán</p>
+          <h1>New Appointment Booking</h1>
+          <p className="booking-subtitle">Choose doctor, date and payment method in one clear flow.</p>
         </div>
 
         {error && (
@@ -309,29 +329,29 @@ const NewBooking = () => {
               <div className="step-circle">
                 {getCurrentStep() > 1 ? '' : '1'}
               </div>
-              <div className="step-label">Chọn người khám</div>
+              <div className="step-label">Who is this for?</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 2 ? 'active' : ''} ${getCurrentStep() > 2 ? 'completed' : ''}`}>
               <div className="step-circle">
                 {getCurrentStep() > 2 ? '' : '2'}
               </div>
-              <div className="step-label">Chọn bác sĩ</div>
+              <div className="step-label">Select doctor</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 3 ? 'active' : ''} ${getCurrentStep() > 3 ? 'completed' : ''}`}>
               <div className="step-circle">
                 {getCurrentStep() > 3 ? '' : '3'}
               </div>
-              <div className="step-label">Chọn thời gian</div>
+              <div className="step-label">Pick date/time</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 4 ? 'active' : ''} ${getCurrentStep() > 4 ? 'completed' : ''}`}>
               <div className="step-circle">
                 {getCurrentStep() > 4 ? '' : '4'}
               </div>
-              <div className="step-label">Thanh toán</div>
+              <div className="step-label">Payment</div>
             </div>
             <div className={`form-step ${getCurrentStep() >= 5 ? 'active' : ''}`}>
               <div className="step-circle">5</div>
-              <div className="step-label">Xác nhận</div>
+              <div className="step-label">Confirm</div>
             </div>
           </div>
 
@@ -339,11 +359,12 @@ const NewBooking = () => {
             {/* Patient Selection - Cho ai khám */}
             <div className="patient-selection-section">
               <label className="form-label">
-                Bạn đặt lịch cho ai?
+                Who is this appointment for?
                 <span className="required">*</span>
               </label>
+              <div className="form-hint text-slate-500 text-sm mb-3">Select dependent (if any) or choose yourself.</div>
               <div className="patient-options-grid">
-                {/* Option: Cho bản thân */}
+                {/* Option: Choose self */}
                 <label className={`patient-option-card ${formData.patientFor === 'self' ? 'selected' : ''}`}>
                   <input
                     type="radio"
@@ -355,8 +376,8 @@ const NewBooking = () => {
                   <div className="patient-option-content">
                     <div className="patient-option-icon"></div>
                     <div className="patient-option-info">
-                      <div className="patient-option-name">Cho bản thân tôi</div>
-                      <div className="patient-option-desc">Đặt lịch cho chính bạn</div>
+                      <div className="patient-option-name">For myself</div>
+                      <div className="patient-option-desc">Book this appointment for you</div>
                     </div>
                   </div>
                   <div className="patient-check-icon">
@@ -370,8 +391,8 @@ const NewBooking = () => {
                     <div className="patient-option-content">
                       <div className="patient-option-icon"></div>
                       <div className="patient-option-info">
-                        <div className="patient-option-name">Đang tải...</div>
-                        <div className="patient-option-desc">Đang tải danh sách thành viên</div>
+                        <div className="patient-option-name">Loading...</div>
+                        <div className="patient-option-desc">Fetching family members</div>
                       </div>
                     </div>
                   </div>
@@ -380,8 +401,8 @@ const NewBooking = () => {
                     <div className="patient-option-content">
                       <div className="patient-option-icon"></div>
                       <div className="patient-option-info">
-                        <div className="patient-option-name">Chưa có thành viên</div>
-                        <div className="patient-option-desc">Vào "Hồ sơ Gia đình" để thêm thành viên</div>
+                        <div className="patient-option-name">No family members</div>
+                        <div className="patient-option-desc">Add dependents in Family Profile</div>
                       </div>
                     </div>
                   </div>
@@ -407,9 +428,9 @@ const NewBooking = () => {
                         <div className="patient-option-info">
                           <div className="patient-option-name">{member.fullName}</div>
                           <div className="patient-option-desc">
-                            {member.relationship === 'CHILD' ? 'Con cái' :
-                              member.relationship === 'PARENT' ? 'Bố/Mẹ' :
-                                member.relationship === 'SPOUSE' ? 'Vợ/Chồng' : 'Thành viên'}
+                            {member.relationship === 'CHILD' ? 'Dependent' :
+                              member.relationship === 'PARENT' ? 'Parent' :
+                                member.relationship === 'SPOUSE' ? 'Spouse' : 'Family member'}
                             {member.medicalHistory && (
                               <span className="medical-history-badge"> • {member.medicalHistory}</span>
                             )}
@@ -423,12 +444,17 @@ const NewBooking = () => {
                   ))
                 )}
               </div>
+              {fieldErrors.patientFor && (
+                <div className="field-error" style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '0.75rem' }}>
+                  {fieldErrors.patientFor}
+                </div>
+              )}
             </div>
 
             {/* Doctor Selection */}
             <div>
               <label className="form-label">
-                Chọn Bác Sĩ
+                Select doctor
                 <span className="required">*</span>
               </label>
               <div className="doctor-select-wrapper">
@@ -440,22 +466,27 @@ const NewBooking = () => {
                   required
                   className="with-icon"
                 >
-                  <option value="">Chọn bác sĩ chuyên khoa...</option>
+                  <option value="">Choose a doctor...</option>
                   {doctors.map((doctor) => (
                     <option key={doctor.id} value={doctor.id}>
                       Dr. {doctor.fullName} - {doctor.specialization}
-                      {doctor.consultationFee > 0 ? ` • ${Number(doctor.consultationFee).toLocaleString('vi-VN')} VNĐ` : ' • Miễn phí'}
+                      {doctor.consultationFee > 0 ? ` • ${Number(doctor.consultationFee).toLocaleString('en-US')} VND` : ' • Free'}
                     </option>
                   ))}
                 </select>
               </div>
+              {fieldErrors.doctorId && (
+                <div className="field-error" style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '0.75rem' }}>
+                  {fieldErrors.doctorId}
+                </div>
+              )}
             </div>
 
             {/* Date & Time Selection */}
             <div className="datetime-grid">
               <div>
                 <label className="form-label">
-                  Ngày Hẹn
+                  Expected appointment date
                   <span className="required">*</span>
                 </label>
                 <div className="input-wrapper">
@@ -470,11 +501,16 @@ const NewBooking = () => {
                     className="with-icon"
                   />
                 </div>
+                {fieldErrors.appointmentDate && (
+                  <div className="field-error" style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '0.75rem' }}>
+                    {fieldErrors.appointmentDate}
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="form-label">
-                  Giờ Hẹn
+                  Select appointment time
                   <span className="required">*</span>
                 </label>
                 <div className="input-wrapper">
@@ -488,16 +524,16 @@ const NewBooking = () => {
                     className="with-icon"
                   >
                     {loadingSlots ? (
-                      <option value="">Đang tải khung giờ...</option>
+                      <option value="">Loading available times...</option>
                     ) : availableTimeSlots.length === 0 ? (
                       formData.doctorId && formData.appointmentDate ? (
-                        <option value="">Lịch bác sĩ đã full trong ngày này</option>
+                        <option value="">Doctor is fully booked on this date</option>
                       ) : (
-                        <option value="">Chọn bác sĩ và ngày trước...</option>
+                        <option value="">Choose doctor and date first...</option>
                       )
                     ) : (
                       <>
-                        <option value="">Chọn giờ khám...</option>
+                        <option value="">Select a time slot...</option>
                         {availableTimeSlots.map((time) => (
                           <option key={time} value={time}>
                             {time}
@@ -506,15 +542,20 @@ const NewBooking = () => {
                       </>
                     )}
                   </select>
+                  {fieldErrors.appointmentTime && (
+                    <div className="field-error" style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '0.75rem' }}>
+                      {fieldErrors.appointmentTime}
+                    </div>
+                  )}
                 </div>
                 {formData.doctorId && formData.appointmentDate && availableTimeSlots.length > 0 && (
                   <div style={{ fontSize: '0.85rem', color: '#10b981', marginTop: '0.5rem' }}>
-                     Có {availableTimeSlots.length} khung giờ trống
+                    {availableTimeSlots.length} available time slots
                   </div>
                 )}
                 {formData.doctorId && formData.appointmentDate && availableTimeSlots.length === 0 && !loadingSlots && (
                   <div style={{ fontSize: '0.85rem', color: '#ef4444', marginTop: '0.5rem' }}>
-                    ✗ Không còn khung giờ trống. Vui lòng chọn ngày khác.
+                    ✗ No available slots. Please select another date.
                   </div>
                 )}
               </div>
@@ -528,9 +569,9 @@ const NewBooking = () => {
                     <i data-feather="credit-card"></i>
                   </div>
                   <div className="fee-text">
-                    <div className="fee-label-text">Phí khám bệnh</div>
+                    <div className="fee-label-text">Consultation fee</div>
                     <div className="fee-amount-display">
-                      {consultationFee.toLocaleString('vi-VN')} VNĐ
+                      {consultationFee.toLocaleString('en-US')} VND
                     </div>
                   </div>
                 </div>
@@ -541,9 +582,14 @@ const NewBooking = () => {
             {selectedDoctor && consultationFee > 0 && (
               <div className="payment-section">
                 <div className="payment-section-label">
-                  Phương thức thanh toán
+                  Payment method
                   <span className="required">*</span>
                 </div>
+                {fieldErrors.paymentMethod && (
+                  <div className="field-error" style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '0.75rem' }}>
+                    {fieldErrors.paymentMethod}
+                  </div>
+                )}
                 <div className="payment-options-grid">
 
                   {/* CASH */}
@@ -558,8 +604,8 @@ const NewBooking = () => {
                     <div className="payment-option-content">
                       <div className="payment-option-icon">💵</div>
                       <div className="payment-option-info">
-                        <div className="payment-option-name">Tiền mặt</div>
-                        <div className="payment-option-desc">Thanh toán trực tiếp tại phòng khám</div>
+                        <div className="payment-option-name">Cash</div>
+                        <div className="payment-option-desc">Pay directly at the clinic</div>
                       </div>
                     </div>
                     <div className="payment-check-icon">
@@ -580,7 +626,7 @@ const NewBooking = () => {
                       <div className="payment-option-icon">🏦</div>
                       <div className="payment-option-info">
                         <div className="payment-option-name">VNPAY</div>
-                        <div className="payment-option-desc">Thanh toán online qua thẻ ATM / QR Code ngân hàng</div>
+                        <div className="payment-option-desc">Pay online via bank QR or card</div>
                       </div>
                     </div>
                     <div className="payment-check-icon">
@@ -601,11 +647,11 @@ const NewBooking = () => {
                     <div className="payment-option-content">
                       <div className="payment-option-icon"></div>
                       <div className="payment-option-info">
-                        <div className="payment-option-name">Ví Sức khỏe</div>
+                        <div className="payment-option-name">Health Wallet</div>
                         <div className="payment-option-desc">
-                          Số dư: <strong>{walletBalance.toLocaleString('vi-VN')} VNĐ</strong>
+                          Balance: <strong>{walletBalance.toLocaleString('en-US')} VND</strong>
                           {walletBalance < consultationFee && (
-                            <span className="insufficient-funds">(Không đủ số dư)</span>
+                            <span className="insufficient-funds">(Insufficient funds)</span>
                           )}
                         </div>
                       </div>
@@ -621,7 +667,7 @@ const NewBooking = () => {
             {/* Notes */}
             <div>
               <label className="form-label">
-                Ghi Chú (Tùy chọn)
+                Notes (optional)
               </label>
               <div className="textarea-wrapper">
                 <i data-feather="file-text" className="textarea-icon"></i>
@@ -630,7 +676,7 @@ const NewBooking = () => {
                   value={formData.notes}
                   onChange={handleChange}
                   className="notes-textarea with-icon"
-                  placeholder="Mô tả triệu chứng, yêu cầu đặc biệt hoặc thông tin bổ sung..."
+                  placeholder="Example: sore throat for 3 days, want ENT specialist…"
                 />
               </div>
             </div>
@@ -644,27 +690,69 @@ const NewBooking = () => {
                 disabled={submitting}
               >
                 <span style={{ fontSize: '1.2rem' }}>✕</span>
-                Hủy bỏ
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
                 className="btn-submit"
+                style={{ backgroundColor: '#0f766e', color: 'white', minWidth: '220px', borderRadius: '999px', padding: '1rem 1.5rem', fontSize: '1rem' }}
               >
                 {submitting ? (
                   <>
                     <div className="loading-spinner-small"></div>
-                    {formData.paymentMethod === 'VNPAY' ? 'Đang chuyển sang VNPAY...' : 'Đang xử lý...'}
+                    {formData.paymentMethod === 'VNPAY' ? 'Redirecting to VNPAY...' : 'Processing...'}
                   </>
                 ) : (
                   <>
                     <span style={{ fontSize: '1.2rem' }}></span>
-                    Xác nhận đặt lịch
+                    Confirm booking
                   </>
                 )}
               </button>
             </div>
           </form>
+
+          {showPreview && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+              <div className="w-full max-w-2xl rounded-[32px] bg-white shadow-2xl border border-slate-200 overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+                  <div>
+                    <h2 className="text-xl font-bold">Review Booking Details</h2>
+                    <p className="text-sm text-slate-500">Confirm the appointment information before submission.</p>
+                  </div>
+                  <button onClick={() => setShowPreview(false)} className="text-slate-500 hover:text-slate-900">
+                    <i data-feather="x"></i>
+                  </button>
+                </div>
+                <div className="space-y-4 px-6 py-5">
+                  <div className="rounded-3xl bg-slate-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Appointment Summary</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-700">
+                      <div><span className="font-semibold">Patient:</span> {selectedPatientLabel}</div>
+                      <div><span className="font-semibold">Doctor:</span> {selectedDoctor?.fullName || 'Not selected'}</div>
+                      <div><span className="font-semibold">Specialty:</span> {selectedDoctor?.specialization || 'N/A'}</div>
+                      <div><span className="font-semibold">Date:</span> {formData.appointmentDate}</div>
+                      <div><span className="font-semibold">Time:</span> {formData.appointmentTime}</div>
+                      <div><span className="font-semibold">Payment:</span> {paymentMethodLabel}</div>
+                    </div>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-700">
+                    <div className="font-semibold mb-2">Notes</div>
+                    <div className="whitespace-pre-wrap text-slate-600">{formData.notes ? formData.notes : 'No notes provided'}</div>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3 px-6 py-5 bg-slate-50 justify-end">
+                  <button onClick={() => setShowPreview(false)} className="w-full sm:w-auto px-5 py-3 text-sm font-semibold rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition">
+                    Edit details
+                  </button>
+                  <button onClick={handleFinalSubmit} disabled={submitting} className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-700 text-white text-sm font-semibold hover:bg-emerald-800 transition shadow-lg">
+                    {submitting ? 'Submitting...' : 'Confirm booking'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
