@@ -2,13 +2,13 @@
   "type": "object",
   "required": ["token", "type", "id", "username", "role"],
   "properties": {
-    "token": { "type": "string" },
-    "refreshToken": { "type": "string" },
-    "type": { "type": "string" },
+    "token": { "type": ["string", "null"] },
+    "refreshToken": { "type": ["string", "null"] },
+    "type": { "type": ["string", "null"] },
     "id": { "type": "integer" },
-    "username": { "type": "string" },
-    "email": { "type": "string" },
-    "role": { "type": "string" },
-    "fullName": { "type": "string" }
+    "username": { "type": ["string", "null"] },
+    "email": { "type": ["string", "null"] },
+    "role": { "type": ["string", "null"] },
+    "fullName": { "type": ["string", "null"] }
   }
 }
