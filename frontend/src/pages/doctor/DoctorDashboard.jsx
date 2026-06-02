@@ -17,6 +17,8 @@ const DoctorDashboard = () => {
     upcomingAppointments: 0,
     completedAppointments: 0,
     cancelledAppointments: 0,
+    appsTrendValue: 0,
+    treatmentsTrendValue: 0,
   });
   const [appointments, setAppointments] = useState([]);
   const [treatments, setTreatments] = useState([]);
@@ -54,13 +56,43 @@ const DoctorDashboard = () => {
         })
         .slice(0, 5);
 
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayAppsCount = allApps.filter(a => a.appointmentDate === yesterdayStr).length;
+      const todayAppsCount = todayApps.length;
+      
+      let appsTrendValue = 0;
+      if (yesterdayAppsCount > 0) {
+          appsTrendValue = Math.round(((todayAppsCount - yesterdayAppsCount) / yesterdayAppsCount) * 100);
+      } else if (todayAppsCount > 0) {
+          appsTrendValue = 100;
+      }
+
+      const todayDate = new Date();
+      const currentMonthStr = todayDate.toISOString().substring(0, 7);
+      const lastMonthDate = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1);
+      const lastMonthStr = lastMonthDate.toISOString().substring(0, 7);
+
+      const currentMonthTreatments = allTreatments.filter(t => t.createdAt && t.createdAt.startsWith(currentMonthStr)).length;
+      const lastMonthTreatments = allTreatments.filter(t => t.createdAt && t.createdAt.startsWith(lastMonthStr)).length;
+      
+      let treatmentsTrendValue = 0;
+      if (lastMonthTreatments > 0) {
+          treatmentsTrendValue = Math.round(((currentMonthTreatments - lastMonthTreatments) / lastMonthTreatments) * 100);
+      } else if (currentMonthTreatments > 0) {
+          treatmentsTrendValue = 100;
+      }
+
       setStats({
-        todayAppointments: todayApps.length,
+        todayAppointments: todayAppsCount,
         pendingAppointments: pending.length,
         totalTreatments: allTreatments.length,
         upcomingAppointments: upcoming.length,
         completedAppointments: completed.length,
         cancelledAppointments: cancelled.length,
+        appsTrendValue,
+        treatmentsTrendValue
       });
       setAppointments(allApps);
       setTreatments(allTreatments);
@@ -73,39 +105,25 @@ const DoctorDashboard = () => {
     }
   };
 
-  // Prepare chart data for appointments (last 7 days)
-  const appointmentsChartData = useMemo(() => {
+  // Prepare combined chart data for appointments and treatments (last 7 days)
+  const combined7DaysData = useMemo(() => {
     const days = [];
     const today = new Date();
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      const count = appointments.filter(a => a.appointmentDate === dateStr).length;
-      const dayName = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()];
-      days.push({ label: dayName, value: count });
-    }
-    return days;
-  }, [appointments]);
-
-  // Prepare chart data for treatments (last 7 days)
-  const treatmentsChartData = useMemo(() => {
-    const days = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      const count = treatments.filter(t => {
+      const appsCount = appointments.filter(a => a.appointmentDate === dateStr).length;
+      const treatmentsCount = treatments.filter(t => {
         if (!t.createdAt) return false;
         const createdDate = new Date(t.createdAt).toISOString().split('T')[0];
         return createdDate === dateStr;
       }).length;
-      const dayName = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()];
-      days.push({ label: dayName, value: count });
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+      days.push({ label: dayName, appointments: appsCount, treatments: treatmentsCount });
     }
     return days;
-  }, [treatments]);
+  }, [appointments, treatments]);
 
   // Prepare monthly stats
   const monthlyStats = useMemo(() => {
@@ -119,9 +137,9 @@ const DoctorDashboard = () => {
         if (!t.createdAt) return false;
         return t.createdAt.startsWith(monthStr);
       }).length;
-      const monthName = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'][date.getMonth()];
+      const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
       months.push({
-        label: `${monthName}/${date.getFullYear().toString().slice(-2)}`,
+        label: `${monthName} '${date.getFullYear().toString().slice(-2)}`,
         appointments: appsCount,
         treatments: treatmentsCount
       });
@@ -131,39 +149,59 @@ const DoctorDashboard = () => {
 
   const statCards = useMemo(() => [
     {
-      label: "Lịch hẹn hôm nay",
+      label: "Today's Appointments",
       value: stats.todayAppointments,
       color: '#3b82f6',
       chartType: 'wave',
+      trend: { value: Math.abs(stats.appsTrendValue), isPositive: stats.appsTrendValue >= 0 },
+      chartData: combined7DaysData.map(d => ({ value: d.appointments, label: d.label })),
       onClick: () => window.location.href = '/doctor/appointments'
     },
     {
-      label: 'Lịch hẹn đang chờ',
+      label: 'Pending Appointments',
       value: stats.pendingAppointments,
       color: '#f59e0b',
       chartType: 'bars',
+      trend: { value: 0, isNeutral: true },
+      chartData: combined7DaysData.map(d => ({ value: 0, label: d.label })),
       onClick: () => window.location.href = '/doctor/appointments?status=PENDING'
     },
     {
-      label: 'Tổng điều trị',
+      label: 'Total Treatments',
       value: stats.totalTreatments,
       color: '#10b981',
       chartType: 'line',
+      trend: { value: Math.abs(stats.treatmentsTrendValue), isPositive: stats.treatmentsTrendValue >= 0 },
+      chartData: combined7DaysData.map(d => ({ value: d.treatments, label: d.label })),
       onClick: () => window.location.href = '/doctor/treatments'
     },
     {
-      label: 'Đã hoàn thành',
+      label: 'Completed',
       value: stats.completedAppointments,
       color: '#8b5cf6',
       chartType: 'dots',
+      trend: { value: 0, isNeutral: true },
+      chartData: combined7DaysData.map(d => ({ value: 0, label: d.label })),
       onClick: () => window.location.href = '/doctor/appointments?status=COMPLETED'
     },
-  ], [stats]);
+  ], [stats, combined7DaysData]);
 
   if (loading) {
     return (
       <DoctorLayout>
-        <Loading />
+        <div className="doctor-dashboard p-6 animate-pulse">
+          <div className="h-8 bg-slate-200/50 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-slate-200/50 rounded w-1/3 mb-8"></div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-36 bg-slate-200/50 rounded-2xl"></div>
+            ))}
+          </div>
+          
+          <div className="h-[300px] bg-slate-200/50 rounded-2xl mb-8"></div>
+          <div className="h-[350px] bg-slate-200/50 rounded-2xl"></div>
+        </div>
       </DoctorLayout>
     );
   }
@@ -172,17 +210,61 @@ const DoctorDashboard = () => {
     <DoctorLayout>
       <div className="doctor-dashboard text-slate-800">
         <div className="dashboard-header">
-          <h1 className="dashboard-title">
-            Bảng Điều Khiển Bác Sĩ
+          {/* Injected keyframes for gradient-flow */}
+          <style>{`
+            @keyframes gradient-flow {
+              0%   { background-position: 0% center; }
+              100% { background-position: 300% center; }
+            }
+          `}</style>
+
+          {/* Live indicator badge */}
+          <div className="dashboard-header-badge">
+            <span className="dashboard-header-badge-dot"></span>
+            Hệ thống hoạt động
+          </div>
+
+          <h1
+            className="dashboard-title"
+            style={{
+              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #10b981, #3b82f6, #8b5cf6)',
+              backgroundSize: '300% auto',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              color: 'transparent',
+              animation: 'gradient-flow 5s linear infinite',
+            }}
+          >
+            Doctor Dashboard
           </h1>
+
           <p className="dashboard-subtitle">
             Tổng quan hoạt động và thống kê của bạn
+            <span className="dashboard-subtitle-date">
+              📅&nbsp;
+              {new Date().toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </span>
           </p>
         </div>
 
         {error && (
-          <div className="error-message">
-            {error}
+          <div className="error-message bg-rose-50 border border-rose-200 text-rose-600 p-4 rounded-xl flex items-center justify-between mb-8 shadow-sm">
+            <div className="flex items-center gap-3">
+              <i data-feather="alert-circle"></i>
+              <span className="font-medium">{error}</span>
+            </div>
+            <button 
+              onClick={loadStats} 
+              className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-sm font-semibold transition-colors"
+            >
+              Thử lại
+            </button>
           </div>
         )}
 
@@ -194,55 +276,38 @@ const DoctorDashboard = () => {
         </div>
 
         {/* Charts Section */}
-        <div className="charts-section">
-          <div className="chart-card">
+        <div className="charts-section" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="chart-card glass-card">
             <div className="chart-header">
-              <h3 className="chart-title">Lịch hẹn 7 ngày qua</h3>
-              <span className="chart-subtitle">Theo ngày</span>
+              <h3 className="chart-title">Activity Overview (Last 7 Days)</h3>
+              <span className="chart-subtitle">Appointments & Treatments</span>
             </div>
             <SimpleChart
-              data={appointmentsChartData}
-              type="bar"
-              color="#3b82f6"
-              height={220}
-            />
-          </div>
-
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">Điều trị 7 ngày qua</h3>
-              <span className="chart-subtitle">Theo ngày</span>
-            </div>
-            <SimpleChart
-              data={treatmentsChartData}
-              type="line"
-              color="#10b981"
-              height={220}
+              data={combined7DaysData}
+              type="area"
+              series={[
+                { key: 'appointments', name: 'Appointments', color: '#3b82f6' },
+                { key: 'treatments', name: 'Treatments', color: '#10b981' }
+              ]}
+              height={260}
             />
           </div>
         </div>
 
         {/* Monthly Stats */}
-        <div className="monthly-stats-card">
-          <h3 className="section-title">Thống kê 6 tháng gần đây</h3>
+        <div className="chart-card glass-card monthly-stats-card">
+          <h3 className="section-title">Last 6 Months Statistics</h3>
           <div className="monthly-stats-content">
-            <div className="monthly-chart">
+            <div className="monthly-chart" style={{ flex: 1, minWidth: '100%' }}>
               <SimpleChart
-                data={monthlyStats.map(m => ({ label: m.label, value: m.appointments }))}
-                type="bar"
-                color="#8b5cf6"
-                height={180}
+                data={monthlyStats}
+                type="stacked-bar"
+                series={[
+                  { key: 'appointments', name: 'Appointments', color: '#8b5cf6' },
+                  { key: 'treatments', name: 'Treatments', color: '#f59e0b' }
+                ]}
+                height={280}
               />
-              <p className="chart-legend">Lịch hẹn</p>
-            </div>
-            <div className="monthly-chart">
-              <SimpleChart
-                data={monthlyStats.map(m => ({ label: m.label, value: m.treatments }))}
-                type="bar"
-                color="#10b981"
-                height={180}
-              />
-              <p className="chart-legend">Điều trị</p>
             </div>
           </div>
         </div>
@@ -250,15 +315,19 @@ const DoctorDashboard = () => {
         {/* Main Content Grid */}
         <div className="dashboard-grid">
           {/* Upcoming Appointments */}
-          <div className="dashboard-card upcoming-appointments-card">
+          <div className="chart-card glass-card upcoming-appointments-card">
             <div className="card-header">
-              <h3 className="card-title">Lịch hẹn sắp tới</h3>
-              <a href="/doctor/appointments" className="card-link">Xem tất cả →</a>
+              <h3 className="card-title">Upcoming Appointments</h3>
+              <a href="/doctor/appointments" className="card-link">View all →</a>
             </div>
             <div className="appointments-grid">
               {upcomingAppointments.length === 0 ? (
-                <div className="empty-state">
-                  <p>Không có lịch hẹn sắp tới</p>
+                <div className="col-span-full flex flex-col items-center justify-center p-12 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  <div className="w-16 h-16 mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                    <i data-feather="calendar" className="w-8 h-8 text-slate-300"></i>
+                  </div>
+                  <h4 className="text-lg font-medium text-slate-600 mb-1">Chưa có dữ liệu</h4>
+                  <p className="text-sm">Hiện tại không có lịch hẹn nào sắp tới.</p>
                 </div>
               ) : (
                 upcomingAppointments.map((appointment) => (
@@ -271,8 +340,8 @@ const DoctorDashboard = () => {
                         </span>
                       </div>
                       <div className={`appointment-status-badge status-${appointment.status.toLowerCase()}`}>
-                        {appointment.status === 'PENDING' ? 'Đang chờ' :
-                          appointment.status === 'CONFIRMED' ? 'Đã xác nhận' : appointment.status}
+                        {appointment.status === 'PENDING' ? 'Pending' :
+                          appointment.status === 'CONFIRMED' ? 'Confirmed' : appointment.status}
                       </div>
                     </div>
                     <div className="appointment-card-body">
@@ -302,37 +371,37 @@ const DoctorDashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="dashboard-card quick-actions-card">
+          <div className="chart-card glass-card quick-actions-card">
             <div className="card-header">
-              <h3 className="card-title">Thao tác nhanh</h3>
+              <h3 className="card-title">Quick Actions</h3>
             </div>
             <div className="quick-actions-grid">
               <QuickActionCard
                 to="/doctor/appointments"
-                icon="calendar"
-                title="Lịch hẹn"
-                description="Xem và quản lý lịch hẹn"
+                icon="plus-circle"
+                title="New Appointment"
+                description="Schedule a new patient visit"
                 color="#3b82f6"
               />
               <QuickActionCard
-                to="/doctor/treatments"
-                icon="activity"
-                title="Điều trị"
-                description="Quản lý đơn thuốc và điều trị"
+                to="/messages"
+                icon="message-square"
+                title="Send Message"
+                description="Chat with patients or staff"
                 color="#10b981"
               />
               <QuickActionCard
                 to="/doctor/patients"
-                icon="search"
-                title="Tìm bệnh nhân"
-                description="Tìm kiếm và xem hồ sơ bệnh nhân"
+                icon="file-text"
+                title="Medical Records"
+                description="View and update patient records"
                 color="#8b5cf6"
               />
               <QuickActionCard
                 to="/doctor/profile"
-                icon="user"
-                title="Hồ sơ"
-                description="Chỉnh sửa thông tin cá nhân"
+                icon="settings"
+                title="Settings"
+                description="Manage your profile and hours"
                 color="#f59e0b"
               />
             </div>
