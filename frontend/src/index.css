@@ -77,14 +77,14 @@ body::after {
 }
 
 /* Custom Global Premium Style Override for Segesta Inputs, Textareas and Dropdowns */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="tel"],
-input[type="date"],
+input[type="text"]:not(.premium-input),
+input[type="email"]:not(.premium-input),
+input[type="password"]:not(.premium-input),
+input[type="tel"]:not(.premium-input),
+input[type="date"]:not(.premium-input),
 textarea,
 select,
-.form-group input,
+.form-group input:not(.premium-input),
 .form-group select,
 .form-group textarea,
 .admin-input,
