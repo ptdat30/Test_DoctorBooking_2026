@@ -774,22 +774,23 @@
 }
 
 .btn-submit {
-  padding: 0.85rem 2rem !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  padding: 1rem 1.5rem !important;
+  background-color: #0f766e !important; /* dark green */
   border: none !important;
   color: #fff !important;
-  border-radius: 8px !important;
+  border-radius: 999px !important; /* pill */
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem !important;
-  transition: all 0.2s;
+  font-weight: 700;
+  font-size: 1rem !important;
+  transition: all 0.18s ease-in-out;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 0.5rem !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
-  height: auto !important;
-  max-height: none !important;
-  margin: 0 !important;
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.25) !important;
+  min-width: 220px !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
 }
 
 .btn-submit i {
