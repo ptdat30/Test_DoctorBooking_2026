@@ -65,17 +65,22 @@ jobs:
           SKIP_AI_TESTS: 'true'
         run: |
           chmod +x mvnw
-          # Wait for MySQL to be ready
+          
+          # Verify MySQL is ready
           echo "Waiting for MySQL to be ready..."
-          for i in $(seq 1 30); do
-            if mysqladmin ping -h localhost -u root -proot --silent 2>/dev/null; then
+          for i in $(seq 1 60); do
+            if mysql -h localhost -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
               echo "MySQL is ready (attempt $i)"
+              mysql -h localhost -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
               break
             fi
-            echo "Waiting for MySQL... (attempt $i/30)"
+            echo "Waiting for MySQL... (attempt $i/60)"
             sleep 2
           done
-          # Run tests
+          
+          # Verify connection
+          mysql -h localhost -u root -proot -e "SHOW DATABASES;" || { echo "MySQL connection failed"; exit 1; }
+          
           ./mvnw clean verify -B --no-transfer-progress
 
       - name: Upload Test Results
