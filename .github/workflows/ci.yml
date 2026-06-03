@@ -52,6 +52,11 @@ jobs:
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
           JWT_EXPIRATION: '86400000'
           JWT_REFRESH_EXPIRATION: '604800000'
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: '587'
+          SMTP_USERNAME: ci-test@example.com
+          SMTP_PASSWORD: ci-test-password
+          SKIP_AI_TESTS: 'true'
         run: |
           chmod +x mvnw
           ./mvnw clean verify -B --no-transfer-progress
