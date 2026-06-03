@@ -56,9 +56,26 @@ jobs:
           SMTP_PORT: '587'
           SMTP_USERNAME: ci-test@example.com
           SMTP_PASSWORD: ci-test-password
+          GROQ_API_KEY: ci-test-key
+          VNPAY_TMN_CODE: TESTTMN
+          VNPAY_HASH_SECRET: TESTHASH
+          VNPAY_URL: http://localhost
+          VNPAY_RETURN_URL: http://localhost/callback
+          VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
           SKIP_AI_TESTS: 'true'
         run: |
           chmod +x mvnw
+          # Wait for MySQL to be ready
+          echo "Waiting for MySQL to be ready..."
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h localhost -u root -proot --silent 2>/dev/null; then
+              echo "MySQL is ready (attempt $i)"
+              break
+            fi
+            echo "Waiting for MySQL... (attempt $i/30)"
+            sleep 2
+          done
+          # Run tests
           ./mvnw clean verify -B --no-transfer-progress
 
       - name: Upload Test Results
