@@ -190,6 +190,20 @@ jobs:
       - name: Install Newman
         run: npm install -g newman
 
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in $(seq 1 30); do
+            if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
+              echo "MySQL is ready (attempt $i)"
+              mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
+              break
+            fi
+            echo "Waiting for MySQL... (attempt $i/30)"
+            sleep 2
+          done
+          mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SHOW DATABASES;" || { echo "MySQL connection failed"; exit 1; }
+
       - name: Start Backend
         working-directory: backend
         env:
