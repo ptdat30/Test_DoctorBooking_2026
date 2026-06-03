@@ -166,7 +166,7 @@ public class PaymentController {
             return redirect(frontendUrl + "/patient/wallet/payment/result" + query);
         } catch (Exception e) {
             logger.error("Error processing VNPAY callback", e);
-            failTransactionSilently(request.getParameter(VNP_TXN_REF), "System error: " + e.getMessage());
+            failTransactionSilently(request.getParameter("vnp_TxnRef"), "System error: " + e.getMessage());
             return redirect(frontendUrl + "/patient/wallet/payment/result?code=99&message=Loi%20he%20thong");
         }
     }
@@ -259,7 +259,7 @@ public class PaymentController {
         if (vnpTxnRef != null && !vnpTxnRef.isEmpty()) {
             failTransactionSilently(vnpTxnRef, "Invalid checksum");
         }
-        String url = frontendUrl + "/patient/wallet/payment/result?code=97&message=Invalid%20checksum&" + VNP_TXN_REF + "="
+        String url = frontendUrl + "/patient/wallet/payment/result?code=97&message=Invalid%20checksum&vnp_TxnRef="
                 + (vnpTxnRef != null ? vnpTxnRef : "");
         return redirect(url);
     }
