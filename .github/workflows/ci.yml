@@ -46,7 +46,7 @@ jobs:
       - name: Build + Unit Test
         working-directory: backend
         env:
-          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
           DB_USERNAME: root
           DB_PASSWORD: root
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
@@ -66,12 +66,12 @@ jobs:
         run: |
           chmod +x mvnw
           
-          # Verify MySQL is ready
+          # Wait for MySQL to be ready via TCP (not socket)
           echo "Waiting for MySQL to be ready..."
           for i in $(seq 1 60); do
-            if mysql -h localhost -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
+            if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
               echo "MySQL is ready (attempt $i)"
-              mysql -h localhost -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
+              mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
               break
             fi
             echo "Waiting for MySQL... (attempt $i/60)"
@@ -79,7 +79,7 @@ jobs:
           done
           
           # Verify connection
-          mysql -h localhost -u root -proot -e "SHOW DATABASES;" || { echo "MySQL connection failed"; exit 1; }
+          mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SHOW DATABASES;" || { echo "MySQL connection failed"; exit 1; }
           
           ./mvnw clean verify -B --no-transfer-progress
 
@@ -190,7 +190,7 @@ jobs:
       - name: Start Backend
         working-directory: backend
         env:
-          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
           DB_USERNAME: root
           DB_PASSWORD: root
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
