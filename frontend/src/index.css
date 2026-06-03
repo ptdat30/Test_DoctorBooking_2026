@@ -24,12 +24,52 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f8fafc !important;
-  color: #1e293b;
+  background: linear-gradient(-45deg, #e0f2fe, #d1fae5, #e9d5ff, #f0f9ff) !important;
+  background-size: 200% 200% !important;
+  animation: gradientShift 15s ease infinite !important;
+  color: #1f2937;
   position: relative;
 }
 
-/* Light background blobs - removed blur filter for better contrast */
+.bg-gradient-shift {
+  background: linear-gradient(-45deg, #e0f2fe, #d1fae5, #e9d5ff, #f0f9ff) !important;
+  background-size: 200% 200% !important;
+  animation: gradientShift 15s ease infinite !important;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating background blobs using fixed elements on body to keep layout light */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -10;
+  pointer-events: none;
+}
+body::before {
+  top: 10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: rgba(128, 222, 234, 0.35); /* segesta-cyan */
+  animation: blob-bounce 25s infinite ease-in-out;
+}
+body::after {
+  bottom: 10%;
+  right: -10%;
+  width: 45vw;
+  height: 45vw;
+  background: rgba(252, 228, 236, 0.4); /* segesta-peach */
+  animation: blob-bounce 30s infinite ease-in-out;
+  animation-delay: 2s;
+}
 
 #root {
   width: 100%;
@@ -50,10 +90,10 @@ select,
 .admin-input,
 .admin-select,
 .admin-textarea {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1px solid rgba(176, 190, 197, 0.45) !important;
   border-radius: 12px !important;
-  color: #1e293b !important;
+  color: #1f2937 !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   outline: none !important;
 }
@@ -71,8 +111,8 @@ select:hover:not(:focus),
 .admin-input:hover:not(:focus),
 .admin-select:hover:not(:focus),
 .admin-textarea:hover:not(:focus) {
-  background: #ffffff !important;
-  border-color: #3b82f6 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(79, 169, 255, 0.55) !important;
 }
 
 input[type="text"]:focus,
@@ -89,10 +129,11 @@ select:focus,
 .admin-select:focus,
 .admin-textarea:focus {
   background: #ffffff !important;
-  border-color: #3b82f6 !important;
+  border-color: #4FA9FF !important;
   box-shadow: 
-    0 0 0 3px rgba(59, 130, 246, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    0 0 0 3px rgba(79, 169, 255, 0.18),
+    0 8px 24px rgba(79, 169, 255, 0.12) !important;
+  transform: translateY(-1.5px) !important;
 }
 
 /* Custom premium styling for Select dropdowns with custom chevron-down arrow */
@@ -102,7 +143,7 @@ select,
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23546E7A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 14px center !important;
   background-size: 16px !important;
@@ -112,23 +153,23 @@ select,
 select option,
 .admin-select option {
   background-color: #ffffff !important;
-  color: #1e293b !important;
+  color: #1f2937 !important;
 }
 
 /* Custom Global Premium Style Override for Buttons */
 .btn-primary,
 .admin-btn-primary,
 .send-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  background: linear-gradient(135deg, #4FA9FF 0%, #80DEEA 50%, #B2DFDB 100%) !important;
   background-size: 200% auto !important;
   border: none !important;
   border-radius: 12px !important;
-  color: #ffffff !important;
+  color: #0f172a !important;
   font-weight: 700 !important;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   box-shadow: 
-    0 4px 15px rgba(59, 130, 246, 0.3),
-    0 2px 4px rgba(0, 0, 0, 0.08) !important;
+    0 4px 15px rgba(80, 222, 234, 0.25),
+    0 2px 4px rgba(15, 23, 42, 0.08) !important;
   position: relative !important;
   overflow: hidden !important;
 }
@@ -139,9 +180,9 @@ select option,
   background-position: right center !important;
   transform: translateY(-2px) !important;
   box-shadow: 
-    0 10px 20px rgba(59, 130, 246, 0.4),
-    0 4px 8px rgba(59, 130, 246, 0.15) !important;
-  color: #ffffff !important;
+    0 10px 20px rgba(80, 222, 234, 0.4),
+    0 4px 8px rgba(79, 169, 255, 0.15) !important;
+  color: #000000 !important;
 }
 
 .btn-primary:active,
@@ -170,7 +211,7 @@ select option,
   animation-delay: 4s;
 }
 
-/* ================= SEGESTA DARK THEME OVERRIDES FOR DASHBOARDS & PORTALS ================= */
+/* ================= SEGESTA LIGHT THEME OVERRIDES FOR DASHBOARDS & PORTALS ================= */
 
 /* Portal layout wrapper transparency */
 .admin-layout,
@@ -187,125 +228,31 @@ select option,
 .mode-container,
 .my-feedbacks-container {
   background: transparent !important;
-  color: #d0d0d0 !important;
+  color: #546E7A !important;
 }
 
-/* Ensure patient-main background is transparent even after PatientLayout.css loads */
-.patient-layout .patient-main,
-.patient-main {
-  background: #f1f5f9 !important;
+/* Remove dark overlays and background videos from portals */
+.admin-layout::before,
+.doctor-layout::before,
+.patient-layout::before,
+.admin-background-video,
+.doctor-background-video,
+.patient-background-video {
+  display: none !important;
 }
 
-/* Fix main-header background */
-.patient-layout .main-header,
-.patient-main .main-header {
-  background: #ffffff !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-/* Fix sidebar toggle and notification bell colors */
-.patient-layout .main-header .sidebar-toggle,
-.patient-layout .main-header .notification-bell {
-  background: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #475569 !important;
-}
-
-/* Fix all text within main-header */
-.patient-layout .main-header * {
-  color: #1e293b !important;
-}
-
-/* ── PATIENT: Force Light Mode ── */
-.patient-page,
-.patient-layout,
-.patient-main,
-.futuristic-dashboard {
-  background: #f1f5f9 !important;
-  color: #1e293b !important;
-}
-.patient-page .card-title,
-.patient-page .dashboard-title,
-.patient-page .chart-title,
-.patient-page .section-title {
-  color: #1e293b !important;
-}
-.patient-page .dashboard-subtitle,
-.patient-page .chart-subtitle,
-.patient-page .stat-card-label,
-.patient-page .empty-state p {
-  color: #64748b !important;
-}
-.patient-page .chart-card,
-.patient-page .activity-card,
-.patient-page .table-card,
-.patient-page .action-card,
-.patient-page .kpi-card,
-.patient-page .stat-card,
-.patient-page .patient-card,
-.patient-page .info-card {
-  background: #ffffff !important;
-  backdrop-filter: none !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  color: #1e293b !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-}
-.patient-page .chart-card:hover,
-.patient-page .activity-card:hover,
-.patient-page .table-card:hover,
-.patient-page .action-card:hover,
-.patient-page .kpi-card:hover,
-.patient-page .stat-card:hover,
-.patient-page .patient-card:hover {
-  background: #f8fafc !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-}
-.patient-page table {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-}
-.patient-page thead {
-  background: #f8fafc !important;
-}
-.patient-page th {
-  color: #475569 !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-.patient-page td {
-  color: #475569 !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-}
-.patient-page .table-row:hover {
-  background: #f8fafc !important;
-}
-
-/* Sidebars and Navigation headers styling - ADMIN / DOCTOR / PORTAL only */
+/* Sidebars and Navigation headers styling */
 .admin-sidebar,
 .doctor-sidebar,
 .portal-header,
 .portal-sidebar-left,
 .portal-sidebar-right,
-.admin-main .main-header,
-.doctor-main .main-header,
-.portal-main .main-header {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(12px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px 0 rgba(31, 38, 135, 0.05);
-}
-
-/* Global Glassmorphism Class */
-.glass-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-  border-radius: 16px;
+.admin-main .main-header {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-color: rgba(79, 169, 255, 0.25) !important;
+  color: #546E7A !important;
 }
 
 /* Sidebar navigation item colors */
@@ -314,7 +261,7 @@ select option,
 .portal-sidebar-left .nav-item,
 .portal-sidebar-right .nav-item,
 .chat-history-list .history-item {
-  color: #cccccc !important;
+  color: #546E7A !important;
   transition: all 0.2s ease !important;
 }
 
@@ -322,17 +269,17 @@ select option,
 .doctor-sidebar .nav-item:hover,
 .portal-sidebar-left .nav-item:hover,
 .chat-history-list .history-item:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
+  background: rgba(79, 169, 255, 0.1) !important;
+  color: #4FA9FF !important;
 }
 
 .admin-sidebar .nav-item.active,
 .doctor-sidebar .nav-item.active,
 .admin-sidebar .sidebar-logo:hover,
 .doctor-sidebar .sidebar-logo:hover {
-  background: rgba(46, 204, 113, 0.25) !important;
-  color: #ffffff !important;
-  border-left-color: #2ecc71 !important;
+  background: rgba(79, 169, 255, 0.15) !important;
+  color: #0ea5e9 !important;
+  border-left-color: #4FA9FF !important;
 }
 
 /* Sidebar logo image text colors */
@@ -341,7 +288,7 @@ select option,
 .admin-sidebar .user-name,
 .doctor-sidebar .user-name,
 .portal-header .user-name {
-  color: #f5f5f5 !important;
+  color: #1f2937 !important;
 }
 
 .admin-sidebar .logo-image,
@@ -356,25 +303,15 @@ select option,
 .patient-page h2,
 .patient-page h3,
 .admin-page-title,
+.dashboard-title,
 .chart-title,
 .card-title,
 .section-title {
-  color: #ffffff !important;
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%) !important;
+  color: #1f2937 !important;
+  background: linear-gradient(135deg, #0f172a 0%, #546E7A 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
-}
-
-/* Dashboard title — let animated gradient show through */
-.dashboard-title {
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #10b981, #3b82f6, #8b5cf6) !important;
-  background-size: 300% auto !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  animation: gradient-flow 5s linear infinite !important;
 }
 
 /* Secondary descriptions colors */
@@ -386,7 +323,7 @@ select option,
 .history-time,
 .patient-phone,
 .empty-state p {
-  color: #94a3b8 !important;
+  color: #546E7A !important;
 }
 
 /* Glassmorphic dashboard cards override */
@@ -405,14 +342,16 @@ select option,
 .wallet-card,
 .family-member-card,
 .ai-chat-container,
-.ai-symptom-checker {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(12px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+.ai-symptom-checker,
+.activity-card,
+.table-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(79, 169, 255, 0.25) !important;
   border-radius: 16px !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+  color: #1f2937 !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.03) !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
@@ -429,164 +368,158 @@ select option,
 .suggestion-item:hover,
 .wallet-card:hover,
 .family-member-card:hover,
-.ai-symptom-checker:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
+.ai-symptom-checker:hover,
+.activity-card:hover,
+.table-card:hover {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: #4FA9FF !important;
   box-shadow: 
-    0 12px 28px rgba(31, 38, 135, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    0 12px 28px rgba(79, 169, 255, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.04) !important;
   transform: translateY(-2px) !important;
 }
 
-/* Tables visual enhancements for dark mode contrast - ADMIN / DOCTOR / PORTAL */
+/* Tables visual enhancements for light mode contrast */
+.patient-page table,
 .admin-page table,
-.admin-page .admin-table {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+.admin-table {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(79, 169, 255, 0.25) !important;
   border-radius: 12px !important;
   overflow: hidden !important;
 }
+
+.patient-page thead,
 .admin-page thead {
-  background: rgba(46, 204, 113, 0.15) !important;
+  background: rgba(79, 169, 255, 0.1) !important;
 }
-.admin-page th {
-  color: #f5f5f5 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+
+.patient-page th,
+.admin-page th,
+.admin-th {
+  color: #1f2937 !important;
+  border-bottom: 1px solid rgba(79, 169, 255, 0.25) !important;
   font-weight: 600 !important;
   padding: 12px 16px !important;
 }
-.admin-page td {
-  color: #d0d0d0 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+.patient-page td,
+.admin-page td,
+.admin-td {
+  color: #546E7A !important;
+  border-bottom: 1px solid rgba(79, 169, 255, 0.15) !important;
   padding: 12px 16px !important;
 }
+
+.patient-page tbody tr:hover,
 .admin-page tbody tr:hover {
-  background: rgba(46, 204, 113, 0.08) !important;
+  background: rgba(79, 169, 255, 0.05) !important;
 }
 
 /* Chat interfaces overrides */
 .message-text {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
-  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  border-color: rgba(79, 169, 255, 0.2) !important;
+  color: #1f2937 !important;
 }
 
-.admin-page .message.user .message-text,
-.doctor-page .message.user .message-text,
-.portal-page .message.user .message-text {
-  background: linear-gradient(135deg, rgba(46, 204, 113, 0.25) 0%, rgba(46, 204, 113, 0.15) 100%) !important;
-  border-color: rgba(46, 204, 113, 0.4) !important;
+.message.user .message-text {
+  background: linear-gradient(135deg, rgba(79, 169, 255, 0.18) 0%, rgba(128, 222, 234, 0.18) 100%) !important;
+  border-color: rgba(79, 169, 255, 0.35) !important;
 }
 
-.admin-page .chat-input-wrapper,
-.doctor-page .chat-input-wrapper,
-.portal-page .chat-input-wrapper {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+.chat-input-wrapper {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(79, 169, 255, 0.25) !important;
 }
 
-.admin-page .chat-input,
-.doctor-page .chat-input,
-.portal-page .chat-input {
-  color: #e0e0e0 !important;
+.chat-input {
+  color: #1f2937 !important;
 }
 
 /* Portal Secondary & Danger Buttons overrides */
-.admin-page .btn-secondary,
-.admin-page .admin-btn-secondary,
-.admin-page .back-btn,
-.doctor-page .btn-secondary,
-.doctor-page .back-btn,
-.portal-page .btn-secondary,
-.portal-page .admin-btn-secondary,
-.portal-page .back-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+.btn-secondary,
+.admin-btn-secondary,
+.back-btn {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1px solid rgba(176, 190, 197, 0.45) !important;
   border-radius: 12px !important;
-  color: #d0d0d0 !important;
+  color: #546E7A !important;
   font-weight: 600 !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-.admin-page .btn-secondary:hover,
-.admin-page .admin-btn-secondary:hover,
-.admin-page .back-btn:hover,
-.doctor-page .btn-secondary:hover,
-.doctor-page .back-btn:hover,
-.portal-page .btn-secondary:hover,
-.portal-page .admin-btn-secondary:hover,
-.portal-page .back-btn:hover {
-  background: rgba(255, 255, 255, 0.18) !important;
-  border-color: rgba(46, 204, 113, 0.4) !important;
-  color: #ffffff !important;
+.btn-secondary:hover,
+.admin-btn-secondary:hover,
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: #4FA9FF !important;
+  color: #4FA9FF !important;
   transform: translateY(-1.5px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(79, 169, 255, 0.12) !important;
 }
 
-.admin-page .btn-danger,
-.admin-page .admin-btn-danger,
-.doctor-page .btn-danger,
-.portal-page .btn-danger,
-.portal-page .admin-btn-danger {
-  background: rgba(231, 76, 60, 0.2) !important;
-  border: 1px solid rgba(231, 76, 60, 0.4) !important;
+.btn-danger,
+.admin-btn-danger {
+  background: rgba(244, 63, 94, 0.1) !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
   border-radius: 12px !important;
-  color: #e74c3c !important;
+  color: #e11d48 !important;
   font-weight: 600 !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-.admin-page .btn-danger:hover,
-.admin-page .admin-btn-danger:hover,
-.doctor-page .btn-danger:hover,
-.portal-page .btn-danger:hover,
-.portal-page .admin-btn-danger:hover {
-  background: rgba(231, 76, 60, 0.3) !important;
-  border-color: #e74c3c !important;
+.btn-danger:hover,
+.admin-btn-danger:hover {
+  background: rgba(244, 63, 94, 0.18) !important;
+  border-color: #f43f5e !important;
   transform: translateY(-1.5px) !important;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15) !important;
 }
 
 /* Calendar styling details overrides */
-.admin-page .rbc-calendar,
-.doctor-page .rbc-calendar,
-.portal-page .rbc-calendar {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+.rbc-calendar {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(79, 169, 255, 0.25) !important;
   border-radius: 16px !important;
   padding: 16px !important;
-  color: #e0e0e0 !important;
+  color: #1f2937 !important;
 }
 
 .rbc-today {
-  background-color: rgba(46, 204, 113, 0.15) !important;
+  background-color: rgba(79, 169, 255, 0.1) !important;
 }
 
 .rbc-event {
-  background-color: #2ecc71 !important;
+  background-color: #4FA9FF !important;
   border-radius: 6px !important;
 }
 
-/* Global dashboard text color overrides - ADMIN / DOCTOR / PORTAL only */
-.admin-layout, .doctor-layout,
-.admin-dashboard, .doctor-dashboard,
-.admin-card, .doctor-card, .stat-card, .chart-card, .dashboard-card,
+/* Global dashboard text color overrides for readability on pastel backgrounds */
+.admin-layout, .doctor-layout, .patient-layout,
+.admin-dashboard, .doctor-dashboard, .futuristic-dashboard,
+.admin-card, .doctor-card, .patient-card, .stat-card, .chart-card, .dashboard-card,
 .dashboard-grid, .kpi-grid, .activity-list, .data-table-container {
-  color: #e0e0e0 !important;
+  color: #1f2937 !important; /* text-gray-800 / text-slate-800 */
 }
 
-/* Ensure headings, paragraphs, spans and lists within layouts/dashboards also inherit readable colors - ADMIN / DOCTOR / PORTAL */
+/* Ensure headings, paragraphs, spans and lists within layouts/dashboards also inherit readable colors */
 .admin-layout h1, .admin-layout h2, .admin-layout h3, .admin-layout h4, .admin-layout h5, .admin-layout h6,
 .doctor-layout h1, .doctor-layout h2, .doctor-layout h3, .doctor-layout h4, .doctor-layout h5, .doctor-layout h6,
+.patient-layout h1, .patient-layout h2, .patient-layout h3, .patient-layout h4, .patient-layout h5, .patient-layout h6,
+.admin-layout p, .doctor-layout p, .patient-layout p,
+.admin-layout td, .doctor-layout td, .patient-layout td,
+.admin-layout th, .doctor-layout th, .patient-layout th,
+.futuristic-dashboard h1, .futuristic-dashboard h2, .futuristic-dashboard h3, .futuristic-dashboard h4,
+.futuristic-dashboard p, .futuristic-dashboard span, .futuristic-dashboard div:not(.pulse-dot),
 .doctor-dashboard h1, .doctor-dashboard h2, .doctor-dashboard h3, .doctor-dashboard h4,
 .doctor-dashboard p, .doctor-dashboard span,
 .admin-dashboard h1, .admin-dashboard h2, .admin-dashboard h3, .admin-dashboard h4,
 .admin-dashboard p, .admin-dashboard span {
-  color: #e0e0e0 !important;
+  color: #1f2937 !important;
 }
 
-/* Update primary buttons to use the mint green theme */
+/* Update primary buttons to use the mint green / lavender theme */
 .btn-primary,
 .admin-btn-primary,
 .send-btn,
@@ -596,11 +529,11 @@ select option,
 .linear-submit-button,
 .premium-btn-submit span,
 .linear-submit-button span {
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(46, 204, 113, 0.3) !important;
+  background: #a7f3d0 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(167, 243, 208, 0.2) !important;
   font-weight: 700 !important;
 }
 
@@ -618,12 +551,10 @@ select option,
 .navbar-login-btn:hover span,
 .premium-btn-submit:hover span,
 .linear-submit-button:hover span {
-  background: linear-gradient(135deg, #27ae60 0%, #219a52 100%) !important;
-  color: #ffffff !important;
-  border-color: rgba(46, 204, 113, 0.5) !important;
+  background: #c4b5fd !important;
+  color: #0f172a !important;
+  border-color: rgba(139, 92, 246, 0.2) !important;
   transform: translateY(-1.5px) !important;
-  box-shadow: 0 8px 16px rgba(46, 204, 113, 0.4) !important;
+  box-shadow: 0 8px 16px rgba(196, 181, 253, 0.4) !important;
 }
-
-/* Patient layout elements inherit glass-card class styling directly */
 
