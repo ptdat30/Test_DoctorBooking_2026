@@ -166,7 +166,7 @@ public class PaymentController {
             return redirect(frontendUrl + "/patient/wallet/payment/result" + query);
         } catch (Exception e) {
             logger.error("Error processing VNPAY callback", e);
-            failTransactionSilently(request.getParameter("vnp_TxnRef"), "System error: " + e.getMessage());
+            failTransactionSilently(request.getParameter(VNP_TXN_REF), "System error: " + e.getMessage());
             return redirect(frontendUrl + "/patient/wallet/payment/result?code=99&message=Loi%20he%20thong");
         }
     }
