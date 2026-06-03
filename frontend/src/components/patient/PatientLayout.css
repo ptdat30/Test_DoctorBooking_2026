@@ -136,13 +136,9 @@
 }
 
 .nav-item.active {
-  background: rgba(102, 126, 234, 0.2);
-  color: #ffffff;
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
   border-left-color: #667eea;
-}
-
-.nav-item.active i {
-  color: #ffffff;
 }
 
 .nav-item i {
