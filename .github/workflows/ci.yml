@@ -215,8 +215,18 @@ jobs:
           SKIP_AI_TESTS: 'true'
         run: |
           chmod +x mvnw
-          ./mvnw spring-boot:run -DskipTests &
+          ./mvnw spring-boot:run -DskipTests 2>&1 | tee backend.log &
           echo $! > backend.pid
+
+      - name: Debug Backend Startup
+        run: |
+          sleep 30
+          echo "=== Backend logs (last 100 lines) ==="
+          tail -100 backend.log || echo "No logs yet"
+          echo "=== Checking if process is running ==="
+          ps aux | grep -i java || echo "No Java process"
+          echo "=== Checking port 8080 ==="
+          ss -tlnp | grep 8080 || echo "Port 8080 not listening"
 
       - name: Wait for API Health
         run: |
@@ -226,9 +236,12 @@ jobs:
               echo "✅ API is healthy (attempt $i)"
               exit 0
             fi
+            echo "Attempt $i/60 - backend not ready yet..."
             sleep 5
           done
           echo "❌ API failed to start within 5 minutes"
+          echo "=== Last 50 lines of backend log ==="
+          tail -50 backend.log
           exit 1
 
       - name: Run Newman — All 23 Folders
