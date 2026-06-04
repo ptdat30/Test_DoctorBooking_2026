@@ -8,6 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.doctorbooking.backend.constant.AppConstants;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDate;
@@ -174,7 +176,7 @@ public class EmailService {
         String formattedTime = appointmentTime.format(timeFormatter);
 
         String paymentMethodText = switch (paymentMethod != null ? paymentMethod.toUpperCase() : "CASH") {
-            case "WALLET" -> "Ví điện tử";
+            case AppConstants.WALLET -> "Ví điện tử";
             case "VNPAY" -> "VNPay";
             case "CASH" -> "Tiền mặt";
             default -> "Tiền mặt";

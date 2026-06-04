@@ -1,5 +1,6 @@
 package com.doctorbooking.backend.service;
 
+import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
 import com.doctorbooking.backend.model.Appointment;
@@ -341,7 +342,7 @@ public class AppointmentService {
         }
 
         // Xử lý hoàn tiền nếu đã thanh toán bằng WALLET
-        if ("WALLET".equals(appointment.getPaymentMethod()) && 
+        if (AppConstants.WALLET.equals(appointment.getPaymentMethod()) && 
             appointment.getPaymentStatus() == Appointment.PaymentStatus.PAID &&
             appointment.getPrice() != null && 
             appointment.getPrice().compareTo(java.math.BigDecimal.ZERO) > 0) {
@@ -673,7 +674,7 @@ public class AppointmentService {
     private Appointment resolvePaymentAndSave(Appointment appointment, Long patientId,
                                                Doctor doctor, java.math.BigDecimal consultationFee,
                                                String paymentMethod) {
-        if ("WALLET".equals(paymentMethod)) {
+        if (AppConstants.WALLET.equals(paymentMethod)) {
             if (consultationFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
                 try {
                     appointment.setPaymentStatus(Appointment.PaymentStatus.PENDING);
@@ -716,7 +717,7 @@ public class AppointmentService {
     }
 
     private void processRefundIfNeeded(Appointment appointment) {
-        if ("WALLET".equals(appointment.getPaymentMethod()) && 
+        if (AppConstants.WALLET.equals(appointment.getPaymentMethod()) && 
             appointment.getPaymentStatus() == Appointment.PaymentStatus.PAID &&
             appointment.getPrice() != null && 
             appointment.getPrice().compareTo(java.math.BigDecimal.ZERO) > 0) {
