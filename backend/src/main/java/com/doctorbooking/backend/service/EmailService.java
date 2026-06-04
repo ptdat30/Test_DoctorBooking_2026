@@ -20,6 +20,8 @@ public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
+    private static final String CHARSET_UTF8 = "UTF-8";
+
     private final JavaMailSender mailSender;
 
     @Value("${app.email.from:Doctor Booking System <noreply@doctorbooking.com>}")
@@ -51,7 +53,7 @@ public class EmailService {
         
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
@@ -104,7 +106,7 @@ public class EmailService {
         
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
@@ -354,7 +356,7 @@ public class EmailService {
         
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
@@ -577,7 +579,7 @@ public class EmailService {
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);

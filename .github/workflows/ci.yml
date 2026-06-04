@@ -46,14 +46,44 @@ jobs:
       - name: Build + Unit Test
         working-directory: backend
         env:
-          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
           DB_USERNAME: root
           DB_PASSWORD: root
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
           JWT_EXPIRATION: '86400000'
           JWT_REFRESH_EXPIRATION: '604800000'
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: '587'
+          SMTP_USERNAME: ci-test@example.com
+          SMTP_PASSWORD: ci-test-password
+          GROQ_API_KEY: ci-test-key
+          VNPAY_TMN_CODE: TESTTMN
+          VNPAY_HASH_SECRET: TESTHASH
+          VNPAY_URL: http://localhost
+          VNPAY_RETURN_URL: http://localhost/callback
+          VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
+          CORS_ALLOWED_ORIGINS: '*'
+          FRONTEND_URL: http://localhost:5173
+          EMAIL_FROM: noreply@doctorbooking.com
+          SKIP_AI_TESTS: 'true'
         run: |
           chmod +x mvnw
+          
+          # Wait for MySQL to be ready via TCP (not socket)
+          echo "Waiting for MySQL to be ready..."
+          for i in $(seq 1 60); do
+            if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
+              echo "MySQL is ready (attempt $i)"
+              mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
+              break
+            fi
+            echo "Waiting for MySQL... (attempt $i/60)"
+            sleep 2
+          done
+          
+          # Verify connection
+          mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SHOW DATABASES;" || { echo "MySQL connection failed"; exit 1; }
+          
           ./mvnw clean verify -B --no-transfer-progress
 
       - name: Upload Test Results
@@ -163,7 +193,7 @@ jobs:
       - name: Start Backend
         working-directory: backend
         env:
-          DB_URL: jdbc:mysql://localhost:3306/doctor_booking
+          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
           DB_USERNAME: root
           DB_PASSWORD: root
           JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing

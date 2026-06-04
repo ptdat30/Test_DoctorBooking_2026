@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "a381b635-754e-4073-8176-c257c443d39d",
+    "_postman_id": "cb208f4a-f86e-43d9-9161-526b7b9748ab",
     "name": "test_doctor_booking_2026 - API Automation Test Suite",
     "description": "Professional API automation test suite for Doctor Booking System (test_doctor_booking_2026). Includes positive/negative tests, schema validation, data-driven tests, E2E flows, and Newman CI support.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -127,7 +127,7 @@
   "variable": [
     {
       "key": "schema_auth_response",
-      "value": "{\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":\"string\"},\"refreshToken\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"fullName\":{\"type\":\"string\"}}}"
+      "value": "{\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}}"
     },
     {
       "key": "schema_error_response",
@@ -223,7 +223,7 @@
                   "console.log('Logged in as PATIENT:', json.username);",
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":\"string\"},\"refreshToken\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"fullName\":{\"type\":\"string\"}}};",
+                  "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
                   "  if (typeof tv4 !== 'undefined') {",
                   "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
                   "  }",
@@ -278,7 +278,7 @@
                   "console.log('Logged in as DOCTOR:', json.username);",
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":\"string\"},\"refreshToken\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"fullName\":{\"type\":\"string\"}}};",
+                  "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
                   "  if (typeof tv4 !== 'undefined') {",
                   "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
                   "  }",
@@ -365,7 +365,7 @@
                   "console.log('Logged in as ADMIN:', json.username);",
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":\"string\"},\"refreshToken\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"fullName\":{\"type\":\"string\"}}};",
+                  "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
                   "  if (typeof tv4 !== 'undefined') {",
                   "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
                   "  }",
@@ -592,7 +592,7 @@
                       "console.log('Logged in as PATIENT:', json.username);",
                       "if (pm.response.code === 200 || pm.response.code === 201) {",
                       "  const json = pm.response.json();",
-                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":\"string\"},\"refreshToken\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"fullName\":{\"type\":\"string\"}}};",
+                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
                       "  if (typeof tv4 !== 'undefined') {",
                       "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
                       "  }",
@@ -640,7 +640,7 @@
                       "if (pm.response.code !== 201) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
                       "if (pm.response.code === 200 || pm.response.code === 201) {",
                       "  const json = pm.response.json();",
-                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":\"string\"},\"refreshToken\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"fullName\":{\"type\":\"string\"}}};",
+                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
                       "  if (typeof tv4 !== 'undefined') {",
                       "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
                       "  }",

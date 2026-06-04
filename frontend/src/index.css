@@ -342,7 +342,9 @@ select option,
 .wallet-card,
 .family-member-card,
 .ai-chat-container,
-.ai-symptom-checker {
+.ai-symptom-checker,
+.activity-card,
+.table-card {
   background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
@@ -366,7 +368,9 @@ select option,
 .suggestion-item:hover,
 .wallet-card:hover,
 .family-member-card:hover,
-.ai-symptom-checker:hover {
+.ai-symptom-checker:hover,
+.activity-card:hover,
+.table-card:hover {
   background: rgba(255, 255, 255, 0.85) !important;
   border-color: #4FA9FF !important;
   box-shadow: 

@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import PatientLayout from '../../components/patient/PatientLayout';
 import { patientService } from '../../services/patientService';
 import Loading from '../../components/common/Loading';
+import StatCard from '../../components/common/StatCard';
+import SimpleChart from '../../components/common/SimpleChart';
 import './PatientDashboard.css';
 
 const PatientDashboard = () => {
@@ -10,31 +12,23 @@ const PatientDashboard = () => {
     totalAppointments: 0,
     totalTreatments: 0,
     pendingAppointments: 0,
+    appsTrendValue: 0,
+    treatmentsTrendValue: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recentActivity, setRecentActivity] = useState([]);
-  const [appointmentTrend, setAppointmentTrend] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [allTreatments, setAllTreatments] = useState([]);
 
   useEffect(() => {
     loadStats();
     loadRecentActivity();
-    generateTrendData();
     
     // Initialize Feather Icons
     if (window.feather) {
       window.feather.replace();
     }
-    
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      generateTrendData();
-      if (window.feather) {
-        window.feather.replace();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const loadStats = async () => {
@@ -45,6 +39,9 @@ const PatientDashboard = () => {
         patientService.getTreatments(),
       ]);
 
+      setAllAppointments(appointments);
+      setAllTreatments(treatments);
+
       const upcoming = appointments.filter(a => 
         a.status !== 'CANCELLED' && 
         a.status !== 'COMPLETED' &&
@@ -53,11 +50,42 @@ const PatientDashboard = () => {
 
       const pending = appointments.filter(a => a.status === 'PENDING');
 
+      // Calculate apps trend: today vs yesterday
+      const todayStr = new Date().toISOString().split('T')[0];
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayAppsCount = appointments.filter(a => a.appointmentDate === yesterdayStr).length;
+      const todayAppsCount = appointments.filter(a => a.appointmentDate === todayStr).length;
+      let appsTrendValue = 0;
+      if (yesterdayAppsCount > 0) {
+        appsTrendValue = Math.round(((todayAppsCount - yesterdayAppsCount) / yesterdayAppsCount) * 100);
+      } else if (todayAppsCount > 0) {
+        appsTrendValue = 100;
+      }
+
+      // Calculate treatments trend: this month vs last month
+      const todayDate = new Date();
+      const currentMonthStr = todayDate.toISOString().substring(0, 7);
+      const lastMonthDate = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1);
+      const lastMonthStr = lastMonthDate.toISOString().substring(0, 7);
+
+      const currentMonthTreatments = treatments.filter(t => t.createdAt && t.createdAt.startsWith(currentMonthStr)).length;
+      const lastMonthTreatments = treatments.filter(t => t.createdAt && t.createdAt.startsWith(lastMonthStr)).length;
+      let treatmentsTrendValue = 0;
+      if (lastMonthTreatments > 0) {
+        treatmentsTrendValue = Math.round(((currentMonthTreatments - lastMonthTreatments) / lastMonthTreatments) * 100);
+      } else if (currentMonthTreatments > 0) {
+        treatmentsTrendValue = 100;
+      }
+
       setStats({
         upcomingAppointments: upcoming.length,
         totalAppointments: appointments.length,
         totalTreatments: treatments.length,
         pendingAppointments: pending.length,
+        appsTrendValue,
+        treatmentsTrendValue,
       });
     } catch (err) {
       console.error('Error loading stats:', err);
@@ -79,59 +107,64 @@ const PatientDashboard = () => {
     }
   };
 
-  const generateTrendData = () => {
-    // Generate mock trend data for last 7 days
-    const days = 7;
-    const trend = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
+  // Prepare chart data for last 7 days (same pattern as Doctor Dashboard)
+  const combined7DaysData = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
       date.setDate(date.getDate() - i);
-      trend.push({
-        date: date.toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 10) + stats.totalAppointments - 5,
-      });
+      const dateStr = date.toISOString().split('T')[0];
+      const appsCount = allAppointments.filter(a => a.appointmentDate === dateStr).length;
+      const treatmentsCount = allTreatments.filter(t => {
+        if (!t.createdAt) return false;
+        const createdDate = new Date(t.createdAt).toISOString().split('T')[0];
+        return createdDate === dateStr;
+      }).length;
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+      days.push({ label: dayName, appointments: appsCount, treatments: treatmentsCount });
     }
-    setAppointmentTrend(trend);
-  };
+    return days;
+  }, [allAppointments, allTreatments]);
 
-  const kpiCards = useMemo(() => [
-    { 
-      label: 'Lịch hẹn sắp tới', 
-      value: stats.upcomingAppointments, 
-      color: '#3B82F6',
-      gradient: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-      icon: 'calendar',
-      trend: '+12%',
-      trendUp: true
+  const statCards = useMemo(() => [
+    {
+      label: 'Lịch hẹn sắp tới',
+      value: stats.upcomingAppointments,
+      color: '#3b82f6',
+      chartType: 'wave',
+      trend: { value: 0, isNeutral: true },
+      chartData: combined7DaysData.map(d => ({ value: d.appointments, label: d.label })),
+      onClick: () => window.location.href = '/patient/booking'
     },
-    { 
-      label: 'Tổng lịch hẹn', 
-      value: stats.totalAppointments, 
-      color: '#10B981',
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      icon: 'clipboard',
-      trend: '+8%',
-      trendUp: true
+    {
+      label: 'Tổng lịch hẹn',
+      value: stats.totalAppointments,
+      color: '#10b981',
+      chartType: 'line',
+      trend: { value: Math.abs(stats.appsTrendValue || 0), isPositive: (stats.appsTrendValue || 0) >= 0 },
+      chartData: combined7DaysData.map(d => ({ value: d.appointments, label: d.label })),
+      onClick: () => window.location.href = '/patient/history'
     },
-    { 
-      label: 'Điều trị của tôi', 
-      value: stats.totalTreatments, 
-      color: '#8B5CF6',
-      gradient: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
-      icon: 'activity',
-      trend: '+5%',
-      trendUp: true
+    {
+      label: 'Điều trị của tôi',
+      value: stats.totalTreatments,
+      color: '#8b5cf6',
+      chartType: 'bars',
+      trend: { value: Math.abs(stats.treatmentsTrendValue || 0), isPositive: (stats.treatmentsTrendValue || 0) >= 0 },
+      chartData: combined7DaysData.map(d => ({ value: d.treatments, label: d.label })),
+      onClick: () => window.location.href = '/patient/treatments'
     },
-    { 
-      label: 'Đang chờ', 
-      value: stats.pendingAppointments, 
-      color: '#F59E0B',
-      gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-      icon: 'clock',
-      trend: '-3%',
-      trendUp: false
+    {
+      label: 'Đang chờ',
+      value: stats.pendingAppointments,
+      color: '#f59e0b',
+      chartType: 'line',
+      trend: { value: 0, isNeutral: true },
+      chartData: combined7DaysData.map(d => ({ value: 0, label: d.label })),
+      onClick: () => window.location.href = '/patient/history'
     },
-  ], [stats]);
+  ], [stats, combined7DaysData]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -175,23 +208,67 @@ const PatientDashboard = () => {
     <PatientLayout>
       <div className="futuristic-dashboard text-slate-800">
         {/* Header Section */}
-        <div className="dashboard-header">
-          <div className="header-left">
-            <h1 className="dashboard-title">Bảng điều khiển</h1>
-            <p className="dashboard-subtitle">Phân tích & Thông tin Sức khỏe</p>
+        <div className="dashboard-header" style={{ display: 'block', padding: '36px 40px' }}>
+          {/* Injected keyframes for gradient-flow */}
+          <style>{`
+            @keyframes gradient-flow {
+              0%   { background-position: 0% center; }
+              100% { background-position: 300% center; }
+            }
+          `}</style>
+
+          {/* Live indicator badge */}
+          <div className="dashboard-header-badge" style={{ marginBottom: '14px' }}>
+            <span className="dashboard-header-badge-dot"></span>
+            Hệ thống hoạt động
           </div>
-          <div className="header-right">
-            <div className="search-container">
-              <i data-feather="search" className="search-icon"></i>
-              <input 
-                type="text" 
-                placeholder="Tìm lịch hẹn, bác sĩ..." 
-                className="global-search"
-              />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div className="header-left">
+              <h1 
+                className="dashboard-title"
+                style={{
+                  background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #10b981, #3b82f6, #8b5cf6)',
+                  backgroundSize: '300% auto',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  color: 'transparent',
+                  animation: 'gradient-flow 5s linear infinite',
+                  fontSize: '3rem',
+                  fontWeight: 900,
+                  letterSpacing: '-0.04em',
+                  lineHeight: 1.1
+                }}
+              >
+                Patient Dashboard
+              </h1>
+              <p className="dashboard-subtitle">
+                Phân tích & Thông tin Sức khỏe của bạn
+                <span className="dashboard-subtitle-date" style={{ marginLeft: '10px' }}>
+                  📅&nbsp;
+                  {new Date().toLocaleDateString('vi-VN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </p>
             </div>
-            <div className="notification-bell">
-              <i data-feather="bell"></i>
-              <span className="notification-dot"></span>
+            <div className="header-right">
+              <div className="search-container">
+                <i data-feather="search" className="search-icon"></i>
+                <input 
+                  type="text" 
+                  placeholder="Tìm lịch hẹn, bác sĩ..." 
+                  className="global-search"
+                />
+              </div>
+              <div className="notification-bell">
+                <i data-feather="bell"></i>
+                <span className="notification-dot"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -203,54 +280,10 @@ const PatientDashboard = () => {
           </div>
         )}
 
-        {/* KPI Cards Grid */}
-        <div className="kpi-grid">
-          {kpiCards.map((card, index) => (
-            <div key={index} className="kpi-card" style={{ '--card-color': card.color }}>
-              <div className="kpi-card-header">
-                <div className="kpi-icon-wrapper" style={{ background: card.gradient }}>
-                  <i data-feather={card.icon}></i>
-                </div>
-                <div className={`kpi-trend ${card.trendUp ? 'up' : 'down'}`}>
-                  <i data-feather={card.trendUp ? 'trending-up' : 'trending-down'}></i>
-                  <span>{card.trend}</span>
-                </div>
-              </div>
-              <div className="kpi-content">
-                <div className="kpi-value" style={{ color: card.color }}>
-                  {card.value}
-                </div>
-                <div className="kpi-label">{card.label}</div>
-              </div>
-              {/* Sparkline */}
-              <div className="sparkline-container">
-                <svg className="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor={card.color} stopOpacity="0.8" />
-                      <stop offset="100%" stopColor={card.color} stopOpacity="0.1" />
-                    </linearGradient>
-                  </defs>
-                  <polyline
-                    points={appointmentTrend.map((point, i) => 
-                      `${(i / (appointmentTrend.length - 1)) * 100},${30 - (point.value / Math.max(...appointmentTrend.map(p => p.value))) * 25}`
-                    ).join(' ')}
-                    fill={`url(#gradient-${index})`}
-                    stroke={card.color}
-                    strokeWidth="2"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  {/* Pulse dot at end */}
-                  <circle
-                    cx={100}
-                    cy={30 - (appointmentTrend[appointmentTrend.length - 1]?.value / Math.max(...appointmentTrend.map(p => p.value))) * 25}
-                    r="3"
-                    fill={card.color}
-                    className="pulse-dot"
-                  />
-                </svg>
-              </div>
-            </div>
+        {/* Stats Cards - same as Doctor Dashboard */}
+        <div className="stats-grid">
+          {statCards.map((card, index) => (
+            <StatCard key={index} {...card} />
           ))}
         </div>
 
@@ -260,84 +293,20 @@ const PatientDashboard = () => {
           <div className="chart-card">
             <div className="card-header">
               <div>
-                <h3 className="card-title">Xu hướng lịch hẹn</h3>
+                <h3 className="card-title">Xu hướng hoạt động</h3>
                 <p className="card-subtitle">7 ngày qua</p>
               </div>
-              <div className="card-actions">
-                <button className="icon-btn">
-                  <i data-feather="more-horizontal"></i>
-                </button>
-              </div>
             </div>
-            <div className="chart-container">
-              <svg className="line-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                {/* Grid lines */}
-                {[0, 25, 50, 75, 100].map((y) => (
-                  <line
-                    key={y}
-                    x1="0"
-                    y1={y * 2}
-                    x2="800"
-                    y2={y * 2}
-                    stroke="rgba(255, 255, 255, 0.05)"
-                    strokeWidth="1"
-                  />
-                ))}
-                {/* Area */}
-                <path
-                  d={`M 0,200 ${appointmentTrend.map((point, i) => 
-                    `L ${(i / (appointmentTrend.length - 1)) * 800},${200 - (point.value / Math.max(...appointmentTrend.map(p => p.value))) * 150}`
-                  ).join(' ')} L 800,200 Z`}
-                  fill="url(#chartGradient)"
-                />
-                {/* Line */}
-                <polyline
-                  points={appointmentTrend.map((point, i) => 
-                    `${(i / (appointmentTrend.length - 1)) * 800},${200 - (point.value / Math.max(...appointmentTrend.map(p => p.value))) * 150}`
-                  ).join(' ')}
-                  fill="none"
-                  stroke="#3B82F6"
-                  strokeWidth="3"
-                  vectorEffect="non-scaling-stroke"
-                />
-                {/* Data points */}
-                {appointmentTrend.map((point, i) => (
-                  <circle
-                    key={i}
-                    cx={(i / (appointmentTrend.length - 1)) * 800}
-                    cy={200 - (point.value / Math.max(...appointmentTrend.map(p => p.value))) * 150}
-                    r="4"
-                    fill="#3B82F6"
-                    className="chart-point"
-                  />
-                ))}
-                {/* Pulse dot at end */}
-                {appointmentTrend.length > 0 && (
-                  <circle
-                    cx={800}
-                    cy={200 - (appointmentTrend[appointmentTrend.length - 1]?.value / Math.max(...appointmentTrend.map(p => p.value))) * 150}
-                    r="6"
-                    fill="#3B82F6"
-                    className="pulse-dot-large"
-                  />
-                )}
-              </svg>
-            </div>
-            <div className="chart-legend">
-              {appointmentTrend.map((point, i) => (
-                <div key={i} className="legend-item">
-                  <span className="legend-date">
-                    {new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                  <span className="legend-value">{point.value}</span>
-                </div>
-              ))}
+            <div className="chart-container" style={{ height: '260px' }}>
+              <SimpleChart
+                data={combined7DaysData}
+                type="area"
+                series={[
+                  { key: 'appointments', name: 'Lịch hẹn', color: '#3b82f6' },
+                  { key: 'treatments', name: 'Điều trị', color: '#8b5cf6' }
+                ]}
+                height={260}
+              />
             </div>
           </div>
 
