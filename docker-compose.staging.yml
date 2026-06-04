@@ -26,6 +26,8 @@ services:
         -XX:+ExitOnOutOfMemoryError
       # Disable structured logging for easier debugging on staging
       SPRING_LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
+      # Disable mail health indicator — SMTP is external
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
 
