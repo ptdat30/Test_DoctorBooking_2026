@@ -1,5 +1,6 @@
 package com.doctorbooking.backend.service;
 
+import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
 import com.doctorbooking.backend.model.*;
@@ -158,7 +159,7 @@ class AppointmentServiceTest {
             confirmed.setAppointmentTime(LocalTime.of(9, 0)); // CONFIRMED → bị loại
 
             Appointment cancelled = buildAppointment(2L, p, d,
-                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, "WALLET");
+                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, AppConstants.WALLET);
             cancelled.setAppointmentTime(LocalTime.of(10, 0)); // CANCELLED → vẫn còn
 
             LocalDate date = LocalDate.now().plusDays(1);
@@ -213,11 +214,11 @@ class AppointmentServiceTest {
             User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
             Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
 
-            CreateAppointmentRequest req = buildCreateRequest(1L, "WALLET", null);
+            CreateAppointmentRequest req = buildCreateRequest(1L, AppConstants.WALLET, null);
             Appointment pendingSave = buildAppointment(88L, patient, doctor,
-                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "WALLET");
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, AppConstants.WALLET);
             Appointment paidSave = buildAppointment(88L, patient, doctor,
-                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PAID, "WALLET");
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
 
             when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
             when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
@@ -351,7 +352,7 @@ class AppointmentServiceTest {
             Doctor doctor = buildDoctor(1L, dUser, "Huỳnh Phong Đạt", "Tim", Doctor.DoctorStatus.ACTIVE);
 
             Appointment apt = buildAppointment(88L, patient, doctor,
-                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PAID, "WALLET");
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
 
             when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
             when(walletService.refundAppointment(any(), any(), any(), any())).thenReturn(new WalletTransaction());
@@ -410,7 +411,7 @@ class AppointmentServiceTest {
             Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
 
             Appointment apt = buildAppointment(79L, patient, doctor,
-                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, "WALLET");
+                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, AppConstants.WALLET);
 
             when(appointmentRepository.findById(79L)).thenReturn(Optional.of(apt));
 
