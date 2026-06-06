@@ -1,5 +1,6 @@
 package com.doctorbooking.backend.service;
 
+import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.model.WalletTransaction;
 import com.doctorbooking.backend.repository.PatientRepository;
@@ -198,7 +199,7 @@ public class WalletService {
         transaction.setTransactionType(WalletTransaction.TransactionType.PAYMENT);
         transaction.setAmount(amount);
         transaction.setStatus(WalletTransaction.TransactionStatus.COMPLETED);
-        transaction.setPaymentMethod("WALLET");
+        transaction.setPaymentMethod(AppConstants.WALLET);
         transaction.setDescription(description);
         transaction.setReferenceId("APT" + appointmentId + "_" + System.currentTimeMillis());
         transaction.setCreatedAt(LocalDateTime.now());
@@ -241,7 +242,7 @@ public class WalletService {
         transaction.setTransactionType(WalletTransaction.TransactionType.REFUND);
         transaction.setAmount(amount);
         transaction.setStatus(WalletTransaction.TransactionStatus.COMPLETED);
-        transaction.setPaymentMethod("WALLET");
+        transaction.setPaymentMethod(AppConstants.WALLET);
         transaction.setDescription(description);
         transaction.setReferenceId("REFUND_APT" + appointmentId + "_" + System.currentTimeMillis());
         transaction.setCreatedAt(LocalDateTime.now());
