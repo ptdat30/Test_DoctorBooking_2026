@@ -8,6 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.doctorbooking.backend.model.PrescriptionMedication;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDate;
@@ -591,42 +593,11 @@ public class EmailService {
                 helper.setTo(toEmail);
                 helper.setSubject("Đơn thuốc điện tử của bạn");
 
-                String medsHtml;
-                if (medications == null || medications.isEmpty()) {
-                    medsHtml = "<p style='margin:4px 0;'>Chưa có thuốc.</p>";
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    for (var pm : medications) {
-                        String qty = pm.getQuantity() != null ? pm.getQuantity().toString() : "";
-                        String unit = pm.getUnit() != null ? pm.getUnit() : "";
-                        sb.append("""
-                          <tr>
-                            <td style="padding:8px; border-bottom:1px solid #e2e8f0;">
-                              <div style="font-weight:700; color:#0f172a;">%s</div>
-                              <div style="color:#475569; font-size:13px;">Liều dùng: %s</div>
-                              <div style="color:#475569; font-size:13px;">Tần suất: %s</div>
-                              %s
-                              <div style="color:#475569; font-size:13px;">Số lượng: %s %s</div>
-                              %s
-                            </td>
-                          </tr>
-                        """.formatted(
-                                safe(pm.getMedicationName()),
-                                safe(pm.getDosage()),
-                                safe(pm.getFrequency()),
-                                pm.getDuration() != null && !pm.getDuration().isEmpty()
-                                        ? "<div style='color:#475569; font-size:13px;'>Thời gian: " + safe(pm.getDuration()) + "</div>"
-                                        : "",
-                                safe(qty),
-                                safe(unit),
-                                pm.getInstructions() != null && !pm.getInstructions().isEmpty()
-                                        ? "<div style='color:#475569; font-size:13px;'>Hướng dẫn: " + safe(pm.getInstructions()) + "</div>"
-                                        : ""
-                        ));
-                    }
-                    medsHtml = sb.toString();
-                }
-
+                String medsHtml = buildMedicationsHtml(medications);
+                String diagnosisCodeText = getDiagnosisCodeText(diagnosisCode);
+                String diagnosisText = getDiagnosisText(diagnosis);
+                String adviceText = getAdviceText(advice);
+                String followUpDateText = getFollowUpDateText(followUpDate);
                 String htmlContent = """
                   <!DOCTYPE html>
                   <html lang="vi">
@@ -695,11 +666,11 @@ public class EmailService {
                         safe(patientName),
                         safe(patientPhone),
                         safe(patientAddress),
-                        diagnosisCode != null ? safe(diagnosisCode) + " - " : "",
-                        diagnosis != null ? safe(diagnosis) : "",
+                        diagnosisCodeText,
+                        diagnosisText,
                         medsHtml,
-                        advice != null ? safe(advice) : "Không có",
-                        followUpDate != null ? safe(followUpDate) : "Không đặt",
+                        adviceText,
+                        followUpDateText,
                         safe(doctorName)
                 );
 
@@ -715,6 +686,76 @@ public class EmailService {
             }
         });
     }
+    private String buildMedicationsHtml(
+        java.util.List<PrescriptionMedication> medications) {
+    if (medications == null || medications.isEmpty()) {
+        return "<p style='margin:4px 0;'>Chưa có thuốc.</p>";
+    }
+
+    StringBuilder sb = new StringBuilder();
+
+    for (var pm : medications) {
+        String qty = pm.getQuantity() != null
+                ? pm.getQuantity().toString()
+                : "";
+
+        String unit = pm.getUnit() != null
+                ? pm.getUnit()
+                : "";
+
+        sb.append("""
+            <tr>
+              <td style="padding:8px; border-bottom:1px solid #e2e8f0;">
+                <div style="font-weight:700; color:#0f172a;">%s</div>
+                <div style="color:#475569; font-size:13px;">Liều dùng: %s</div>
+                <div style="color:#475569; font-size:13px;">Tần suất: %s</div>
+                %s
+                <div style="color:#475569; font-size:13px;">Số lượng: %s %s</div>
+                %s
+              </td>
+            </tr>
+            """.formatted(
+                safe(pm.getMedicationName()),
+                safe(pm.getDosage()),
+                safe(pm.getFrequency()),
+                pm.getDuration() != null && !pm.getDuration().isEmpty()
+                        ? "<div style='color:#475569; font-size:13px;'>Thời gian: "
+                        + safe(pm.getDuration()) + "</div>"
+                        : "",
+                safe(qty),
+                safe(unit),
+                pm.getInstructions() != null && !pm.getInstructions().isEmpty()
+                        ? "<div style='color:#475569; font-size:13px;'>Hướng dẫn: "
+                        + safe(pm.getInstructions()) + "</div>"
+                        : ""
+            ));
+    }
+
+    return sb.toString();
+}
+    private String getDiagnosisCodeText(String diagnosisCode) {
+    return diagnosisCode == null
+            ? ""
+            : safe(diagnosisCode) + " - ";
+}
+
+    private String getDiagnosisText(String diagnosis) {
+    return diagnosis == null
+            ? ""
+            : safe(diagnosis);
+}
+
+private String getAdviceText(String advice) {
+    return advice == null
+            ? "Không có"
+            : safe(advice);
+}
+
+private String getFollowUpDateText(String followUpDate) {
+    return followUpDate == null
+            ? "Không đặt"
+            : safe(followUpDate);
+}
 
     private String safe(String v) {
         return v == null ? "" : v;
