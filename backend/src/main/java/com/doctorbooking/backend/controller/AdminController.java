@@ -22,6 +22,8 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
+    private static final String FIELD_MESSAGE = "message";
+
     private final AdminService adminService;
     private final com.doctorbooking.backend.service.AppointmentService appointmentService;
 
@@ -53,7 +55,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.CREATED).body(doctor);
         } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", e.getMessage());
+            errorResponse.put(FIELD_MESSAGE, e.getMessage());
             errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
             errorResponse.put("timestamp", java.time.LocalDateTime.now());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
@@ -69,7 +71,7 @@ public class AdminController {
             return ResponseEntity.ok(doctor);
         } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", e.getMessage());
+            errorResponse.put(FIELD_MESSAGE, e.getMessage());
             errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
             errorResponse.put("timestamp", java.time.LocalDateTime.now());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
@@ -174,9 +176,9 @@ public class AdminController {
             @RequestBody com.doctorbooking.backend.dto.appointment.CancelAppointmentRequest request) {
         try {
             appointmentService.cancelAppointmentByAdmin(id, request.getCancellationReason());
-            return ResponseEntity.ok().body(java.util.Map.of("message", "Appointment cancelled successfully"));
+            return ResponseEntity.ok().body(java.util.Map.of(FIELD_MESSAGE, "Appointment cancelled successfully"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(java.util.Map.of(FIELD_MESSAGE, e.getMessage()));
         }
     }
 
