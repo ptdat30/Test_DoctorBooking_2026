@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "cb208f4a-f86e-43d9-9161-526b7b9748ab",
+    "_postman_id": "449d3a79-b0e6-4d82-afff-b35984d22f8f",
     "name": "test_doctor_booking_2026 - API Automation Test Suite",
     "description": "Professional API automation test suite for Doctor Booking System (test_doctor_booking_2026). Includes positive/negative tests, schema validation, data-driven tests, E2E flows, and Newman CI support.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -651,6 +651,188 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "POST Register - Username Min Length (3 chars) - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": true
+                  }
+                ],
+                "url": "{{base_url}}/api/auth/register",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{bva_username_min}}\",\n  \"password\": \"password123\",\n  \"email\": \"{{bva_email_min}}\",\n  \"fullName\": \"BVA Min User\",\n  \"phone\": \"0900000002\",\n  \"role\": \"PATIENT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const chars = 'abcdefghijklmnopqrstuvwxyz';",
+                      "let rand3 = '';",
+                      "for (let i = 0; i < 3; i++) rand3 += chars.charAt(Math.floor(Math.random() * chars.length));",
+                      "pm.environment.set('bva_username_min', rand3);",
+                      "pm.environment.set('bva_email_min', rand3 + '@test.local');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 201', () => pm.response.to.have.status(201));",
+                      "if (pm.response.code !== 201) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const json = pm.response.json();",
+                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
+                      "  if (typeof tv4 !== 'undefined') {",
+                      "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
+                      "  }",
+                      "  pm.test('Token is string', () => pm.expect(json.token).to.be.a('string'));",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Register - Username Max Length (50 chars) - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": true
+                  }
+                ],
+                "url": "{{base_url}}/api/auth/register",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{bva_username_max}}\",\n  \"password\": \"password123\",\n  \"email\": \"{{bva_email_max}}\",\n  \"fullName\": \"BVA Max User\",\n  \"phone\": \"0900000003\",\n  \"role\": \"PATIENT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const chars = 'abcdefghijklmnopqrstuvwxyz';",
+                      "let rand50 = 'u_' + Date.now() + '_';",
+                      "while(rand50.length < 50) rand50 += chars.charAt(Math.floor(Math.random() * chars.length));",
+                      "rand50 = rand50.substring(0, 50);",
+                      "pm.environment.set('bva_username_max', rand50);",
+                      "pm.environment.set('bva_email_max', rand50 + '@test.local');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 201', () => pm.response.to.have.status(201));",
+                      "if (pm.response.code !== 201) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const json = pm.response.json();",
+                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
+                      "  if (typeof tv4 !== 'undefined') {",
+                      "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
+                      "  }",
+                      "  pm.test('Token is string', () => pm.expect(json.token).to.be.a('string'));",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Register - Password Min Length (6 chars) - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": true
+                  }
+                ],
+                "url": "{{base_url}}/api/auth/register",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{bva_username_pwd_min}}\",\n  \"password\": \"{{bva_password_min}}\",\n  \"email\": \"{{bva_email_pwd_min}}\",\n  \"fullName\": \"BVA Password Min User\",\n  \"phone\": \"0900000004\",\n  \"role\": \"PATIENT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const ts = Date.now();",
+                      "pm.environment.set('bva_email_pwd_min', 'pwd_min_' + ts + '@test.local');",
+                      "pm.environment.set('bva_username_pwd_min', 'pwd_min_' + ts);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 201', () => pm.response.to.have.status(201));",
+                      "if (pm.response.code !== 201) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }",
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "  const json = pm.response.json();",
+                      "  const schema = {\"type\":\"object\",\"required\":[\"token\",\"type\",\"id\",\"username\",\"role\"],\"properties\":{\"token\":{\"type\":[\"string\",\"null\"]},\"refreshToken\":{\"type\":[\"string\",\"null\"]},\"type\":{\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"integer\"},\"username\":{\"type\":[\"string\",\"null\"]},\"email\":{\"type\":[\"string\",\"null\"]},\"role\":{\"type\":[\"string\",\"null\"]},\"fullName\":{\"type\":[\"string\",\"null\"]}}};",
+                      "  if (typeof tv4 !== 'undefined') {",
+                      "    pm.test('Auth response schema', () => pm.expect(tv4.validate(json, schema)).to.be.true);",
+                      "  }",
+                      "  pm.test('Token is string', () => pm.expect(json.token).to.be.a('string'));",
+                      "}"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -892,6 +1074,137 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('201 or 400', () => pm.expect([201,400]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Register - Username Too Short (2 chars)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": true
+                  }
+                ],
+                "url": "{{base_url}}/api/auth/register",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{bva_username_too_short}}\",\n  \"password\": \"password123\",\n  \"email\": \"too_short@test.com\",\n  \"fullName\": \"BVA Too Short User\",\n  \"phone\": \"0900000005\",\n  \"role\": \"PATIENT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                      "if (pm.response.code !== 400) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Register - Username Too Long (51 chars)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": true
+                  }
+                ],
+                "url": "{{base_url}}/api/auth/register",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{bva_username_too_long}}\",\n  \"password\": \"password123\",\n  \"email\": \"too_long@test.com\",\n  \"fullName\": \"BVA Too Long User\",\n  \"phone\": \"0900000006\",\n  \"role\": \"PATIENT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                      "if (pm.response.code !== 400) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Register - Password Too Short (5 chars)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": true
+                  }
+                ],
+                "url": "{{base_url}}/api/auth/register",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{bva_username_pwd_short}}\",\n  \"password\": \"{{bva_password_too_short}}\",\n  \"email\": \"{{bva_email_pwd_short}}\",\n  \"fullName\": \"BVA Password Short User\",\n  \"phone\": \"0900000007\",\n  \"role\": \"PATIENT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const ts = Date.now();",
+                      "pm.environment.set('bva_email_pwd_short', 'pwd_sh_' + ts + '@test.local');",
+                      "pm.environment.set('bva_username_pwd_short', 'pwd_sh_' + ts);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                      "if (pm.response.code !== 400) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
                     ]
                   }
                 }
@@ -1943,7 +2256,7 @@
                 "description": "",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": 5,\n  \"comment\": \"Great service - auto test\"\n}",
+                  "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": \"{{bva_rating_max}}\",\n  \"comment\": \"Great service - auto test\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2101,6 +2414,110 @@
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": 99\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('current_role', 'PATIENT');",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                      "if (pm.response.code !== 400) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Feedback - Rating Too Low (0)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": false
+                  }
+                ],
+                "url": "{{base_url}}/api/patient/feedbacks",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": \"{{bva_rating_too_low}}\",\n  \"comment\": \"Rating 0\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('current_role', 'PATIENT');",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                      "if (pm.response.code !== 400) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Feedback - Rating Too High (6)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": false
+                  }
+                ],
+                "url": "{{base_url}}/api/patient/feedbacks",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": \"{{bva_rating_too_high}}\",\n  \"comment\": \"Rating 6\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2532,6 +2949,108 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "POST Wallet Top-Up - Min Valid (10000 VNĐ)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": false
+                  }
+                ],
+                "url": "{{base_url}}/api/patient/wallet/top-up",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": \"{{bva_top_up_min}}\",\n  \"paymentMethod\": \"VNPAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('current_role', 'PATIENT');",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 or 201 or 400 vnpay', () => pm.expect([200,201,400]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Wallet Top-Up - Slightly Above Min (10001 VNĐ) - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": false
+                  }
+                ],
+                "url": "{{base_url}}/api/patient/wallet/top-up",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": \"{{bva_top_up_above_min}}\",\n  \"paymentMethod\": \"VNPAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('current_role', 'PATIENT');",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 or 201 or 400 vnpay', () => pm.expect([200,201,400]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -2559,6 +3078,58 @@
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"amount\": 100,\n  \"paymentMethod\": \"VNPAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('current_role', 'PATIENT');",
+                      "const tok = pm.environment.get('patient_token');",
+                      "pm.environment.set('auth_token', tok);",
+                      "if (tok) pm.request.headers.upsert({key: 'Authorization', value: 'Bearer ' + tok});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                      "if (pm.response.code !== 400) { pm.environment.set('skip_dependent_tests', 'true'); console.error(pm.response.text()); }"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST Wallet Top-Up - Below Min BVA (9999 VNĐ)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth_token}}",
+                    "disabled": false
+                  }
+                ],
+                "url": "{{base_url}}/api/patient/wallet/top-up",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": \"{{bva_top_up_too_low}}\",\n  \"paymentMethod\": \"VNPAY\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
