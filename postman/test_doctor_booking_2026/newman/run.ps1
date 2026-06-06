@@ -13,7 +13,7 @@ $ReportsDir = Join-Path $Root "reports"
 
 if (-not (Test-Path $ReportsDir)) { New-Item -ItemType Directory -Path $ReportsDir | Out-Null }
 
-$args = @(
+$newmanArgs = @(
     "run", $Collection,
     "-e", $Environment,
     "--reporters", "cli,htmlextra,json",
@@ -23,16 +23,16 @@ $args = @(
     "--delay-request", "100"
 )
 
-if ($E2EOnly) { $args += "--folder", "22_E2E_Flows" }
-elseif ($SetupOnly) { $args += "--folder", "00_Setup" }
-elseif ($Folder) { $args += "--folder", $Folder }
+if ($E2EOnly) { $newmanArgs += "--folder", "22_E2E_Flows" }
+elseif ($SetupOnly) { $newmanArgs += "--folder", "00_Setup" }
+elseif ($Folder) { $newmanArgs += "--folder", $Folder }
 
 if ($DataFile) {
-    $args += "-d", (Join-Path $Root "data\$DataFile")
+    $newmanArgs += "-d", (Join-Path $Root "data\$DataFile")
 } elseif (-not $E2EOnly -and -not $SetupOnly -and -not $Folder) {
-    $args += "-d", (Join-Path $Root "data\users_login.json")
+    $newmanArgs += "-d", (Join-Path $Root "data\users_login.json")
 }
 
-Write-Host "Running: newman $($args -join ' ')"
-newman @args
+Write-Host "Running: newman $($newmanArgs -join ' ')"
+npx --yes newman $newmanArgs
 exit $LASTEXITCODE

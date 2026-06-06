@@ -364,5 +364,89 @@ class WalletServiceTest {
             doPayment(p, BigDecimal.valueOf(100_000)); // +1000 điểm → 10500 → PLATINUM
             assertThat(p.getLoyaltyTier()).isEqualTo("PLATINUM");
         }
+
+        // =========================================================
+        // BVA (Boundary Value Analysis) Tests
+        // =========================================================
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm tối thiểu bằng 0 → BRONZE")
+        void loyaltyTier_bva_0_bronze() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 0, "BRONZE");
+            doPayment(p, BigDecimal.valueOf(0)); // +0 điểm → 0 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("BRONZE");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 999 (dưới biên SILVER) → BRONZE")
+        void loyaltyTier_bva_999_bronze() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 999, "BRONZE");
+            doPayment(p, BigDecimal.valueOf(99)); // +0 điểm → 999 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("BRONZE");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 1000 (biên SILVER) → SILVER")
+        void loyaltyTier_bva_1000_silver() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 999, "BRONZE");
+            doPayment(p, BigDecimal.valueOf(100)); // +1 điểm → 1000 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("SILVER");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 1001 (trên biên SILVER) → SILVER")
+        void loyaltyTier_bva_1001_silver() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 1000, "SILVER");
+            doPayment(p, BigDecimal.valueOf(100)); // +1 điểm → 1001 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("SILVER");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 4999 (dưới biên GOLD) → SILVER")
+        void loyaltyTier_bva_4999_silver() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 4999, "SILVER");
+            doPayment(p, BigDecimal.valueOf(99)); // +0 điểm → 4999 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("SILVER");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 5000 (biên GOLD) → GOLD")
+        void loyaltyTier_bva_5000_gold() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 4999, "SILVER");
+            doPayment(p, BigDecimal.valueOf(100)); // +1 điểm → 5000 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("GOLD");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 5001 (trên biên GOLD) → GOLD")
+        void loyaltyTier_bva_5001_gold() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 5000, "GOLD");
+            doPayment(p, BigDecimal.valueOf(100)); // +1 điểm → 5001 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("GOLD");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 9999 (dưới biên PLATINUM) → GOLD")
+        void loyaltyTier_bva_9999_gold() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 9999, "GOLD");
+            doPayment(p, BigDecimal.valueOf(99)); // +0 điểm → 9999 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("GOLD");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 10000 (biên PLATINUM) → PLATINUM")
+        void loyaltyTier_bva_10000_platinum() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 9999, "GOLD");
+            doPayment(p, BigDecimal.valueOf(100)); // +1 điểm → 10000 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("PLATINUM");
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Điểm bằng 10001 (trên biên PLATINUM) → PLATINUM")
+        void loyaltyTier_bva_10001_platinum() {
+            Patient p = buildPatient(1L, BigDecimal.valueOf(1_000_000), 10000, "PLATINUM");
+            doPayment(p, BigDecimal.valueOf(100)); // +1 điểm → 10001 điểm
+            assertThat(p.getLoyaltyTier()).isEqualTo("PLATINUM");
+        }
     }
 }
