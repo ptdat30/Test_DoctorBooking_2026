@@ -12,6 +12,7 @@ import com.doctorbooking.backend.repository.AdminRepository;
 import com.doctorbooking.backend.repository.UserRepository;
 import com.doctorbooking.backend.repository.DoctorRepository;
 import com.doctorbooking.backend.repository.PatientRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -49,7 +51,7 @@ public class UserService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        System.out.println("🔵 UserService.loadUserByUsername - Searching for: " + usernameOrEmail);
+        log.debug("Searching for user: {}", usernameOrEmail);
         
         // Try to find by username first, if not found, try email
         User user = userRepository.findByUsername(usernameOrEmail)
@@ -57,16 +59,16 @@ public class UserService implements UserDetailsService {
                         .orElse(null));
         
         if (user != null) {
-            System.out.println("✅ UserService.loadUserByUsername - Found user: " + user.getUsername() + " (ID: " + user.getId() + ", Role: " + user.getRole() + ")");
+            log.debug("Found user: {} (ID: {}, Role: {})", user.getUsername(), user.getId(), user.getRole());
             return user;
         } else {
-            System.err.println("❌ UserService.loadUserByUsername - User not found with username or email: " + usernameOrEmail);
+            log.warn("User not found with username or email: {}", usernameOrEmail);
             // Debug: List all usernames and emails
             long totalUsers = userRepository.count();
-            System.err.println("❌ Total users in database: " + totalUsers);
+            log.warn("Total users in database: {}", totalUsers);
             if (totalUsers > 0) {
                 userRepository.findAll().forEach(u -> 
-                    System.err.println("   - Username: '" + u.getUsername() + "', Email: '" + u.getEmail() + "', Role: " + u.getRole())
+                    log.debug("   - Username: '{}', Email: '{}', Role: {}", u.getUsername(), u.getEmail(), u.getRole())
                 );
             }
             throw new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail);

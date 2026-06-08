@@ -17,6 +17,7 @@ import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.PrescriptionMedicationRepository;
 import com.doctorbooking.backend.repository.TreatmentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TreatmentService {
 
     private final TreatmentRepository treatmentRepository;
@@ -224,8 +226,7 @@ public class TreatmentService {
             );
         } catch (Exception ex) {
             // Không chặn luồng chính nếu email lỗi
-            System.err.println("⚠️ Không gửi được email đơn thuốc: " + ex.getMessage());
-            ex.printStackTrace();
+            log.warn("Không gửi được email đơn thuốc: {}", ex.getMessage());
         }
     }
 }

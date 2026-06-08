@@ -9,6 +9,7 @@ import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.List;
 @RequestMapping("/api/doctor")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('DOCTOR')")
+@Slf4j
 public class DoctorController {
 
     private final DoctorService doctorService;
@@ -76,37 +78,37 @@ public class DoctorController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         try {
             Long doctorId = getCurrentDoctorId();
-            System.out.println("🔍 Doctor ID: " + doctorId);
+            log.info("Doctor ID: {}", doctorId);
             
             if (date != null) {
                 List<AppointmentResponse> allByDate = appointmentService.getAppointmentsByDate(date);
-                System.out.println("📅 Total appointments on " + date + ": " + allByDate.size());
+                log.info("Total appointments on {}: {}", date, allByDate.size());
                 
                 List<AppointmentResponse> appointments = allByDate.stream()
                         .filter(a -> {
-                            System.out.println("  - Appointment ID: " + a.getId() + ", Doctor ID: " + a.getDoctorId());
+                            log.debug("Appointment ID: {}, Doctor ID: {}", a.getId(), a.getDoctorId());
                             return a.getDoctorId().equals(doctorId);
                         })
                         .toList();
-                System.out.println("✅ Filtered appointments: " + appointments.size());
+                log.info("Filtered appointments: {}", appointments.size());
                 return ResponseEntity.ok(appointments);
             }
             
             // Get all appointments for this doctor
             List<AppointmentResponse> allAppointments = appointmentService.getAllAppointments();
-            System.out.println("📋 Total appointments in system: " + allAppointments.size());
+            log.info("Total appointments in system: {}", allAppointments.size());
             
             List<AppointmentResponse> filtered = allAppointments.stream()
                     .filter(a -> {
-                        System.out.println("  - Appointment ID: " + a.getId() + ", Doctor ID: " + a.getDoctorId() + ", Patient: " + a.getPatientName());
+                        log.debug("Appointment ID: {}, Doctor ID: {}, Patient: {}", 
+                            a.getId(), a.getDoctorId(), a.getPatientName());
                         return a.getDoctorId().equals(doctorId);
                     })
                     .toList();
-            System.out.println("✅ Filtered appointments for doctor " + doctorId + ": " + filtered.size());
+            log.info("Filtered appointments for doctor {}: {}", doctorId, filtered.size());
             return ResponseEntity.ok(filtered);
         } catch (RuntimeException e) {
-            System.err.println("❌ Error getting appointments: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error getting appointments: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }

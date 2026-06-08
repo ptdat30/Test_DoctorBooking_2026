@@ -13,6 +13,7 @@ import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.UserRepository;
 import com.doctorbooking.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,6 +27,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -64,7 +66,7 @@ public class AuthService {
             } catch (IllegalArgumentException e) {
                 // Invalid role, stick to default or throw error
                 // For now, let's default to PATIENT but log it
-                System.err.println("Invalid role provided: " + request.getRole());
+                log.warn("Invalid role provided: {}", request.getRole());
             }
         }
         user.setRole(role);
@@ -118,8 +120,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        // Log login attempt
-        System.out.println("🔵 AuthService.login - Attempting login for: " + request.getUsername());
+        log.debug("Attempting login for: {}", request.getUsername());
 
         // Authenticate user - username field can be either username or email
         Authentication authentication;
@@ -128,41 +129,36 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
                             request.getPassword()));
-            System.out.println("✅ AuthService.login - Authentication successful for: " + request.getUsername());
+            log.debug("Authentication successful for: {}", request.getUsername());
         } catch (org.springframework.security.core.AuthenticationException e) {
-            System.err.println("❌ AuthService.login - Authentication failed: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Authentication failed: {}", e.getMessage());
             throw e; // Re-throw để GlobalExceptionHandler xử lý
         }
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        // UserService.loadUserByUsername() trả về User entity (vì User implements
-        // UserDetails)
+        // UserService.loadUserByUsername() trả về User entity (vì User implements UserDetails)
         // Nên authentication.getPrincipal() sẽ là User object
         // Sử dụng trực tiếp để tránh query lại từ DB
         User user;
         if (userDetails instanceof User) {
             // Nếu UserDetails là User entity, sử dụng trực tiếp (không cần query lại)
             user = (User) userDetails;
-            System.out.println("🔵 AuthService.login - Using User from authentication principal (ID: " + user.getId()
-                    + ", Username: " + user.getUsername() + ")");
+            log.debug("Using User from authentication principal (ID: {}, Username: {})", user.getId(), user.getUsername());
         } else {
             // Fallback: nếu không phải User entity, load từ database
             String usernameFromDetails = userDetails.getUsername();
-            System.out.println("⚠️ AuthService.login - Principal is not User entity, loading from DB with username: "
-                    + usernameFromDetails);
+            log.warn("Principal is not User entity, loading from DB with username: {}", usernameFromDetails);
             user = userRepository.findByUsername(usernameFromDetails)
                     .orElse(userRepository.findByEmail(usernameFromDetails)
                             .orElseThrow(() -> {
-                                System.err.println("❌ User not found with username/email: " + usernameFromDetails);
+                                log.error("User not found with username/email: {}", usernameFromDetails);
                                 return new RuntimeException("User not found: " + usernameFromDetails);
                             }));
         }
 
         // Generate tokens
-        // QUAN TRỌNG: Sử dụng user.getUsername() (username thực tế từ DB) thay vì
-        // userDetails.getUsername()
+        // QUAN TRỌNG: Sử dụng user.getUsername() (username thực tế từ DB) thay vì userDetails.getUsername()
         // Vì userDetails.getUsername() có thể trả về email nếu login bằng email
         // Nhưng token phải có subject là username thực tế để validate đúng
         Map<String, Object> extraClaims = new HashMap<>();
@@ -179,11 +175,11 @@ public class AuthService {
         String token = jwtUtil.generateToken(tokenUserDetails, extraClaims);
         String refreshToken = jwtUtil.generateRefreshToken(tokenUserDetails);
 
-        System.out.println("🔵 AuthService.login - Token created with username: " + user.getUsername());
+        log.debug("Token created with username: {}", user.getUsername());
 
         // Get full name based on role
         String fullName = getFullNameByRole(user);
-        System.out.println("🔵 AuthService.login - FullName retrieved: " + fullName);
+        log.debug("FullName retrieved: {}", fullName);
 
         // Build response
         AuthResponse response = AuthResponse.builder()
@@ -196,7 +192,7 @@ public class AuthService {
                 .fullName(fullName)
                 .build();
 
-        System.out.println("✅ AuthService.login - Response built successfully");
+        log.debug("Response built successfully");
         return response;
     }
 
@@ -220,8 +216,7 @@ public class AuthService {
                 }
             };
         } catch (Exception e) {
-            System.err.println("❌ Error getting fullName for role " + user.getRole() + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error getting fullName for role {}: {}", user.getRole(), e.getMessage());
             // Return default based on role
             return switch (user.getRole()) {
                 case ADMIN -> "System Administrator";
