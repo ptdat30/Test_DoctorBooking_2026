@@ -259,8 +259,8 @@ public class PaymentController {
         if (vnpTxnRef != null && !vnpTxnRef.isEmpty()) {
             failTransactionSilently(vnpTxnRef, "Invalid checksum");
         }
-        String url = frontendUrl + "/patient/wallet/payment/result?code=97&message=Invalid%20checksum&vnp_TxnRef="
-                + (vnpTxnRef != null ? vnpTxnRef : "");
+        String url = frontendUrl + "/patient/wallet/payment/result?code=97&message=Invalid%20checksum&"
+                + VNP_TXN_REF + "=" + (vnpTxnRef != null ? vnpTxnRef : "");
         return redirect(url);
     }
 

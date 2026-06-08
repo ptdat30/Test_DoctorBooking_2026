@@ -77,7 +77,9 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    # No ports exposed: DB only reachable within backend-net
+    # Ports exposed for local development
+    ports:
+      - "3306:3306"
     cap_drop:
       - ALL
     cap_add:
@@ -98,15 +100,35 @@ services:
     networks:
       - frontend-net
       - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
     secrets:
       - db_password
       - jwt_secret
       - google_ai_api_key
       - groq_api_key
       - smtp_password
+      - google_ai_api_key
       - vnpay_hash_secret
+    environment:
+      - DB_URL=jdbc:mysql://doctorbooking-db:3306/doctor_booking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - DB_USERNAME=root
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=your_email@gmail.com
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+      - JWT_EXPIRATION=86400000
+      - JWT_REFRESH_EXPIRATION=604800000
+      - FRONTEND_URL=http://localhost:5173
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - EMAIL_FROM=noreply@doctorbooking.com
+      - VNPAY_TMN_CODE=YOUR_TMN_CODE
+      - VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      - VNPAY_RETURN_URL=http://localhost:5173/payment/return
+      - VNPAY_APPOINTMENT_RETURN_URL=http://localhost:5173/appointment/payment-return
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/liveness || exit 0"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -133,6 +155,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api
+    environment:
+      - VITE_API_TARGET=http://doctorbooking-backend:8080
     container_name: doctorbooking-frontend
     restart: unless-stopped
     networks:
