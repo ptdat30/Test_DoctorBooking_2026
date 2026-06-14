@@ -170,6 +170,25 @@ class AppointmentServiceTest {
             assertThat(slots).doesNotContain("09:00"); // CONFIRMED bị loại
             assertThat(slots).contains("10:00");       // CANCELLED vẫn available
         }
+
+        @Test
+        @DisplayName("✅ Giữ lại slot COMPLETED")
+        void getAvailableSlots_completedAppointment_kept() {
+            Patient p = buildPatient(1L, buildUser(1L, "p", "p@t.com", User.Role.PATIENT), "Pat");
+            Doctor d = buildDoctor(1L, buildUser(2L, "d", "d@t.com", User.Role.DOCTOR), "Dr", "Nhi", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment completed = buildAppointment(3L, p, d,
+                    Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
+            completed.setAppointmentTime(LocalTime.of(11, 0)); // COMPLETED → vẫn còn
+
+            LocalDate date = LocalDate.now().plusDays(1);
+            when(appointmentRepository.findByDoctorAndDate(1L, date))
+                    .thenReturn(List.of(completed));
+
+            List<String> slots = appointmentService.getAvailableTimeSlots(1L, date);
+
+            assertThat(slots).contains("11:00"); // COMPLETED vẫn available
+        }
     }
 
     // =========================================================
@@ -312,6 +331,150 @@ class AppointmentServiceTest {
             assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Cannot book appointment in the past");
+        }
+
+        @Test
+        @DisplayName("❌ Thời gian không hợp lệ 08:15 → throw RuntimeException")
+        void shouldRejectInvalidTimeSlot() {
+            User patientUser = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, patientUser, "Đặng Tấn Trọng");
+            User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(8, 15));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Invalid appointment time");
+        }
+
+        @Test
+        @DisplayName("✅ Thời gian hợp lệ 14:30 → Tạo appointment thành công")
+        void shouldAcceptValidTimeSlot() {
+            User patientUser = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, patientUser, "Đặng Tấn Trọng");
+            User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(14, 30));
+
+            Appointment savedApt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            savedApt.setAppointmentTime(LocalTime.of(14, 30));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any(LocalDate.class)))
+                    .thenReturn(Collections.emptyList());
+            when(appointmentRepository.save(any(Appointment.class))).thenReturn(savedApt);
+            when(notificationService.createNotification(any(), any(), any(), any(), any())).thenReturn(null);
+
+            AppointmentResponse response = appointmentService.createAppointment(6L, req);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getAppointmentTime()).isEqualTo(LocalTime.of(14, 30));
+            assertThat(response.getAppointmentDate()).isEqualTo(req.getAppointmentDate());
+        }
+
+        @Test
+        @DisplayName("✅ Thời gian hợp lệ 08:00 → Tạo appointment thành công")
+        void shouldAcceptEightOClockSlot() {
+            User patientUser = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, patientUser, "Đặng Tấn Trọng");
+            User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(8, 0));
+
+            Appointment savedApt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            savedApt.setAppointmentTime(LocalTime.of(8, 0));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any(LocalDate.class)))
+                    .thenReturn(Collections.emptyList());
+            when(appointmentRepository.save(any(Appointment.class))).thenReturn(savedApt);
+            when(notificationService.createNotification(any(), any(), any(), any(), any())).thenReturn(null);
+
+            AppointmentResponse response = appointmentService.createAppointment(6L, req);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getAppointmentTime()).isEqualTo(LocalTime.of(8, 0));
+            assertThat(response.getAppointmentDate()).isEqualTo(req.getAppointmentDate());
+        }
+
+        @Test
+        @DisplayName("✅ Thời gian hợp lệ 17:00 → Tạo appointment thành công")
+        void shouldAcceptFivePmSlot() {
+            User patientUser = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, patientUser, "Đặng Tấn Trọng");
+            User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(17, 0));
+
+            Appointment savedApt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            savedApt.setAppointmentTime(LocalTime.of(17, 0));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any(LocalDate.class)))
+                    .thenReturn(Collections.emptyList());
+            when(appointmentRepository.save(any(Appointment.class))).thenReturn(savedApt);
+            when(notificationService.createNotification(any(), any(), any(), any(), any())).thenReturn(null);
+
+            AppointmentResponse response = appointmentService.createAppointment(6L, req);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getAppointmentTime()).isEqualTo(LocalTime.of(17, 0));
+            assertThat(response.getAppointmentDate()).isEqualTo(req.getAppointmentDate());
+        }
+
+        @Test
+        @DisplayName("❌ Thời gian lunch break 12:00 → throw RuntimeException")
+        void shouldRejectLunchBreakTimeSlot() {
+            User patientUser = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, patientUser, "Đặng Tấn Trọng");
+            User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(12, 0));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Invalid appointment time");
+        }
+
+        @Test
+        @DisplayName("❌ Sau giờ làm 17:30 → throw RuntimeException")
+        void shouldRejectAfterWorkingHours() {
+            User patientUser = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, patientUser, "Đặng Tấn Trọng");
+            User doctorUser = buildUser(2L, "doctor", "doctor@test.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, doctorUser, "Huỳnh Phong Đạt", "Sản phụ khoa", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(17, 30));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Invalid appointment time");
         }
     }
 
