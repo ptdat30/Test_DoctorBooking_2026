@@ -210,7 +210,10 @@ public class FeedbackService {
         }
 
         // Check if can edit (within 24 hours)
-        if (feedback.getDoctorRepliedAt().plusHours(EDIT_WINDOW_HOURS).isBefore(LocalDateTime.now())) {
+        if (feedback.getDoctorRepliedAt() == null ||
+                feedback.getDoctorRepliedAt()
+                        .plusHours(EDIT_WINDOW_HOURS)
+                        .isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Reply can only be edited within " + EDIT_WINDOW_HOURS + " hours");
         }
 
