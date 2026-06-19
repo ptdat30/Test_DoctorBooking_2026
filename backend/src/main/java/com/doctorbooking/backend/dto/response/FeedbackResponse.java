@@ -44,6 +44,7 @@ public class FeedbackResponse {
         
         // Can edit if created within 24 hours and no doctor reply yet
         boolean canEdit = feedback.getDoctorReply() == null && 
+                         feedback.getCreatedAt() != null &&
                          feedback.getCreatedAt().plusHours(24).isAfter(LocalDateTime.now());
         response.setCanEdit(canEdit);
         
