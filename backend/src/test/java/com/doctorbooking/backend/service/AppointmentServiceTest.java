@@ -356,7 +356,7 @@ class AppointmentServiceTest {
                     .thenReturn(Collections.emptyList());
             when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            Appointment result = appointmentService.createAppointment(6L, req);
+            AppointmentResponse result = appointmentService.createAppointment(6L, req);
 
             assertThat(result).isNotNull();
             assertThat(result.getAppointmentDate()).isEqualTo(LocalDate.now());
