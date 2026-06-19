@@ -172,6 +172,23 @@ class AppointmentServiceTest {
             assertThat(slots).doesNotContain("09:00"); // CONFIRMED bị loại
             assertThat(slots).contains("10:00");       // CANCELLED vẫn available
         }
+
+        @Test
+        @DisplayName("✅ Trả về các slots chưa qua hôm nay khi query ngày hiện tại")
+        void getAvailableSlots_today_filtersPastSlots() {
+            LocalTime now = LocalTime.now();
+            LocalDate date = LocalDate.now();
+
+            when(appointmentRepository.findByDoctorAndDate(1L, date))
+                    .thenReturn(Collections.emptyList());
+
+            List<String> slots = appointmentService.getAvailableTimeSlots(1L, date);
+
+            for (String slot : slots) {
+                LocalTime slotTime = LocalTime.parse(slot);
+                assertThat(slotTime).isAfter(now);
+            }
+        }
     }
 
     // =========================================================

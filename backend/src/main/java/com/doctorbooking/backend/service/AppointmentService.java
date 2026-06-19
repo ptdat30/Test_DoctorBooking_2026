@@ -83,9 +83,15 @@ public class AppointmentService {
             })
             .collect(Collectors.toList());
 
-        // Trả về slots available (chưa bị book hoặc đã CANCELLED/COMPLETED)
+        // Trả về slots available (chưa bị book hoặc đã CANCELLED/COMPLETED và phải ở tương lai nếu là ngày hôm nay)
         return allSlots.stream()
             .filter(slot -> !bookedTimes.contains(slot))
+            .filter(slot -> {
+                if (date.equals(LocalDate.now())) {
+                    return LocalTime.parse(slot).isAfter(LocalTime.now());
+                }
+                return true;
+            })
             .collect(Collectors.toList());
     }
 
