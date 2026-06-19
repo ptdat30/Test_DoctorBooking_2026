@@ -137,7 +137,7 @@ public class FeedbackService {
      */
     public List<FeedbackResponse> getDoctorFeedbacks(Long doctorId) {
         return feedbackRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId).stream()
-                .filter(feedback -> !feedback.getIsHidden()) // Hide hidden feedbacks
+                .filter(feedback -> !Boolean.TRUE.equals(feedback.getIsHidden())) // Hide hidden feedbacks (null-safe)
                 .map(FeedbackResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -147,7 +147,7 @@ public class FeedbackService {
      */
     public List<FeedbackResponse> getDoctorFeedbacksByRating(Long doctorId, Integer rating) {
         return feedbackRepository.findByDoctorIdAndRatingOrderByCreatedAtDesc(doctorId, rating).stream()
-                .filter(feedback -> !feedback.getIsHidden())
+                .filter(feedback -> !Boolean.TRUE.equals(feedback.getIsHidden()))
                 .map(FeedbackResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -233,10 +233,10 @@ public class FeedbackService {
             return 0.0;
         }
         double sum = feedbacks.stream()
-                .filter(f -> !f.getIsHidden())
+                .filter(f -> !Boolean.TRUE.equals(f.getIsHidden()))
                 .mapToInt(Feedback::getRating)
                 .sum();
-        long count = feedbacks.stream().filter(f -> !f.getIsHidden()).count();
+        long count = feedbacks.stream().filter(f -> !Boolean.TRUE.equals(f.getIsHidden())).count();
         return count > 0 ? sum / count : 0.0;
     }
 
