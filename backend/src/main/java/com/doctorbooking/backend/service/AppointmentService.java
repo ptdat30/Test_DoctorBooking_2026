@@ -83,9 +83,15 @@ public class AppointmentService {
             })
             .collect(Collectors.toList());
 
-        // Trả về slots available (chưa bị book hoặc đã CANCELLED/COMPLETED)
+        // Trả về slots available (chưa bị book hoặc đã CANCELLED/COMPLETED và phải ở tương lai nếu là ngày hôm nay)
         return allSlots.stream()
             .filter(slot -> !bookedTimes.contains(slot))
+            .filter(slot -> {
+                if (date.equals(LocalDate.now())) {
+                    return LocalTime.parse(slot).isAfter(LocalTime.now());
+                }
+                return true;
+            })
             .collect(Collectors.toList());
     }
 
@@ -147,6 +153,12 @@ public class AppointmentService {
         // Check if date is not in the past
         if (request.getAppointmentDate().isBefore(LocalDate.now())) {
             throw new RuntimeException("Cannot book appointment in the past");
+        }
+
+        // Check if booking time slot has already passed today
+        if (request.getAppointmentDate().equals(LocalDate.now()) &&
+                request.getAppointmentTime().isBefore(LocalTime.now())) {
+            throw new RuntimeException("Cannot book appointment time slot that has already passed today");
         }
 
         // Get consultation fee
@@ -449,6 +461,17 @@ public class AppointmentService {
         if (request.getAppointmentTime() != null) {
             appointment.setAppointmentTime(request.getAppointmentTime());
         }
+
+        // Check if the updated date/time is in the past
+        LocalDate checkDate = appointment.getAppointmentDate();
+        LocalTime checkTime = appointment.getAppointmentTime();
+        if (checkDate.isBefore(LocalDate.now())) {
+            throw new RuntimeException("Cannot update appointment to a past date");
+        }
+        if (checkDate.equals(LocalDate.now()) && checkTime.isBefore(LocalTime.now())) {
+            throw new RuntimeException("Cannot update appointment to a time slot that has already passed today");
+        }
+
         if (request.getNotes() != null) {
             appointment.setNotes(request.getNotes());
         }

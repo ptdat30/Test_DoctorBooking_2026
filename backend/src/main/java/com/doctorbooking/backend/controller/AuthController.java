@@ -18,6 +18,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private static final String MESSAGE = "message";
 
     // Re-writing the method to be cleaner and return the error
     @PostMapping("/register")
@@ -27,7 +28,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of(MESSAGE, e.getMessage()));
         }
     }
 
@@ -39,12 +40,12 @@ public class AuthController {
         } catch (org.springframework.security.core.AuthenticationException e) {
             // Authentication failed (bad credentials, user not found, etc.)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid username or password", "error", e.getMessage()));
+                    .body(Map.of(MESSAGE, "Invalid username or password", "error", e.getMessage()));
         } catch (Exception e) {
             // Other exceptions
             e.printStackTrace(); // Log for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An error occurred during login", "error", e.getMessage()));
+                    .body(Map.of(MESSAGE, "An error occurred during login", "error", e.getMessage()));
         }
     }
 
