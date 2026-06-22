@@ -109,8 +109,14 @@ public class FamilyMemberService {
             member.setGender(request.getGender());
         }
         if (request.getRelationship() != null) {
-            member.setRelationship(request.getRelationship());
+            if (request.getRelationship() == FamilyMember.Relationship.SELF) {
+        long mainAccountCount = familyMemberRepository.countMainAccountByPatientId(patientId);
+                if (mainAccountCount > 0) {
+            throw new RuntimeException("Main account already exists");
         }
+    }
+    member.setRelationship(request.getRelationship());
+}
         if (request.getPhone() != null) {
             member.setPhone(request.getPhone());
         }
