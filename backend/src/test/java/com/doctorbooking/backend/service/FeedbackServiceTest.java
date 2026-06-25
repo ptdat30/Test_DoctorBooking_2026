@@ -266,23 +266,88 @@ class FeedbackServiceTest {
         }
 
         @Test
-        @DisplayName("❌ Quá 24 giờ → không thể edit")
-        void updateFeedback_after24Hours_throwsException() {
-            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
-            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
-            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
-            Feedback feedback = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.PENDING, false);
-            feedback.setCreatedAt(LocalDateTime.now().minusHours(25)); // 25 giờ trước
+        @DisplayName("🎯 BVA: Đúng biên 24 giờ (còn 23h 59m 59s) → có thể edit")
+        void updateFeedback_bva_within24Hours_succeeds() {
+            try (org.mockito.MockedStatic<LocalDateTime> mockedStatic = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+                LocalDateTime fixedNow = LocalDateTime.of(2026, 6, 6, 12, 0, 0);
+                mockedStatic.when(LocalDateTime::now).thenReturn(fixedNow);
 
-            UpdateFeedbackRequest req = new UpdateFeedbackRequest();
-            req.setRating(3);
-            req.setComment("Late update");
+                Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+                Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+                Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+                Feedback feedback = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.PENDING, false);
+                
+                // 23 giờ 59 phút 59 giây trước
+                feedback.setCreatedAt(fixedNow.minusHours(24).plusSeconds(1)); 
 
-            when(feedbackRepository.findById(1L)).thenReturn(Optional.of(feedback));
+                UpdateFeedbackRequest req = new UpdateFeedbackRequest();
+                req.setRating(4);
+                req.setComment("Updated within boundary");
 
-            assertThatThrownBy(() -> feedbackService.updateFeedback(6L, 1L, req))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Feedback can only be edited within 24 hours");
+                when(feedbackRepository.findById(1L)).thenReturn(Optional.of(feedback));
+                when(feedbackRepository.save(any(Feedback.class))).thenReturn(feedback);
+
+                FeedbackResponse response = feedbackService.updateFeedback(6L, 1L, req);
+
+                assertThat(response).isNotNull();
+                assertThat(feedback.getRating()).isEqualTo(4);
+                assertThat(feedback.getComment()).isEqualTo("Updated within boundary");
+            }
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Đúng biên chính xác 24 giờ → có thể edit (chưa quá 24 giờ)")
+        void updateFeedback_bva_exactly24Hours_succeeds() {
+            try (org.mockito.MockedStatic<LocalDateTime> mockedStatic = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+                LocalDateTime fixedNow = LocalDateTime.of(2026, 6, 6, 12, 0, 0);
+                mockedStatic.when(LocalDateTime::now).thenReturn(fixedNow);
+
+                Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+                Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+                Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+                Feedback feedback = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.PENDING, false);
+                
+                // Chính xác 24 giờ trước
+                feedback.setCreatedAt(fixedNow.minusHours(24)); 
+
+                UpdateFeedbackRequest req = new UpdateFeedbackRequest();
+                req.setRating(4);
+                req.setComment("Updated exactly at 24h");
+
+                when(feedbackRepository.findById(1L)).thenReturn(Optional.of(feedback));
+                when(feedbackRepository.save(any(Feedback.class))).thenReturn(feedback);
+
+                FeedbackResponse response = feedbackService.updateFeedback(6L, 1L, req);
+
+                assertThat(response).isNotNull();
+            }
+        }
+
+        @Test
+        @DisplayName("🎯 BVA: Vượt biên 24 giờ (24h 0m 1s trước) → throw Exception")
+        void updateFeedback_bva_after24Hours_throwsException() {
+            try (org.mockito.MockedStatic<LocalDateTime> mockedStatic = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+                LocalDateTime fixedNow = LocalDateTime.of(2026, 6, 6, 12, 0, 0);
+                mockedStatic.when(LocalDateTime::now).thenReturn(fixedNow);
+
+                Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+                Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+                Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+                Feedback feedback = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.PENDING, false);
+                
+                // 24 giờ và 1 giây trước (quá 24 giờ)
+                feedback.setCreatedAt(fixedNow.minusHours(24).minusSeconds(1)); 
+
+                UpdateFeedbackRequest req = new UpdateFeedbackRequest();
+                req.setRating(3);
+                req.setComment("Late update");
+
+                when(feedbackRepository.findById(1L)).thenReturn(Optional.of(feedback));
+
+                assertThatThrownBy(() -> feedbackService.updateFeedback(6L, 1L, req))
+                        .isInstanceOf(RuntimeException.class)
+                        .hasMessageContaining("Feedback can only be edited within 24 hours");
+            }
         }
     }
 

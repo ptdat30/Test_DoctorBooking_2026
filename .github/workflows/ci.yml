@@ -1,25 +1,66 @@
-# .github/workflows/ci.yml
-# ══════════════════════════════════════════════════════════════
-# CI Pipeline — Runs on every PR to staging or main
-#
-# Jobs (parallel where possible):
-#   1. backend-build   — Maven compile + unit test
-#   2. frontend-build  — npm ci + npm run build
-#   3. sonar-gate      — SonarCloud scan + Quality Gate (after backend-build)
-#   4. integration-test — Start backend + Newman 23-folder API test suite
-# ══════════════════════════════════════════════════════════════
-
 name: CI Pipeline
 
 on:
+  push:
+    branches: [staging, main]
   pull_request:
     branches: [staging, main]
 
+env:
+  DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
+  DB_USERNAME: root
+  DB_PASSWORD: root
+  JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
+  JWT_EXPIRATION: '86400000'
+  JWT_REFRESH_EXPIRATION: '604800000'
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: '587'
+  SMTP_USERNAME: ci-test@example.com
+  SMTP_PASSWORD: ci-test-password
+  GROQ_API_KEY: ci-test-key
+  VNPAY_TMN_CODE: TESTTMN
+  VNPAY_HASH_SECRET: TESTHASH
+  VNPAY_URL: http://localhost
+  VNPAY_RETURN_URL: http://localhost/callback
+  VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
+  CORS_ALLOWED_ORIGINS: '*'
+  FRONTEND_URL: http://localhost:5173
+  EMAIL_FROM: noreply@doctorbooking.com
+  SKIP_AI_TESTS: 'true'
+  SEED_TEST_DATA: 'true'
+
 jobs:
-  # ── Job 1: Backend Build + Unit Test ─────────────────────────
+  # ── Job 0: Path Filtering ────────────────────────────────────
+  filter:
+    name: "Detect Changes"
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      postman: ${{ steps.changes.outputs.postman }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+              - 'sonar-project.properties'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci.yml'
+            postman:
+              - 'postman/**'
+              - '.github/workflows/ci.yml'
+
+  # ── Job 1: Backend Build & Unit Test ─────────────────────────
   backend-build:
     name: "Backend: Build & Unit Test"
     runs-on: ubuntu-latest
+    needs: filter
+    if: ${{ needs.filter.outputs.backend == 'true' || needs.filter.outputs.frontend == 'true' || needs.filter.outputs.postman == 'true' }}
     services:
       mysql:
         image: mysql:8.0
@@ -45,31 +86,9 @@ jobs:
 
       - name: Build + Unit Test
         working-directory: backend
-        env:
-          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
-          DB_USERNAME: root
-          DB_PASSWORD: root
-          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
-          JWT_EXPIRATION: '86400000'
-          JWT_REFRESH_EXPIRATION: '604800000'
-          SMTP_HOST: smtp.gmail.com
-          SMTP_PORT: '587'
-          SMTP_USERNAME: ci-test@example.com
-          SMTP_PASSWORD: ci-test-password
-          GROQ_API_KEY: ci-test-key
-          VNPAY_TMN_CODE: TESTTMN
-          VNPAY_HASH_SECRET: TESTHASH
-          VNPAY_URL: http://localhost
-          VNPAY_RETURN_URL: http://localhost/callback
-          VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
-          CORS_ALLOWED_ORIGINS: '*'
-          FRONTEND_URL: http://localhost:5173
-          EMAIL_FROM: noreply@doctorbooking.com
-          SKIP_AI_TESTS: 'true'
         run: |
           chmod +x mvnw
           
-          # Wait for MySQL to be ready via TCP (not socket)
           echo "Waiting for MySQL to be ready..."
           for i in $(seq 1 60); do
             if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
@@ -81,9 +100,6 @@ jobs:
             sleep 2
           done
           
-          # Verify connection
-          mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SHOW DATABASES;" || { echo "MySQL connection failed"; exit 1; }
-          
           ./mvnw clean verify -B --no-transfer-progress
 
       - name: Upload Test Results
@@ -94,10 +110,22 @@ jobs:
           path: backend/target/surefire-reports/
           retention-days: 7
 
-  # ── Job 2: Frontend Build (runs in parallel with backend) ────
+      - name: Upload Backend Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build-artifacts
+          path: |
+            backend/target/*.jar
+            backend/target/classes/
+            backend/target/site/jacoco/
+          retention-days: 1
+
+  # ── Job 2: Frontend Build ────────────────────────────────────
   frontend-build:
     name: "Frontend: Build"
     runs-on: ubuntu-latest
+    needs: filter
+    if: ${{ needs.filter.outputs.frontend == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -114,28 +142,22 @@ jobs:
           npm ci --prefer-offline --no-audit --no-fund
           npm run build
 
-  # ── Job 3: SonarCloud Quality Gate (after backend compiles) ──
+  # ── Job 3: SonarCloud Quality Gate ───────────────────────────
   sonar-gate:
     name: "SonarCloud: Scan & Quality Gate"
     runs-on: ubuntu-latest
-    needs: backend-build
+    needs: [filter, backend-build]
+    if: ${{ needs.filter.outputs.backend == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup JDK 21
-        uses: actions/setup-java@v4
+      - name: Download Backend Classes & Coverage
+        uses: actions/download-artifact@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Compile for Sonar
-        working-directory: backend
-        run: |
-          chmod +x mvnw
-          ./mvnw clean compile -B --no-transfer-progress -q
+          name: backend-build-artifacts
+          path: backend/target
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v2
@@ -154,11 +176,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  # ── Job 4: Integration Test — Newman Full Suite ──────────────
+  # ── Job 4: Integration Test — Newman API Tests ───────────────
   integration-test:
     name: "Integration: Newman API Tests"
     runs-on: ubuntu-latest
-    needs: backend-build
+    needs: [filter, backend-build]
+    if: ${{ needs.filter.outputs.backend == 'true' || needs.filter.outputs.postman == 'true' }}
     services:
       mysql:
         image: mysql:8.0
@@ -180,52 +203,44 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Newman
-        run: npm install -g newman
+      - name: Download Backend JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build-artifacts
+          path: backend/target
+
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in $(seq 1 60); do
+            if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
+              echo "MySQL is ready"
+              mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
+              break
+            fi
+            sleep 2
+          done
 
       - name: Start Backend
-        working-directory: backend
-        env:
-          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
-          DB_USERNAME: root
-          DB_PASSWORD: root
-          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
-          JWT_EXPIRATION: '86400000'
-          JWT_REFRESH_EXPIRATION: '604800000'
-          SKIP_AI_TESTS: 'true'
         run: |
-          chmod +x mvnw
-          ./mvnw spring-boot:run -DskipTests &
+          java -jar backend/target/backend-0.0.1-SNAPSHOT.jar &
           echo $! > backend.pid
 
       - name: Wait for API Health
-        run: |
-          echo "Waiting for backend to start..."
-          for i in $(seq 1 60); do
-            if curl -sf http://localhost:8080/api/public/health > /dev/null 2>&1; then
-              echo "✅ API is healthy (attempt $i)"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "❌ API failed to start within 5 minutes"
-          exit 1
+        run: npx wait-on http-get://localhost:8080/api/public/health --timeout 60000
 
       - name: Run Newman — All 23 Folders
         run: |
           cd postman/test_doctor_booking_2026
           mkdir -p reports
 
-          # Prepare environment with correct base_url
           cp test_doctor_booking_2026.postman_environment.json /tmp/ci-env.json
-          # Update base_url to localhost
           node -e "
             const fs = require('fs');
             const env = JSON.parse(fs.readFileSync('/tmp/ci-env.json','utf8'));
@@ -260,7 +275,7 @@ jobs:
             echo "  Running: $folder"
             echo "══════════════════════════════════════════"
 
-            newman run test_doctor_booking_2026.postman_collection.json \
+            npx newman run test_doctor_booking_2026.postman_collection.json \
               -e /tmp/ci-env.json \
               --folder "$folder" \
               --timeout-request 15000 \
@@ -302,5 +317,156 @@ jobs:
 
       - name: Stop Backend
         if: always()
-        working-directory: backend
         run: kill $(cat backend.pid) 2>/dev/null || true
+
+  # ── Job 5: E2E Frontend Test — CodeceptJS + Playwright ──────────────
+  e2e-test:
+    name: "E2E: CodeceptJS + Playwright"
+    runs-on: ubuntu-latest
+    needs: [filter, backend-build]
+    if: ${{ needs.filter.outputs.backend == 'true' || needs.filter.outputs.frontend == 'true' }}
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: doctor_booking
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # ── Khởi động Backend ──────────────────────────────────────────
+      - name: Start Backend (background)
+        working-directory: backend
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
+          JWT_EXPIRATION: '86400000'
+          JWT_REFRESH_EXPIRATION: '604800000'
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: '587'
+          SMTP_USERNAME: ci-test@example.com
+          SMTP_PASSWORD: ci-test-password
+          GROQ_API_KEY: ci-test-key
+          VNPAY_TMN_CODE: TESTTMN
+          VNPAY_HASH_SECRET: TESTHASH
+          VNPAY_URL: http://localhost
+          VNPAY_RETURN_URL: http://localhost/callback
+          VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
+          CORS_ALLOWED_ORIGINS: '*'
+          FRONTEND_URL: http://localhost:4173
+          EMAIL_FROM: noreply@doctorbooking.com
+          SKIP_AI_TESTS: 'true'
+        run: |
+          chmod +x mvnw
+
+          # Chờ MySQL sẵn sàng
+          for i in $(seq 1 60); do
+            if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
+              mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
+              break
+            fi
+            sleep 2
+          done
+
+          ./mvnw spring-boot:run -DskipTests &
+          echo $! > ../backend.pid
+
+      # ── Build + Khởi động Frontend (Vite Preview) ─────────────────
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Build Frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:8080/api
+        run: npm run build
+
+      - name: Start Frontend Preview Server (background)
+        working-directory: frontend
+        run: |
+          npm run preview -- --port 4173 &
+          echo $! > ../frontend.pid
+
+      # ── Cài Playwright Browsers ────────────────────────────────────
+      - name: Install Playwright Browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      # ── Chờ cả 2 server sẵn sàng với wait-on (smart wait) ─────────
+      - name: Wait for Servers (wait-on)
+        run: |
+          npx wait-on \
+            http://localhost:4173 \
+            http://localhost:8080/actuator/health \
+            --timeout 120000 \
+            --interval 2000 \
+            --verbose
+        # wait-on thông minh: poll thực sự thay vì sleep cứng
+        # Timeout 2 phút là đủ cho Spring Boot cold start
+
+      # ── Chạy E2E Tests ────────────────────────────────────────────
+      - name: Run CodeceptJS E2E Tests
+        working-directory: frontend
+        env:
+          TEST_BASE_URL: http://localhost:4173
+          TEST_API_URL: http://localhost:8080/api
+          TEST_ADMIN_USERNAME: admin
+          TEST_ADMIN_PASSWORD: ${{ secrets.CI_TEST_ADMIN_PASSWORD || 'Admin@123' }}
+          HEADLESS: 'true'
+        run: npm run e2e:headless
+
+      # ── Upload Artifacts ────────────────────────────────────────────
+      - name: Upload Allure Results
+        if: always()  # Luôn upload kể cả khi test fail (để debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-allure-results
+          path: frontend/e2e/output/allure-results/
+          retention-days: 14
+
+      - name: Upload Playwright Videos (on failure)
+        if: failure()  # Chỉ upload video khi có test fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-playwright-videos
+          path: frontend/e2e/output/video/
+          retention-days: 7
+
+      - name: Upload Playwright Traces (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-playwright-traces
+          path: frontend/e2e/output/trace/
+          retention-days: 7
+
+      # ── Dọn dẹp ────────────────────────────────────────────────────
+      - name: Stop Servers
+        if: always()
+        run: |
+          kill $(cat backend.pid) 2>/dev/null || true
+          kill $(cat frontend.pid) 2>/dev/null || true

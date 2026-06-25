@@ -9,11 +9,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.doctorbooking.backend.model.PrescriptionMedication;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -52,24 +55,26 @@ public class EmailService {
             return;
         }
         
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
+        CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(content, false); // Plain text
+                helper.setFrom(fromEmail);
+                helper.setTo(toEmail);
+                helper.setSubject(subject);
+                helper.setText(content, false); // Plain text
 
-            mailSender.send(message);
-            logger.info("Email sent successfully to: {}", toEmail);
-        } catch (org.springframework.mail.MailAuthenticationException e) {
-            logger.error("❌ SMTP Authentication failed for email: {}. Error: {}", toEmail, e.getMessage());
-        } catch (jakarta.mail.MessagingException e) {
-            logger.error("❌ Messaging error sending email to: {}. Error: {}", toEmail, e.getMessage());
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error sending email to: {}. Error: {}", toEmail, e.getMessage(), e);
-        }
+                mailSender.send(message);
+                logger.info("Email sent successfully to: {}", toEmail);
+            } catch (org.springframework.mail.MailAuthenticationException e) {
+                logger.error("❌ SMTP Authentication failed for email: {}. Error: {}", toEmail, e.getMessage());
+            } catch (jakarta.mail.MessagingException e) {
+                logger.error("❌ Messaging error sending email to: {}. Error: {}", toEmail, e.getMessage());
+            } catch (Exception e) {
+                logger.error("❌ Unexpected error sending email to: {}. Error: {}", toEmail, e.getMessage(), e);
+            }
+        });
     }
 
     /**
@@ -105,48 +110,48 @@ public class EmailService {
             return;
         }
         
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
+        CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Xác nhận đặt lịch khám thành công - Doctor Booking System");
+                helper.setFrom(fromEmail);
+                helper.setTo(toEmail);
+                helper.setSubject("Xác nhận đặt lịch khám thành công - Doctor Booking System");
 
-            String htmlContent = buildAppointmentConfirmationEmailHtml(
-                    patientName,
-                    patientPhone,
-                    doctorName,
-                    doctorSpecialization,
-                    doctorPhone,
-                    doctorAddress,
-                    appointmentDate,
-                    appointmentTime,
-                    appointmentId,
-                    paymentMethod,
-                    paymentStatus,
-                    price,
-                    notes,
-                    familyMemberName,
-                    familyMemberRelationship
-            );
+                String htmlContent = buildAppointmentConfirmationEmailHtml(
+                        patientName,
+                        patientPhone,
+                        doctorName,
+                        doctorSpecialization,
+                        doctorPhone,
+                        doctorAddress,
+                        appointmentDate,
+                        appointmentTime,
+                        appointmentId,
+                        paymentMethod,
+                        paymentStatus,
+                        price,
+                        notes,
+                        familyMemberName,
+                        familyMemberRelationship
+                );
 
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
+                helper.setText(htmlContent, true);
+                mailSender.send(message);
 
-            logger.info("Appointment confirmation email sent successfully to: {}", toEmail);
-        } catch (org.springframework.mail.MailAuthenticationException e) {
-            logger.error("❌ SMTP Authentication failed for email: {}. " +
-                    "Please check your SMTP_USERNAME and SMTP_PASSWORD in .env file. " +
-                    "For Gmail, you need to use App Password (not regular password). " +
-                    "Error: {}", toEmail, e.getMessage());
-            // Không throw exception để không làm gián đoạn quá trình đặt lịch
-        } catch (jakarta.mail.MessagingException e) {
-            logger.error("❌ Messaging error sending appointment confirmation email to: {}. Error: {}", toEmail, e.getMessage());
-            // Không throw exception để không làm gián đoạn quá trình đặt lịch
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error sending appointment confirmation email to: {}. Error: {}", toEmail, e.getMessage(), e);
-        }
+                logger.info("Appointment confirmation email sent successfully to: {}", toEmail);
+            } catch (org.springframework.mail.MailAuthenticationException e) {
+                logger.error("❌ SMTP Authentication failed for email: {}. " +
+                        "Please check your SMTP_USERNAME and SMTP_PASSWORD in .env file. " +
+                        "For Gmail, you need to use App Password (not regular password). " +
+                        "Error: {}", toEmail, e.getMessage());
+            } catch (jakarta.mail.MessagingException e) {
+                logger.error("❌ Messaging error sending appointment confirmation email to: {}. Error: {}", toEmail, e.getMessage());
+            } catch (Exception e) {
+                logger.error("❌ Unexpected error sending appointment confirmation email to: {}. Error: {}", toEmail, e.getMessage(), e);
+            }
+        });
     }
 
     /**
@@ -355,39 +360,41 @@ public class EmailService {
             return;
         }
         
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
+        CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject(String.format("Nhắc hẹn: Lịch khám của bạn còn %d giờ nữa - Doctor Booking System", hoursBefore));
+                helper.setFrom(fromEmail);
+                helper.setTo(toEmail);
+                helper.setSubject(String.format("Nhắc hẹn: Lịch khám của bạn còn %d giờ nữa - Doctor Booking System", hoursBefore));
 
-            String htmlContent = buildAppointmentReminderEmailHtml(
-                    patientName,
-                    doctorName,
-                    doctorSpecialization,
-                    doctorPhone,
-                    doctorAddress,
-                    appointmentDate,
-                    appointmentTime,
-                    appointmentId,
-                    hoursBefore,
-                    familyMemberName,
-                    familyMemberRelationship
-            );
+                String htmlContent = buildAppointmentReminderEmailHtml(
+                        patientName,
+                        doctorName,
+                        doctorSpecialization,
+                        doctorPhone,
+                        doctorAddress,
+                        appointmentDate,
+                        appointmentTime,
+                        appointmentId,
+                        hoursBefore,
+                        familyMemberName,
+                        familyMemberRelationship
+                );
 
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
+                helper.setText(htmlContent, true);
+                mailSender.send(message);
 
-            logger.info("✅ Appointment reminder email ({}h before) sent successfully to: {}", hoursBefore, toEmail);
-        } catch (org.springframework.mail.MailAuthenticationException e) {
-            logger.error("❌ SMTP Authentication failed for reminder email to: {}. Error: {}", toEmail, e.getMessage());
-        } catch (jakarta.mail.MessagingException e) {
-            logger.error("❌ Messaging error sending reminder email to: {}. Error: {}", toEmail, e.getMessage());
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error sending reminder email to: {}. Error: {}", toEmail, e.getMessage(), e);
-        }
+                logger.info("✅ Appointment reminder email ({}h before) sent successfully to: {}", hoursBefore, toEmail);
+            } catch (org.springframework.mail.MailAuthenticationException e) {
+                logger.error("❌ SMTP Authentication failed for reminder email to: {}. Error: {}", toEmail, e.getMessage());
+            } catch (jakarta.mail.MessagingException e) {
+                logger.error("❌ Messaging error sending reminder email to: {}. Error: {}", toEmail, e.getMessage());
+            } catch (Exception e) {
+                logger.error("❌ Unexpected error sending reminder email to: {}. Error: {}", toEmail, e.getMessage(), e);
+            }
+        });
     }
 
     /**
@@ -578,137 +585,178 @@ public class EmailService {
             return;
         }
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
+        CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Đơn thuốc điện tử của bạn");
+                helper.setFrom(fromEmail);
+                helper.setTo(toEmail);
+                helper.setSubject("Đơn thuốc điện tử của bạn");
 
-            String medsHtml;
-            if (medications == null || medications.isEmpty()) {
-                medsHtml = "<p style='margin:4px 0;'>Chưa có thuốc.</p>";
-            } else {
-                StringBuilder sb = new StringBuilder();
-                for (var pm : medications) {
-                    String qty = pm.getQuantity() != null ? pm.getQuantity().toString() : "";
-                    String unit = pm.getUnit() != null ? pm.getUnit() : "";
-                    sb.append("""
-                      <tr>
-                        <td style="padding:8px; border-bottom:1px solid #e2e8f0;">
-                          <div style="font-weight:700; color:#0f172a;">%s</div>
-                          <div style="color:#475569; font-size:13px;">Liều dùng: %s</div>
-                          <div style="color:#475569; font-size:13px;">Tần suất: %s</div>
-                          %s
-                          <div style="color:#475569; font-size:13px;">Số lượng: %s %s</div>
-                          %s
-                        </td>
-                      </tr>
-                    """.formatted(
-                            safe(pm.getMedicationName()),
-                            safe(pm.getDosage()),
-                            safe(pm.getFrequency()),
-                            pm.getDuration() != null && !pm.getDuration().isEmpty()
-                                    ? "<div style='color:#475569; font-size:13px;'>Thời gian: " + safe(pm.getDuration()) + "</div>"
-                                    : "",
-                            safe(qty),
-                            safe(unit),
-                            pm.getInstructions() != null && !pm.getInstructions().isEmpty()
-                                    ? "<div style='color:#475569; font-size:13px;'>Hướng dẫn: " + safe(pm.getInstructions()) + "</div>"
-                                    : ""
-                    ));
-                }
-                medsHtml = sb.toString();
+                String medsHtml = buildMedicationsHtml(medications);
+                String diagnosisCodeText = getDiagnosisCodeText(diagnosisCode);
+                String diagnosisText = getDiagnosisText(diagnosis);
+                String adviceText = getAdviceText(advice);
+                String followUpDateText = getFollowUpDateText(followUpDate);
+                String htmlContent = """
+                  <!DOCTYPE html>
+                  <html lang="vi">
+                  <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Đơn thuốc điện tử</title>
+                  </head>
+                  <body style="font-family: Arial, sans-serif; background:#f6f9fc; padding:16px; margin:0; color:#0f172a;">
+                    <div style="max-width:720px; margin:0 auto; background:white; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.08); padding:24px;">
+                      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                        <div>
+                          <div style="font-size:18px; font-weight:800; text-transform:uppercase;">%s</div>
+                          <div style="color:#475569; font-size:14px; margin-top:4px;">%s</div>
+                          <div style="color:#475569; font-size:14px; margin-top:2px;">SĐT: %s</div>
+                        </div>
+                        <div style="text-align:right; color:#475569;">
+                          <div style="font-size:12px; letter-spacing:1px;">MÃ ĐƠN THUỐC</div>
+                          <div style="font-size:14px; font-weight:700;">%s</div>
+                        </div>
+                      </div>
+    
+                      <h3 style="margin:12px 0; font-size:20px; font-weight:800; text-align:center; color:#0f172a;">ĐƠN THUỐC ĐIỆN TỬ</h3>
+    
+                      <table style="width:100%%; border-collapse:collapse; margin-bottom:12px;">
+                        <tr>
+                          <td style="padding:6px 0; width:120px; font-weight:700;">Họ tên:</td>
+                          <td style="padding:6px 0;">%s</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:6px 0; font-weight:700;">Điện thoại:</td>
+                          <td style="padding:6px 0;">%s</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:6px 0; font-weight:700;">Địa chỉ:</td>
+                          <td style="padding:6px 0;">%s</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:6px 0; font-weight:700;">Chẩn đoán:</td>
+                          <td style="padding:6px 0;">%s%s</td>
+                        </tr>
+                      </table>
+    
+                      <div style="margin:16px 0; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                        <div style="font-weight:800; margin-bottom:8px;">ĐIỀU TRỊ</div>
+                        <table style="width:100%%; border-collapse:collapse;">%s</table>
+                      </div>
+    
+                      <div style="margin:12px 0; padding:12px; background:#fff7ed; border:1px solid #fdba74; border-radius:8px;">
+                        <div><strong>Lời dặn:</strong> %s</div>
+                        <div><strong>Ngày tái khám:</strong> %s</div>
+                        <div><strong>Bác sĩ:</strong> %s</div>
+                      </div>
+    
+                      <div style="margin-top:16px; font-size:12px; color:#64748b;">
+                        * Email tự động, vui lòng không trả lời. Nếu cần hỗ trợ, liên hệ phòng khám.
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                """.formatted(
+                        safe(clinicName),
+                        safe(clinicAddress),
+                        safe(clinicPhone),
+                        safe(prescriptionId),
+                        safe(patientName),
+                        safe(patientPhone),
+                        safe(patientAddress),
+                        diagnosisCodeText,
+                        diagnosisText,
+                        medsHtml,
+                        adviceText,
+                        followUpDateText,
+                        safe(doctorName)
+                );
+
+                helper.setText(htmlContent, true);
+                mailSender.send(message);
+                logger.info("Prescription email sent successfully to: {}", toEmail);
+            } catch (org.springframework.mail.MailAuthenticationException e) {
+                logger.error("❌ SMTP Authentication failed for email: {}. Error: {}", toEmail, e.getMessage());
+            } catch (jakarta.mail.MessagingException e) {
+                logger.error("❌ Messaging error sending prescription email to: {}. Error: {}", toEmail, e.getMessage());
+            } catch (Exception e) {
+                logger.error("❌ Unexpected error sending prescription email to: {}. Error: {}", toEmail, e.getMessage(), e);
             }
-
-            String htmlContent = """
-              <!DOCTYPE html>
-              <html lang="vi">
-              <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Đơn thuốc điện tử</title>
-              </head>
-              <body style="font-family: Arial, sans-serif; background:#f6f9fc; padding:16px; margin:0; color:#0f172a;">
-                <div style="max-width:720px; margin:0 auto; background:white; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.08); padding:24px;">
-                  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
-                    <div>
-                      <div style="font-size:18px; font-weight:800; text-transform:uppercase;">%s</div>
-                      <div style="color:#475569; font-size:14px; margin-top:4px;">%s</div>
-                      <div style="color:#475569; font-size:14px; margin-top:2px;">SĐT: %s</div>
-                    </div>
-                    <div style="text-align:right; color:#475569;">
-                      <div style="font-size:12px; letter-spacing:1px;">MÃ ĐƠN THUỐC</div>
-                      <div style="font-size:14px; font-weight:700;">%s</div>
-                    </div>
-                  </div>
-
-                  <h3 style="margin:12px 0; font-size:20px; font-weight:800; text-align:center; color:#0f172a;">ĐƠN THUỐC ĐIỆN TỬ</h3>
-
-                  <table style="width:100%%; border-collapse:collapse; margin-bottom:12px;">
-                    <tr>
-                      <td style="padding:6px 0; width:120px; font-weight:700;">Họ tên:</td>
-                      <td style="padding:6px 0;">%s</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:6px 0; font-weight:700;">Điện thoại:</td>
-                      <td style="padding:6px 0;">%s</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:6px 0; font-weight:700;">Địa chỉ:</td>
-                      <td style="padding:6px 0;">%s</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:6px 0; font-weight:700;">Chẩn đoán:</td>
-                      <td style="padding:6px 0;">%s%s</td>
-                    </tr>
-                  </table>
-
-                  <div style="margin:16px 0; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
-                    <div style="font-weight:800; margin-bottom:8px;">ĐIỀU TRỊ</div>
-                    <table style="width:100%%; border-collapse:collapse;">%s</table>
-                  </div>
-
-                  <div style="margin:12px 0; padding:12px; background:#fff7ed; border:1px solid #fdba74; border-radius:8px;">
-                    <div><strong>Lời dặn:</strong> %s</div>
-                    <div><strong>Ngày tái khám:</strong> %s</div>
-                    <div><strong>Bác sĩ:</strong> %s</div>
-                  </div>
-
-                  <div style="margin-top:16px; font-size:12px; color:#64748b;">
-                    * Email tự động, vui lòng không trả lời. Nếu cần hỗ trợ, liên hệ phòng khám.
-                  </div>
-                </div>
-              </body>
-              </html>
-            """.formatted(
-                    safe(clinicName),
-                    safe(clinicAddress),
-                    safe(clinicPhone),
-                    safe(prescriptionId),
-                    safe(patientName),
-                    safe(patientPhone),
-                    safe(patientAddress),
-                    diagnosisCode != null ? safe(diagnosisCode) + " - " : "",
-                    diagnosis != null ? safe(diagnosis) : "",
-                    medsHtml,
-                    advice != null ? safe(advice) : "Không có",
-                    followUpDate != null ? safe(followUpDate) : "Không đặt",
-                    safe(doctorName)
-            );
-
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-            logger.info("Prescription email sent successfully to: {}", toEmail);
-        } catch (org.springframework.mail.MailAuthenticationException e) {
-            logger.error("❌ SMTP Authentication failed for email: {}. Error: {}", toEmail, e.getMessage());
-        } catch (jakarta.mail.MessagingException e) {
-            logger.error("❌ Messaging error sending prescription email to: {}. Error: {}", toEmail, e.getMessage());
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error sending prescription email to: {}. Error: {}", toEmail, e.getMessage(), e);
-        }
+        });
     }
+    private String buildMedicationsHtml(
+        java.util.List<PrescriptionMedication> medications) {
+    if (medications == null || medications.isEmpty()) {
+        return "<p style='margin:4px 0;'>Chưa có thuốc.</p>";
+    }
+
+    StringBuilder sb = new StringBuilder();
+
+    for (var pm : medications) {
+        String qty = pm.getQuantity() != null
+                ? pm.getQuantity().toString()
+                : "";
+
+        String unit = pm.getUnit() != null
+                ? pm.getUnit()
+                : "";
+
+        sb.append("""
+            <tr>
+              <td style="padding:8px; border-bottom:1px solid #e2e8f0;">
+                <div style="font-weight:700; color:#0f172a;">%s</div>
+                <div style="color:#475569; font-size:13px;">Liều dùng: %s</div>
+                <div style="color:#475569; font-size:13px;">Tần suất: %s</div>
+                %s
+                <div style="color:#475569; font-size:13px;">Số lượng: %s %s</div>
+                %s
+              </td>
+            </tr>
+            """.formatted(
+                safe(pm.getMedicationName()),
+                safe(pm.getDosage()),
+                safe(pm.getFrequency()),
+                pm.getDuration() != null && !pm.getDuration().isEmpty()
+                        ? "<div style='color:#475569; font-size:13px;'>Thời gian: "
+                        + safe(pm.getDuration()) + "</div>"
+                        : "",
+                safe(qty),
+                safe(unit),
+                pm.getInstructions() != null && !pm.getInstructions().isEmpty()
+                        ? "<div style='color:#475569; font-size:13px;'>Hướng dẫn: "
+                        + safe(pm.getInstructions()) + "</div>"
+                        : ""
+            ));
+    }
+
+    return sb.toString();
+}
+    private String getDiagnosisCodeText(String diagnosisCode) {
+    return diagnosisCode == null
+            ? ""
+            : safe(diagnosisCode) + " - ";
+}
+
+    private String getDiagnosisText(String diagnosis) {
+    return diagnosis == null
+            ? ""
+            : safe(diagnosis);
+}
+
+private String getAdviceText(String advice) {
+    return advice == null
+            ? "Không có"
+            : safe(advice);
+}
+
+private String getFollowUpDateText(String followUpDate) {
+    return followUpDate == null
+            ? "Không đặt"
+            : safe(followUpDate);
+}
 
     private String safe(String v) {
         return v == null ? "" : v;
