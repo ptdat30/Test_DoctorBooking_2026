@@ -200,6 +200,9 @@
 						<outputFormat>HTML</outputFormat>
 						<outputFormat>XML</outputFormat>
 					</outputFormats>
+					<jvmArgs>
+						<value>-XX:+EnableDynamicAgentLoading</value>
+					</jvmArgs>
 					<!-- Hiện tại chỉ lấy report, chưa chặn build nếu mutation coverage thấp -->
 					<!-- <mutationThreshold>70</mutationThreshold> -->
 				</configuration>
