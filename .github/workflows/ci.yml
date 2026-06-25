@@ -102,12 +102,24 @@ jobs:
           
           ./mvnw clean verify -B --no-transfer-progress
 
+      - name: Run PiTest (Mutation Testing)
+        working-directory: backend
+        run: ./mvnw pitest:mutationCoverage -B --no-transfer-progress
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-results
           path: backend/target/surefire-reports/
+          retention-days: 7
+
+      - name: Upload PiTest Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitest-reports
+          path: backend/target/pit-reports/
           retention-days: 7
 
       - name: Upload Backend Build Artifacts
