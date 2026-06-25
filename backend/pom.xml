@@ -131,6 +131,18 @@
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.12</version>
+				<configuration>
+					<excludes>
+						<exclude>com/doctorbooking/backend/config/**</exclude>
+						<exclude>com/doctorbooking/backend/constant/**</exclude>
+						<exclude>com/doctorbooking/backend/dto/**</exclude>
+						<exclude>com/doctorbooking/backend/exception/**</exclude>
+						<exclude>com/doctorbooking/backend/model/**</exclude>
+						<exclude>com/doctorbooking/backend/repository/**</exclude>
+						<exclude>com/doctorbooking/backend/util/**</exclude>
+						<exclude>com/doctorbooking/backend/BackendApplication.class</exclude>
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
