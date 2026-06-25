@@ -401,6 +401,100 @@ class FeedbackServiceTest {
     }
 
     // =========================================================
+    // updateDoctorReply TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("updateDoctorReply()")
+    class UpdateDoctorReplyTests {
+
+        @Test
+        @DisplayName("✅ Cập nhật phản hồi thành công trong 24 giờ")
+        void updateDoctorReply_success() {
+            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+            Feedback feedback = buildFeedback(8L, patient, doctor, apt, 5, Feedback.FeedbackStatus.REPLIED, false);
+            feedback.setDoctorReply("Original Reply");
+            feedback.setDoctorRepliedAt(LocalDateTime.now().minusHours(1)); // 1 giờ trước
+
+            ReplyFeedbackRequest req = new ReplyFeedbackRequest();
+            req.setDoctorReply("Updated Reply");
+
+            when(feedbackRepository.findById(8L)).thenReturn(Optional.of(feedback));
+            when(feedbackRepository.save(any(Feedback.class))).thenReturn(feedback);
+
+            FeedbackResponse response = feedbackService.updateDoctorReply(1L, 8L, req);
+
+            assertThat(response).isNotNull();
+            assertThat(feedback.getDoctorReply()).isEqualTo("Updated Reply");
+        }
+
+        @Test
+        @DisplayName("❌ Quá 24 giờ → không thể chỉnh sửa phản hồi")
+        void updateDoctorReply_after24Hours_throwsException() {
+            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+            Feedback feedback = buildFeedback(8L, patient, doctor, apt, 5, Feedback.FeedbackStatus.REPLIED, false);
+            feedback.setDoctorReply("Original Reply");
+            feedback.setDoctorRepliedAt(LocalDateTime.now().minusHours(25)); // 25 giờ trước
+
+            ReplyFeedbackRequest req = new ReplyFeedbackRequest();
+            req.setDoctorReply("Updated Reply");
+
+            when(feedbackRepository.findById(8L)).thenReturn(Optional.of(feedback));
+
+            assertThatThrownBy(() -> feedbackService.updateDoctorReply(1L, 8L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Reply can only be edited within 24 hours");
+        }
+
+        @Test
+        @DisplayName("❌ Phản hồi của legacy feedback có doctorRepliedAt null → throw exception thay vì NPE")
+        void updateDoctorReply_legacyFeedbackRepliedAtNull_throwsException() {
+            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+            Feedback feedback = buildFeedback(8L, patient, doctor, apt, 5, Feedback.FeedbackStatus.REPLIED, false);
+            feedback.setDoctorReply("Legacy Reply");
+            feedback.setDoctorRepliedAt(null); // doctorRepliedAt is null for legacy data
+
+            ReplyFeedbackRequest req = new ReplyFeedbackRequest();
+            req.setDoctorReply("Updated Reply");
+
+            when(feedbackRepository.findById(8L)).thenReturn(Optional.of(feedback));
+
+            assertThatThrownBy(() -> feedbackService.updateDoctorReply(1L, 8L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Reply can only be edited within 24 hours");
+        }
+    }
+
+    // =========================================================
+    // FeedbackResponse.fromEntity null-safety TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("FeedbackResponse.fromEntity()")
+    class FeedbackResponseTests {
+
+        @Test
+        @DisplayName("✅ Chuyển đổi thành công từ Entity có createdAt rỗng (legacy feedback) mà không gây NPE")
+        void fromEntity_nullCreatedAt_success() {
+            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+            Feedback feedback = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.PENDING, false);
+            feedback.setCreatedAt(null); // legacy feedback without createdAt
+
+            FeedbackResponse response = FeedbackResponse.fromEntity(feedback);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getCreatedAt()).isNull();
+            assertThat(response.getCanEdit()).isFalse(); // canEdit should be false when createdAt is null
+        }
+    }
+
+    // =========================================================
     // getDoctorAverageRating TESTS
     // =========================================================
     @Nested
@@ -454,6 +548,25 @@ class FeedbackServiceTest {
             Double avg = feedbackService.getDoctorAverageRating(1L);
 
             assertThat(avg).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("✅ Tính trung bình đúng và bỏ qua NullPointerException khi isHidden là null (legacy feedback)")
+        void averageRating_withNullHiddenFeedbacks_ignoresNullHidden() {
+            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+
+            Feedback f1 = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.REPLIED, false);
+            Feedback f2 = buildFeedback(2L, patient, doctor, apt, 3, Feedback.FeedbackStatus.PENDING, null); // isHidden is null
+
+            when(feedbackRepository.findByDoctorIdOrderByCreatedAtDesc(1L))
+                    .thenReturn(List.of(f1, f2));
+
+            Double avg = feedbackService.getDoctorAverageRating(1L);
+
+            // Both f1 (isHidden=false) and f2 (isHidden=null, meaning not hidden) should be counted: (5+3)/2 = 4.0
+            assertThat(avg).isEqualTo(4.0);
         }
     }
 
@@ -520,6 +633,26 @@ class FeedbackServiceTest {
             List<FeedbackResponse> result = feedbackService.getDoctorFeedbacks(1L);
 
             assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("✅ Lấy danh sách feedbacks thành công và không gây NPE khi isHidden là null (legacy feedback)")
+        void getDoctorFeedbacks_withNullHiddenFeedbacks_succeeds() {
+            Patient patient = buildPatient(6L, buildUser(1L, "p", User.Role.PATIENT), "Pat");
+            Doctor doctor = buildDoctor(1L, buildUser(2L, "d", User.Role.DOCTOR), "Dr");
+            Appointment apt = buildAppointment(82L, patient, doctor, Appointment.AppointmentStatus.COMPLETED);
+
+            Feedback visible = buildFeedback(1L, patient, doctor, apt, 5, Feedback.FeedbackStatus.REPLIED, false);
+            Feedback nullHidden = buildFeedback(2L, patient, doctor, apt, 4, Feedback.FeedbackStatus.PENDING, null); // isHidden is null
+            Feedback hidden = buildFeedback(3L, patient, doctor, apt, 1, Feedback.FeedbackStatus.PENDING, true);
+
+            when(feedbackRepository.findByDoctorIdOrderByCreatedAtDesc(1L))
+                    .thenReturn(List.of(visible, nullHidden, hidden));
+
+            List<FeedbackResponse> result = feedbackService.getDoctorFeedbacks(1L);
+
+            // Both visible and nullHidden should be returned: 2 items
+            assertThat(result).hasSize(2);
         }
     }
 
