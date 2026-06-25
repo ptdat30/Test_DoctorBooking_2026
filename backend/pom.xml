@@ -200,21 +200,11 @@
 						<outputFormat>HTML</outputFormat>
 						<outputFormat>XML</outputFormat>
 					</outputFormats>
-					<jvmArgs>
-						<value>-XX:+EnableDynamicAgentLoading</value>
-					</jvmArgs>
+					<argLine>-XX:+EnableDynamicAgentLoading</argLine>
 					<!-- Hiện tại chỉ lấy report, chưa chặn build nếu mutation coverage thấp -->
 					<!-- <mutationThreshold>70</mutationThreshold> -->
+					<verbose>true</verbose>
 				</configuration>
-				<executions>
-					<execution>
-						<id>pitest</id>
-						<phase>test</phase>
-						<goals>
-							<goal>mutationCoverage</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>
