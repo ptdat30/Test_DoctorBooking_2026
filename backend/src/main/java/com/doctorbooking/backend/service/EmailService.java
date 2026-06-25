@@ -1,5 +1,6 @@
 package com.doctorbooking.backend.service;
 
+import com.doctorbooking.backend.constant.AppConstants;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,7 +177,7 @@ public class EmailService {
         String formattedTime = appointmentTime.format(timeFormatter);
 
         String paymentMethodText = switch (paymentMethod != null ? paymentMethod.toUpperCase() : "CASH") {
-            case "WALLET" -> "Ví điện tử";
+            case AppConstants.WALLET -> "Ví điện tử";
             case "VNPAY" -> "VNPay";
             case "CASH" -> "Tiền mặt";
             default -> "Tiền mặt";
