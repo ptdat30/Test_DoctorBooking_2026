@@ -166,6 +166,24 @@ const authPos = [
     noAuth: true,
     body: { username: '{{random_username}}', password: 'password123', email: '{{random_email}}', fullName: 'Auto Test', phone: '0900000001', role: 'PATIENT' },
     test: statusTest(201) + '\n' + authSchemaTest + `\npm.environment.set('last_registered_username', pm.environment.get('random_username'));`
+  }),
+  req('POST Register - Username Min Length (3 chars) - Valid', 'POST', `${BASE}/api/auth/register`, {
+    noAuth: true,
+    prerequest: `const chars = 'abcdefghijklmnopqrstuvwxyz';\nlet rand3 = '';\nfor (let i = 0; i < 3; i++) rand3 += chars.charAt(Math.floor(Math.random() * chars.length));\npm.environment.set('bva_username_min', rand3);\npm.environment.set('bva_email_min', rand3 + '@test.local');`,
+    body: { username: '{{bva_username_min}}', password: 'password123', email: '{{bva_email_min}}', fullName: 'BVA Min User', phone: '0900000002', role: 'PATIENT' },
+    test: statusTest(201) + '\n' + authSchemaTest
+  }),
+  req('POST Register - Username Max Length (50 chars) - Valid', 'POST', `${BASE}/api/auth/register`, {
+    noAuth: true,
+    prerequest: `const chars = 'abcdefghijklmnopqrstuvwxyz';\nlet rand50 = 'u_' + Date.now() + '_';\nwhile(rand50.length < 50) rand50 += chars.charAt(Math.floor(Math.random() * chars.length));\nrand50 = rand50.substring(0, 50);\npm.environment.set('bva_username_max', rand50);\npm.environment.set('bva_email_max', rand50 + '@test.local');`,
+    body: { username: '{{bva_username_max}}', password: 'password123', email: '{{bva_email_max}}', fullName: 'BVA Max User', phone: '0900000003', role: 'PATIENT' },
+    test: statusTest(201) + '\n' + authSchemaTest
+  }),
+  req('POST Register - Password Min Length (6 chars) - Valid', 'POST', `${BASE}/api/auth/register`, {
+    noAuth: true,
+    prerequest: `const ts = Date.now();\npm.environment.set('bva_email_pwd_min', 'pwd_min_' + ts + '@test.local');\npm.environment.set('bva_username_pwd_min', 'pwd_min_' + ts);`,
+    body: { username: '{{bva_username_pwd_min}}', password: '{{bva_password_min}}', email: '{{bva_email_pwd_min}}', fullName: 'BVA Password Min User', phone: '0900000004', role: 'PATIENT' },
+    test: statusTest(201) + '\n' + authSchemaTest
   })
 ];
 const authNeg = [
@@ -189,6 +207,22 @@ const authNeg = [
     noAuth: true,
     body: { username: '{{random_username}}', password: 'password123', email: '{{random_email}}', fullName: '<script>alert(1)</script>', role: 'PATIENT' },
     test: `pm.test('201 or 400', () => pm.expect([201,400]).to.include(pm.response.code));`
+  }),
+  req('POST Register - Username Too Short (2 chars)', 'POST', `${BASE}/api/auth/register`, {
+    noAuth: true,
+    body: { username: '{{bva_username_too_short}}', password: 'password123', email: 'too_short@test.com', fullName: 'BVA Too Short User', phone: '0900000005', role: 'PATIENT' },
+    test: statusTest(400)
+  }),
+  req('POST Register - Username Too Long (51 chars)', 'POST', `${BASE}/api/auth/register`, {
+    noAuth: true,
+    body: { username: '{{bva_username_too_long}}', password: 'password123', email: 'too_long@test.com', fullName: 'BVA Too Long User', phone: '0900000006', role: 'PATIENT' },
+    test: statusTest(400)
+  }),
+  req('POST Register - Password Too Short (5 chars)', 'POST', `${BASE}/api/auth/register`, {
+    noAuth: true,
+    prerequest: `const ts = Date.now();\npm.environment.set('bva_email_pwd_short', 'pwd_sh_' + ts + '@test.local');\npm.environment.set('bva_username_pwd_short', 'pwd_sh_' + ts);`,
+    body: { username: '{{bva_username_pwd_short}}', password: '{{bva_password_too_short}}', email: '{{bva_email_pwd_short}}', fullName: 'BVA Password Short User', phone: '0900000007', role: 'PATIENT' },
+    test: statusTest(400)
   })
 ];
 const authFolder = folder('02_Auth', posNeg(authPos, authNeg));
@@ -291,7 +325,7 @@ const patientFeedbackPos = [
   req('GET Feedbacks', 'GET', `${BASE}/api/patient/feedbacks`, { test: statusTest(200) }),
   req('POST Feedback - Valid', 'POST', `${BASE}/api/patient/feedbacks`, {
     prerequest: `const adminToken = pm.environment.get('admin_token');\nconst apptId = pm.environment.get('appointmentId');\nif (adminToken && apptId) {\n  pm.sendRequest({\n    url: pm.environment.get('base_url') + '/api/admin/appointments/' + apptId,\n    method: 'PUT',\n    header: {\n      'Content-Type': 'application/json',\n      'Authorization': 'Bearer ' + adminToken\n    },\n    body: {\n      mode: 'raw',\n      raw: JSON.stringify({ status: 'COMPLETED' })\n    }\n  }, function (err, res) {\n    if (err) console.error('Failed to auto-complete appointment for feedback:', err);\n    else console.log('Auto-completed appointment for feedback: status code', res.code);\n  });\n}`,
-    body: { appointmentId: '{{appointmentId}}', rating: 5, comment: 'Great service - auto test' },
+    body: { appointmentId: '{{appointmentId}}', rating: '{{bva_rating_max}}', comment: 'Great service - auto test' },
     test: statusTest(201) + `\nif(pm.response.code===201){pm.environment.set('feedbackId', pm.response.json().id);}`
   })
 ];
@@ -301,6 +335,12 @@ const patientFeedbackNeg = [
   }),
   req('POST Feedback - Rating Out Of Range', 'POST', `${BASE}/api/patient/feedbacks`, {
     body: { appointmentId: '{{appointmentId}}', rating: 99 }, test: statusTest(400)
+  }),
+  req('POST Feedback - Rating Too Low (0)', 'POST', `${BASE}/api/patient/feedbacks`, {
+    body: { appointmentId: '{{appointmentId}}', rating: '{{bva_rating_too_low}}', comment: 'Rating 0' }, test: statusTest(400)
+  }),
+  req('POST Feedback - Rating Too High (6)', 'POST', `${BASE}/api/patient/feedbacks`, {
+    body: { appointmentId: '{{appointmentId}}', rating: '{{bva_rating_too_high}}', comment: 'Rating 6' }, test: statusTest(400)
   })
 ];
 
@@ -326,11 +366,20 @@ const patientWalletPos = [
   req('GET Wallet Transactions', 'GET', `${BASE}/api/patient/wallet/transactions`, { test: statusTest(200) }),
   req('POST Wallet Top-Up - Valid', 'POST', `${BASE}/api/patient/wallet/top-up`, {
     body: { amount: 10000, paymentMethod: 'VNPAY' }, test: `pm.test('200 or 201 or 400 vnpay', () => pm.expect([200,201,400]).to.include(pm.response.code));`
+  }),
+  req('POST Wallet Top-Up - Min Valid (10000 VNĐ)', 'POST', `${BASE}/api/patient/wallet/top-up`, {
+    body: { amount: '{{bva_top_up_min}}', paymentMethod: 'VNPAY' }, test: `pm.test('200 or 201 or 400 vnpay', () => pm.expect([200,201,400]).to.include(pm.response.code));`
+  }),
+  req('POST Wallet Top-Up - Slightly Above Min (10001 VNĐ) - Valid', 'POST', `${BASE}/api/patient/wallet/top-up`, {
+    body: { amount: '{{bva_top_up_above_min}}', paymentMethod: 'VNPAY' }, test: `pm.test('200 or 201 or 400 vnpay', () => pm.expect([200,201,400]).to.include(pm.response.code));`
   })
 ];
 const patientWalletNeg = [
   req('POST Top-Up - Below Minimum', 'POST', `${BASE}/api/patient/wallet/top-up`, {
     body: { amount: 100, paymentMethod: 'VNPAY' }, test: statusTest(400)
+  }),
+  req('POST Wallet Top-Up - Below Min BVA (9999 VNĐ)', 'POST', `${BASE}/api/patient/wallet/top-up`, {
+    body: { amount: '{{bva_top_up_too_low}}', paymentMethod: 'VNPAY' }, test: statusTest(400)
   })
 ];
 

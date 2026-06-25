@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# E2E Test outputs (videos, screenshots, allure reports)
+e2e/output/
+
+# Test environment (contains credentials)
+.env.test

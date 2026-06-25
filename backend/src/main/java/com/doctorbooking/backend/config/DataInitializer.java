@@ -2,8 +2,12 @@ package com.doctorbooking.backend.config;
 
 import com.doctorbooking.backend.model.Admin;
 import com.doctorbooking.backend.model.User;
+import com.doctorbooking.backend.model.Patient;
+import com.doctorbooking.backend.model.Doctor;
 import com.doctorbooking.backend.repository.AdminRepository;
 import com.doctorbooking.backend.repository.UserRepository;
+import com.doctorbooking.backend.repository.PatientRepository;
+import com.doctorbooking.backend.repository.DoctorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -19,11 +23,16 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
         initializeAdminUser();
+        if ("true".equalsIgnoreCase(System.getenv("SEED_TEST_DATA"))) {
+            initializeTestData();
+        }
     }
 
     private void initializeAdminUser() {
@@ -120,6 +129,86 @@ public class DataInitializer implements CommandLineRunner {
         } catch (Exception e) {
             log.error("❌ Failed to initialize admin user: {}", e.getMessage(), e);
             e.printStackTrace();
+        }
+    }
+
+    private void initializeTestData() {
+        log.info("Seeding test data for integration/E2E tests...");
+        
+        // Seed Patient: patient1
+        String patientUsername = "patient1";
+        String patientPassword = "password123";
+        String patientEmail = "patient1@test.local";
+        
+        try {
+            User patientUser = userRepository.findByUsername(patientUsername).orElse(null);
+            if (patientUser == null) {
+                log.info("Creating test patient user...");
+                patientUser = new User();
+                patientUser.setUsername(patientUsername);
+                patientUser.setEmail(patientEmail);
+                patientUser.setRole(User.Role.PATIENT);
+                patientUser.setEnabled(true);
+                patientUser.setCreatedAt(LocalDateTime.now());
+                patientUser.setPassword(passwordEncoder.encode(patientPassword));
+                patientUser = userRepository.save(patientUser);
+                
+                Patient patient = new Patient();
+                patient.setUser(patientUser);
+                patient.setFullName("Patient One");
+                patient.setPhone("0901111222");
+                patient.setAddress("123 Test Street");
+                patient.setWalletBalance(new java.math.BigDecimal("1000000.00"));
+                patient.setLoyaltyPoints(0);
+                patient.setLoyaltyTier("BRONZE");
+                patient.setCreatedAt(LocalDateTime.now());
+                patient.setUpdatedAt(LocalDateTime.now());
+                patientRepository.save(patient);
+                log.info("Patient profile created successfully!");
+            } else {
+                log.info("Test patient user already exists.");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to seed patient test data: {}", e.getMessage(), e);
+        }
+
+        // Seed Doctor: doctor1
+        String doctorUsername = "doctor1";
+        String doctorPassword = "password123";
+        String doctorEmail = "doctor1@test.local";
+        
+        try {
+            User doctorUser = userRepository.findByUsername(doctorUsername).orElse(null);
+            if (doctorUser == null) {
+                log.info("Creating test doctor user...");
+                doctorUser = new User();
+                doctorUser.setUsername(doctorUsername);
+                doctorUser.setEmail(doctorEmail);
+                doctorUser.setRole(User.Role.DOCTOR);
+                doctorUser.setEnabled(true);
+                doctorUser.setCreatedAt(LocalDateTime.now());
+                doctorUser.setPassword(passwordEncoder.encode(doctorPassword));
+                doctorUser = userRepository.save(doctorUser);
+                
+                Doctor doctor = new Doctor();
+                doctor.setUser(doctorUser);
+                doctor.setFullName("Doctor One");
+                doctor.setSpecialization("Cardiology");
+                doctor.setExperience(10);
+                doctor.setPhone("0903333444");
+                doctor.setAddress("456 Hospital Blvd");
+                doctor.setConsultationFee(new java.math.BigDecimal("150000.00"));
+                doctor.setStatus(Doctor.DoctorStatus.ACTIVE);
+                doctor.setBufferTime(15);
+                doctor.setCreatedAt(LocalDateTime.now());
+                doctor.setUpdatedAt(LocalDateTime.now());
+                doctorRepository.save(doctor);
+                log.info("Doctor profile created successfully!");
+            } else {
+                log.info("Test doctor user already exists.");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to seed doctor test data: {}", e.getMessage(), e);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.doctorbooking.backend.service;
 
 import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
+import com.doctorbooking.backend.dto.request.UpdateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
 import com.doctorbooking.backend.model.*;
 import com.doctorbooking.backend.repository.*;
@@ -171,6 +172,23 @@ class AppointmentServiceTest {
             assertThat(slots).doesNotContain("09:00"); // CONFIRMED bị loại
             assertThat(slots).contains("10:00");       // CANCELLED vẫn available
         }
+
+        @Test
+        @DisplayName("✅ Trả về các slots chưa qua hôm nay khi query ngày hiện tại")
+        void getAvailableSlots_today_filtersPastSlots() {
+            LocalTime now = LocalTime.now();
+            LocalDate date = LocalDate.now();
+
+            when(appointmentRepository.findByDoctorAndDate(1L, date))
+                    .thenReturn(Collections.emptyList());
+
+            List<String> slots = appointmentService.getAvailableTimeSlots(1L, date);
+
+            for (String slot : slots) {
+                LocalTime slotTime = LocalTime.parse(slot);
+                assertThat(slotTime).isAfter(now);
+            }
+        }
     }
 
     // =========================================================
@@ -313,6 +331,53 @@ class AppointmentServiceTest {
             assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Cannot book appointment in the past");
+        }
+
+        @Test
+        @DisplayName("❌ Đặt hôm nay giờ đã qua → throw RuntimeException")
+        void createAppointment_pastTimeToday_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentDate(LocalDate.now());
+            req.setAppointmentTime(LocalTime.now().minusMinutes(30)); // Giờ đã qua
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(any(), any()))
+                    .thenReturn(Collections.emptyList());
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Cannot book appointment time slot that has already passed today");
+        }
+
+        @Test
+        @DisplayName("✅ Đặt hôm nay giờ trong tương lai → thành công")
+        void createAppointment_futureTimeToday_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentDate(LocalDate.now());
+            req.setAppointmentTime(LocalTime.now().plusHours(2)); // Giờ trong tương lai
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(any(), any()))
+                    .thenReturn(Collections.emptyList());
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            AppointmentResponse result = appointmentService.createAppointment(6L, req);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getAppointmentDate()).isEqualTo(LocalDate.now());
+            assertThat(result.getAppointmentTime()).isEqualTo(req.getAppointmentTime());
         }
     }
 
@@ -517,6 +582,87 @@ class AppointmentServiceTest {
 
             assertThat(result).isEmpty();
             verify(appointmentRepository, times(1)).findByAppointmentDate(today);
+        }
+    }
+
+    // =========================================================
+    // updateAppointmentByAdmin TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("updateAppointmentByAdmin()")
+    class UpdateAppointmentByAdminTests {
+
+        @Test
+        @DisplayName("❌ Admin update ngày trong quá khứ → throw RuntimeException")
+        void updateAppointmentByAdmin_pastDate_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now().plusDays(1));
+            apt.setAppointmentTime(LocalTime.of(10, 0));
+
+            UpdateAppointmentRequest req = new UpdateAppointmentRequest();
+            req.setAppointmentDate(LocalDate.now().minusDays(1)); // Ngày quá khứ
+
+            when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.updateAppointmentByAdmin(88L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Cannot update appointment to a past date");
+        }
+
+        @Test
+        @DisplayName("❌ Admin update hôm nay giờ đã qua → throw RuntimeException")
+        void updateAppointmentByAdmin_pastTimeToday_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now().plusDays(1));
+            apt.setAppointmentTime(LocalTime.of(10, 0));
+
+            UpdateAppointmentRequest req = new UpdateAppointmentRequest();
+            req.setAppointmentDate(LocalDate.now());
+            req.setAppointmentTime(LocalTime.now().minusMinutes(30)); // Giờ đã qua
+
+            when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.updateAppointmentByAdmin(88L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Cannot update appointment to a time slot that has already passed today");
+        }
+
+        @Test
+        @DisplayName("✅ Admin update hôm nay giờ trong tương lai → thành công")
+        void updateAppointmentByAdmin_futureTimeToday_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now().plusDays(1));
+            apt.setAppointmentTime(LocalTime.of(10, 0));
+
+            UpdateAppointmentRequest req = new UpdateAppointmentRequest();
+            req.setAppointmentDate(LocalDate.now());
+            req.setAppointmentTime(LocalTime.now().plusHours(2)); // Giờ trong tương lai
+
+            when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            AppointmentResponse result = appointmentService.updateAppointmentByAdmin(88L, req);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getAppointmentDate()).isEqualTo(LocalDate.now());
         }
     }
 }
