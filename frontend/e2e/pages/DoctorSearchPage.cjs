@@ -9,7 +9,7 @@ module.exports = {
   // ── Locators ──────────────────────────────────────────────────────────────
   // Dựa trên DoctorSearch.jsx
   search: {
-    input:       'input[type="search"], input[placeholder*="doctor"], input[placeholder*="bác sĩ"], input[placeholder*="tìm"]',
+    input:       '#doctor-search-input',
     submitBtn:   'button[type="submit"], button[class*="search"]',
     clearBtn:    'button[class*="clear"]',
   },
@@ -20,12 +20,12 @@ module.exports = {
   },
 
   results: {
-    doctorList:   '[class*="doctor-list"], [class*="doctors-grid"]',
-    doctorCard:   '[class*="doctor-card"], [class*="doctor-item"]',
-    doctorName:   '[class*="doctor-name"], [class*="name"]',
-    bookBtn:      'button[class*="book"], a[class*="book"]',
-    emptyState:   '[class*="empty"], [class*="no-result"]',
-    loadingState: '[class*="loading"], [class*="spinner"]',
+    doctorList:   'table',
+    doctorCard:   '//tbody/tr[td//button[@title="Đặt lịch"]]',
+    doctorName:   'tbody tr td:nth-child(2)',
+    bookBtn:      'button[title="Đặt lịch"]',
+    emptyState:   '//td[contains(., "Không tìm thấy bác sĩ nào")]',
+    loadingState: 'div.animate-spin',
   },
 
   // ── Actions ───────────────────────────────────────────────────────────────

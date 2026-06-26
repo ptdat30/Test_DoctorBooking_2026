@@ -29,7 +29,7 @@ const factory = {
       username: `test_${suffix}`,                          // VD: test_a3b9c1
       email:    `test_${suffix}@yopmail.com`,              // Dùng yopmail để tránh spam
       password: 'Test@123456',                             // Password đủ mạnh cho validation
-      phone:    faker.phone.number('09########'),          // Format SĐT Việt Nam
+      phone:    '09' + faker.string.numeric(8),            // Format SĐT Việt Nam
     };
   },
 

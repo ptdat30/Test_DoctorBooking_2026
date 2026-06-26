@@ -107,3 +107,38 @@ npm run test:e2e
 npm run test:e2e:headless
 ```
 *Lưu ý: Đảm bảo cả máy chủ Backend và Vite Frontend đang chạy trước khi kích hoạt bộ test.*
+
+---
+
+## 5. Nguyên tắc F.I.R.S.T Cho Unit Test (Whitebox)
+
+Để duy trì chất lượng Unit Test khi dự án mở rộng, toàn bộ test case phải tuân thủ 5 nguyên tắc F.I.R.S.T:
+
+* **Fast (Nhanh):** Test phải chạy cực kỳ nhanh (mili-giây). Tuyệt đối không kết nối CSDL thật hay gọi API ngoài trong Unit Test (dùng `@Mock` và `@InjectMocks` của Mockito để giả lập).
+* **Independent (Độc lập):** Các test case không được phụ thuộc vào nhau. Thứ tự chạy ngẫu nhiên (hoặc chạy song song) không làm thay đổi kết quả Pass/Fail. Dữ liệu mock phải được khởi tạo lại trước mỗi test (dùng `@BeforeEach`).
+* **Repeatable (Lặp lại được):** Test phải Pass ở mọi môi trường (Local, CI/CD, chạy sáng hay tối) mà không bị "Flaky".
+* **Self-validating (Tự xác thực):** Test phải có các câu lệnh `assert` (như `assertEquals`, `assertThatThrownBy`) để tự động kết luận Xanh/Đỏ, không yêu cầu dev phải đọc console log.
+* **Timely (Kịp thời):** Code test phải được viết cùng lúc với code logic (khuyến khích viết trước theo TDD).
+
+> [!IMPORTANT]
+> Dự án đã được cấu hình JaCoCo check rule. Lệnh `mvn clean verify` ở local sẽ **đánh Fail toàn bộ quá trình build** nếu độ phủ lệnh (Line Coverage) hoặc độ phủ nhánh (Branch Coverage) của dự án dưới **80%**. Hãy "Fail Fast" ở máy bạn trước khi đẩy lên CI!
+
+---
+
+## 6. Mutation Testing (Kiểm Thử Đột Biến với PiTest)
+
+Dù đạt 100% Code Coverage, test case vẫn có thể vô dụng nếu thiếu các lệnh `assert` chặt chẽ. Để giải quyết, dự án áp dụng **Mutation Testing** thông qua thư viện PiTest.
+
+### Cơ Chế Hoạt Động
+1. PiTest tự động sửa đổi mã nguồn thực tế (tạo ra các "Mutant"). Ví dụ: đổi `>` thành `>=`, đổi `+` thành `-`, xóa lời gọi hàm.
+2. PiTest chạy bộ Unit Test của bạn lên các Mutant này.
+3. Nếu Unit Test của bạn báo Đỏ (Fail) -> Mutant bị **Killed** (Tốt: Test của bạn đủ chặt chẽ để bắt được lỗi sửa code).
+4. Nếu Unit Test vẫn báo Xanh (Pass) -> Mutant **Survived** (Xấu: Test của bạn quá lỏng lẻo, code thay đổi sai mà test không nhận ra).
+
+### Cách Chạy và Đọc Báo Cáo
+Ở local, bạn có thể chạy:
+```bash
+./mvnw pitest:mutationCoverage
+```
+* Báo cáo HTML sinh ra tại `backend/target/pit-reports/index.html`.
+* **Giai đoạn hiện tại**: PiTest chạy ở chế độ *Report-Only* (chỉ sinh báo cáo, không chặn build). Hãy tập thói quen mở báo cáo này để tìm những đoạn code quan trọng có Mutant "Survived" và viết thêm `assert` để tiêu diệt chúng. Mức Mutation Score sẽ dần được nâng lên thành Quality Gate chặn luồng CI trong các Sprint tới.
