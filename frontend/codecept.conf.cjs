@@ -21,7 +21,13 @@ exports.config = {
     DoctorSearchPage: './e2e/pages/DoctorSearchPage.cjs',
     PatientDashboardPage: './e2e/pages/PatientDashboardPage.cjs',
     RegisterPage: './e2e/pages/RegisterPage.cjs',
-    AuthSteps: './e2e/steps/AuthSteps.cjs'
+    AuthSteps: './e2e/steps/AuthSteps.cjs',
+    DoctorPage: './e2e/pages/DoctorPage.cjs',
+    AdminPage: './e2e/pages/AdminPage.cjs',
+    ProfilePage: './e2e/pages/ProfilePage.cjs',
+    FeedbackPage: './e2e/pages/FeedbackPage.cjs',
+    HealthAIPage: './e2e/pages/HealthAIPage.cjs',
+    WalletPage: './e2e/pages/WalletPage.cjs'
   },
   plugins: {
     screenshotOnFail: {

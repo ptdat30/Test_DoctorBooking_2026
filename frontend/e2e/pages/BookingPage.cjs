@@ -63,6 +63,14 @@ module.exports = {
   },
 
   /**
+   * Chọn bác sĩ theo ID
+   */
+  selectDoctorById(id) {
+    I.waitForElement(this.doctorSelect.select, 10);
+    I.selectOption(this.doctorSelect.select, String(id));
+  },
+
+  /**
    * Chọn ngày đầu tiên có thể đặt trong calendar
    */
   async selectFirstAvailableDate() {
@@ -73,6 +81,29 @@ module.exports = {
     const year = tomorrow.getFullYear();
     const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
     const day = String(tomorrow.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    await I.executeScript((dateVal) => {
+      const input = document.querySelector('input[name="appointmentDate"]');
+      if (input) {
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(input, dateVal);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }, dateStr);
+  },
+
+  /**
+   * Chọn ngày với offset
+   */
+  async selectDateWithOffset(daysOffset) {
+    I.waitForElement(this.dateSelect.input, 10);
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + daysOffset);
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
     await I.executeScript((dateVal) => {

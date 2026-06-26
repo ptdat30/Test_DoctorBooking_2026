@@ -135,7 +135,7 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
 
   const handleQuickNavigate = (specialty) => {
     navigate(`/patient/doctors?search=${specialty}`);
-    if (onClose) onClose();
+    if (!isFullPage && onClose) onClose();
   };
 
   const quickActions = [
