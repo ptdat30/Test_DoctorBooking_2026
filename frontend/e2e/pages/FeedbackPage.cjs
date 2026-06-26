@@ -1,0 +1,125 @@
+// e2e/pages/FeedbackPage.cjs
+// Page Object Model cho hệ thống Đánh giá & Phản hồi (Feedback) ở cả 3 vai trò (Patient, Doctor, Admin)
+
+'use strict';
+
+const { I } = inject();
+
+module.exports = {
+  // ── Locators ──────────────────────────────────────────────────────────────
+  patient: {
+    appointmentSelect: 'select[name="appointmentId"]',
+    ratingRange:       'input[name="rating"]',
+    commentArea:       'textarea[name="comment"]',
+    submitBtn:         'button[type="submit"]',
+    successMsg:        '//div[contains(text(), "Feedback submitted successfully!")]',
+  },
+
+  doctor: {
+    filterSelect:      '//select[preceding-sibling::label[contains(., "Lọc theo đánh giá")]]',
+    replyModalTextArea:'//textarea[@placeholder="Nhập phản hồi của bạn cho bệnh nhân..."]',
+    replyModalSubmit:  '//button[contains(., "Gửi phản hồi") or contains(., "Cập nhật")]',
+  },
+
+  admin: {
+    searchInput:       'input[placeholder*="Tìm theo bệnh nhân, bác sĩ"]',
+    statusFilter:      '//select[parent::div[label[contains(text(), "Trạng thái")]]]',
+  },
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  // --- Patient Actions ---
+  navigateToNewFeedback() {
+    I.amOnPage('/patient/feedback/new');
+    I.waitInUrl('/patient/feedback/new', 10);
+    I.waitForElement(this.patient.appointmentSelect, 15);
+  },
+
+  async submitFeedback(rating, comment, appointmentId = null) {
+    I.waitForElement(this.patient.appointmentSelect, 15);
+    if (appointmentId) {
+      I.selectOption(this.patient.appointmentSelect, String(appointmentId));
+    } else {
+      const value = await I.executeScript(() => {
+        const select = document.querySelector('select[name="appointmentId"]');
+        if (select && select.options.length > 1) {
+          return select.options[1].value;
+        }
+        return null;
+      });
+      if (value) {
+        I.selectOption(this.patient.appointmentSelect, value);
+      } else {
+        throw new Error("No completed appointments found in dropdown!");
+      }
+    }
+    // Click rating star: (//button[text()="★"])[rating]
+    const starXPath = `(//button[text()="★"])[${rating}]`;
+    I.waitForElement(starXPath, 10);
+    I.click(starXPath);
+    
+    if (comment) {
+      I.fillField(this.patient.commentArea, comment);
+    }
+    I.click(this.patient.submitBtn);
+    I.waitForElement(this.patient.successMsg, 15);
+  },
+
+  // --- Doctor Actions ---
+  navigateToDoctorFeedbacks() {
+    I.amOnPage('/doctor/feedbacks');
+    I.waitInUrl('/doctor/feedbacks', 10);
+    I.waitForElement(this.doctor.filterSelect, 15);
+  },
+
+  async replyToFeedback(patientName, replyText) {
+    const rowXPath = `//div[contains(@class, "hover:bg-[#232b3b]")][descendant::h3[contains(text(), "${patientName}")]]`;
+    I.waitForElement(rowXPath, 15);
+    
+    const replyBtnXPath = `${rowXPath}//button[contains(., "Trả lời") or contains(., "Sửa")]`;
+    I.waitForElement(replyBtnXPath, 10);
+    I.click(replyBtnXPath);
+
+    I.waitForElement(this.doctor.replyModalTextArea, 10);
+    I.fillField(this.doctor.replyModalTextArea, replyText);
+    I.click(this.doctor.replyModalSubmit);
+    I.waitForInvisible(this.doctor.replyModalTextArea, 10);
+  },
+
+  seeReplyOnDoctorPage(patientName, replyText) {
+    const replyTextXPath = `//div[contains(@class, "hover:bg-[#232b3b]")][descendant::h3[contains(text(), "${patientName}")]]//p[contains(text(), "${replyText}")]`;
+    I.waitForElement(replyTextXPath, 10);
+    I.seeElement(replyTextXPath);
+  },
+
+  // --- Admin Actions ---
+  navigateToAdminFeedbacks() {
+    I.amOnPage('/admin/feedbacks');
+    I.waitInUrl('/admin/feedbacks', 10);
+    I.waitForElement(this.admin.searchInput, 15);
+  },
+
+  filterAdminFeedbacks(search) {
+    I.clearField(this.admin.searchInput);
+    I.fillField(this.admin.searchInput, search);
+    I.pressKey('Enter');
+  },
+
+  async hideFeedback(patientName) {
+    const hideBtnXPath = `//tbody/tr[td[contains(text(), "${patientName}")]]//button[@title="Ẩn phản hồi"]`;
+    I.waitForElement(hideBtnXPath, 10);
+    I.click(hideBtnXPath);
+  },
+
+  async unhideFeedback(patientName) {
+    const unhideBtnXPath = `//tbody/tr[td[contains(text(), "${patientName}")]]//button[@title="Bỏ ẩn"]`;
+    I.waitForElement(unhideBtnXPath, 10);
+    I.click(unhideBtnXPath);
+  },
+
+  seeHiddenBadge(patientName) {
+    const badgeXPath = `//tbody/tr[td[contains(text(), "${patientName}")]]//span[contains(text(), "Đã ẩn")]`;
+    I.waitForElement(badgeXPath, 10);
+    I.seeElement(badgeXPath);
+  }
+};

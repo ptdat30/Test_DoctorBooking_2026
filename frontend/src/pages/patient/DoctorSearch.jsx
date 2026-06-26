@@ -34,6 +34,11 @@ const DoctorSearch = () => {
 
   useEffect(() => {
     loadDoctors();
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    }
   }, []);
 
   useEffect(() => {
