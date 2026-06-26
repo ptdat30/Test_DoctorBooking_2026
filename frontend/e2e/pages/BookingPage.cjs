@@ -1,5 +1,5 @@
 // e2e/pages/BookingPage.js
-// Page Object Model cho trang Đặt lịch khám (/patient/new-booking)
+// Page Object Model cho trang Đặt lịch khám (/patient/booking)
 
 'use strict';
 
@@ -9,28 +9,22 @@ module.exports = {
   // ── Locators ──────────────────────────────────────────────────────────────
   // Dựa trên NewBooking.jsx
   doctorSelect: {
-    searchInput:   'input[placeholder*="doctor"], input[placeholder*="bác sĩ"]',
-    doctorCard:    '[class*="doctor-card"], [class*="doctor-option"]',
-    selectedBadge: '[class*="selected-doctor"]',
+    select:        'select[name="doctorId"]',
   },
 
   dateSelect: {
-    calendar:      '[class*="calendar"], [class*="date-picker"]',
-    dayCell:       '[class*="day"]:not([class*="disabled"]):not([class*="past"])',
-    selectedDay:   '[class*="day"][class*="selected"]',
+    input:         'input[name="appointmentDate"]',
   },
 
   timeSelect: {
-    slotList:      '[class*="time-slot"], [class*="slot-list"]',
-    availableSlot: '[class*="slot"]:not([class*="disabled"]):not([class*="booked"])',
-    selectedSlot:  '[class*="slot"][class*="selected"]',
+    select:        'select[name="appointmentTime"]',
   },
 
   form: {
-    notesInput:    'textarea[name*="note"], textarea[placeholder*="note"]',
-    submitBtn:     'button[type="submit"], button[class*="confirm"], button[class*="book"]',
-    confirmModal:  '[class*="modal"], [class*="confirm-dialog"]',
-    confirmBtn:    '[class*="modal"] button[class*="confirm"], [class*="confirm-dialog"] button',
+    notesInput:    'textarea[name="notes"]',
+    submitBtn:     'button[type="submit"]',
+    confirmModal:  '//h2[contains(text(), "Review Booking Details")]',
+    confirmBtn:    '//div[contains(@class, "fixed")]//button[contains(text(), "Confirm booking")]',
   },
 
   feedback: {
@@ -44,32 +38,72 @@ module.exports = {
    * Điều hướng đến trang đặt lịch
    */
   async navigateTo() {
-    I.amOnPage('/patient/new-booking');
-    I.waitForNavigation({ timeout: 10000 });
+    I.amOnPage('/patient/booking');
+    I.waitInUrl('/patient/booking', 10);
   },
 
   /**
    * Chọn bác sĩ đầu tiên có sẵn
    */
-  selectFirstAvailableDoctor() {
-    I.waitForElement(this.doctorSelect.doctorCard, 10);
-    I.click(this.doctorSelect.doctorCard);
+  async selectFirstAvailableDoctor() {
+    I.waitForElement(this.doctorSelect.select, 10);
+    const value = await I.executeScript(() => {
+      const select = document.querySelector('select[name="doctorId"]');
+      if (select && select.options.length > 1) {
+        return select.options[1].value;
+      }
+      return null;
+    });
+
+    if (value) {
+      I.selectOption(this.doctorSelect.select, value);
+    } else {
+      throw new Error("No doctors available in the dropdown!");
+    }
   },
 
   /**
    * Chọn ngày đầu tiên có thể đặt trong calendar
    */
-  selectFirstAvailableDate() {
-    I.waitForElement(this.dateSelect.calendar, 10);
-    I.click(this.dateSelect.dayCell);
+  async selectFirstAvailableDate() {
+    I.waitForElement(this.dateSelect.input, 10);
+    // Tính ngày mai (để đảm bảo luôn có time slot trống, không phụ thuộc vào giờ hiện tại của ngày hôm nay)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    await I.executeScript((dateVal) => {
+      const input = document.querySelector('input[name="appointmentDate"]');
+      if (input) {
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(input, dateVal);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }, dateStr);
   },
 
   /**
    * Chọn slot thời gian đầu tiên có sẵn
    */
-  selectFirstAvailableTimeSlot() {
-    I.waitForElement(this.timeSelect.availableSlot, 10);
-    I.click(this.timeSelect.availableSlot);
+  async selectFirstAvailableTimeSlot() {
+    I.waitForElement(this.timeSelect.select, 10);
+    const value = await I.executeScript(() => {
+      const select = document.querySelector('select[name="appointmentTime"]');
+      if (select && select.options.length > 1) {
+        return select.options[1].value;
+      }
+      return null;
+    });
+
+    if (value) {
+      I.selectOption(this.timeSelect.select, value);
+    } else {
+      throw new Error("No time slots available in the dropdown!");
+    }
   },
 
   /**
@@ -101,9 +135,6 @@ module.exports = {
    * Kiểm tra đặt lịch thành công
    */
   seeBookingSuccess() {
-    // Đợi redirect hoặc success message
-    I.waitForNavigation({ timeout: 15000 });
-    // Có thể redirect về booking history hoặc dashboard
-    I.seeInCurrentUrl('/patient');
+    I.waitInUrl('/patient', 15);
   },
 };

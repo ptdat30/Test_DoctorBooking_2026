@@ -30,7 +30,7 @@ class ApiHelper extends Helper {
 
     const resp = await axios.post(`${this.apiBaseUrl}/auth/login`, {
       username: process.env.TEST_ADMIN_USERNAME || 'admin',
-      password: process.env.TEST_ADMIN_PASSWORD || 'Admin@123',
+      password: process.env.TEST_ADMIN_PASSWORD || 'admin123',
     });
 
     // Cấu trúc response dựa trên AuthController của project
@@ -55,13 +55,13 @@ class ApiHelper extends Helper {
         phone:    userData.phone || '',
       });
 
-      this.debug(`✅ Created test user: ${userData.username}`);
+      console.log(`[Data Seeding] ✅ Created test user: ${userData.username}`);
       return {
         ...userData,
         userId: resp.data?.id || resp.data?.userId,
       };
     } catch (err) {
-      this.debug(`⚠️ createTestUser error: ${err.response?.data?.message || err.message}`);
+      console.error(`[Data Seeding] ⚠️ createTestUser error:`, err.response?.data || err.message);
       // Nếu user đã tồn tại (conflict), vẫn trả về data để test tiếp
       return userData;
     }
@@ -69,20 +69,33 @@ class ApiHelper extends Helper {
 
   /**
    * Xóa user test sau khi test xong (cleanup)
-   * Gọi endpoint admin DELETE /admin/users/{username}
+   * Gọi endpoint admin DELETE /admin/users/{id}
    *
    * @param {string} username
    */
   async deleteTestUser(username) {
     try {
       const token = await this._getAdminToken();
-      await axios.delete(`${this.apiBaseUrl}/admin/users/${username}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      this.debug(`🗑️ Deleted test user: ${username}`);
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
+      // 1. Search for user by username to get ID
+      const searchRes = await axios.get(`${this.apiBaseUrl}/admin/users?search=${username}`, config);
+      const users = searchRes.data || [];
+      const targetUser = users.find(u => u.username === username);
+
+      if (!targetUser) {
+        console.log(`[Data Cleanup] User ${username} not found in DB. Skipping deletion.`);
+        return;
+      }
+
+      // 2. Delete user by ID
+      await axios.delete(`${this.apiBaseUrl}/admin/users/${targetUser.id}`, config);
+      console.log(`[Data Cleanup] 🗑️ Deleted test user: ${username} (ID: ${targetUser.id})`);
     } catch (err) {
       // Không fail test nếu cleanup lỗi, chỉ log warning
-      this.debug(`⚠️ deleteTestUser warning: ${err.response?.status} - ${username}`);
+      console.error(`[Data Cleanup] ⚠️ deleteTestUser warning:`, err.response?.data || err.message);
     }
   }
 
@@ -92,10 +105,13 @@ class ApiHelper extends Helper {
    */
   async getDoctors() {
     try {
-      const resp = await axios.get(`${this.apiBaseUrl}/public/doctors`);
+      const token = await this._getAdminToken();
+      const resp = await axios.get(`${this.apiBaseUrl}/admin/doctors`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       return resp.data || [];
     } catch (err) {
-      this.debug(`⚠️ getDoctors error: ${err.message}`);
+      console.error(`[Data Seeding] ⚠️ getDoctors error:`, err.response?.data || err.message);
       return [];
     }
   }

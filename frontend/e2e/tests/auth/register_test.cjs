@@ -31,8 +31,7 @@ Scenario('TC-REG-01: Đăng ký tài khoản mới hợp lệ → redirect về 
   await RegisterPage.register(userData);
 
   // Assert
-  I.waitForNavigation({ timeout: 15000 });
-  I.seeInCurrentUrl('/patient/dashboard');
+  I.waitInUrl('/patient/dashboard', 15);
 }).tag('@smoke').tag('@register');
 
 /**
@@ -103,7 +102,8 @@ Scenario('TC-REG-05: Bỏ trống Full Name (required) → không submit đượ
   I.fillField('#register-username', userData.username);
   I.fillField('#register-email', userData.email);
   I.fillField('#register-password', userData.password);
-  I.click('button[type="submit"]', '.auth-form-wrapper.active');
+  I.fillField('#register-confirmPassword', userData.password);
+  I.click('.auth-submit-btn');
 
   // Assert: HTML5 required ngăn submit
   I.seeInCurrentUrl('/register');

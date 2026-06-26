@@ -9,17 +9,12 @@ Feature('Tìm kiếm Bác sĩ (Doctor Search)');
 
 let testPatient;
 
-Before(async ({ I }) => {
+Before(async ({ I, LoginPage }) => {
   testPatient = factory.createUser();
   await I.createTestUser(testPatient);
   // Login trước khi test (trang search yêu cầu auth)
-  I.amOnPage('/login');
-  I.waitForElement('#login-username', 10);
-  I.fillField('#login-username', testPatient.username);
-  I.fillField('#login-password', testPatient.password);
-  I.click('button[type="submit"].auth-submit-btn');
-  I.waitForNavigation({ timeout: 10000 });
-  I.seeInCurrentUrl('/patient/dashboard');
+  await LoginPage.login(testPatient.username, testPatient.password);
+  LoginPage.seeSuccessRedirect('patient');
 });
 
 After(async ({ I }) => {

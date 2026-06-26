@@ -5,20 +5,20 @@ Scenario('Patient logs in with invalid credentials', ({ I }) => {
   I.see('Đăng nhập hệ thống');
   
   // Fill invalid credentials
-  I.fillField('#linear-login-username', 'patient1');
-  I.fillField('#linear-login-password', 'wrongpassword');
+  I.fillField('#login-username', 'patient1');
+  I.fillField('#login-password', 'wrongpassword');
   I.click('Đăng nhập');
   
   // See error message
-  I.waitForText('Đăng nhập thất bại', 5);
+  I.waitForElement('.bg-rose-50', 5); // Đợi hộp thoại lỗi xuất hiện
 });
 
 Scenario('Patient logs in with valid credentials', ({ I }) => {
   I.amOnPage('/login');
   
   // Fill valid credentials (seeded patient1)
-  I.fillField('#linear-login-username', 'patient1');
-  I.fillField('#linear-login-password', 'password123');
+  I.fillField('#login-username', 'patient1');
+  I.fillField('#login-password', 'password123');
   I.click('Đăng nhập');
   
   // Wait for redirect to patient dashboard

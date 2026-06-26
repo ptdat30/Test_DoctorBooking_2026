@@ -20,7 +20,21 @@ const AuthUnified = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, user } = useAuth();
+
+  useEffect(() => {
+    // If user is already logged in, redirect them to their dashboard
+    if (user) {
+      const role = user.role?.toUpperCase();
+      if (role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (role === 'DOCTOR') {
+        navigate('/doctor/dashboard', { replace: true });
+      } else {
+        navigate('/patient/dashboard', { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     document.body.style.background = '#e0f2ff';
@@ -125,7 +139,7 @@ const AuthUnified = () => {
 
         {/* Error Alert Box */}
         {error && (
-          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-800 text-xs px-4 py-3 rounded-xl flex items-center space-x-2 animate-pulse-subtle">
+          <div className="error-message mb-5 bg-rose-50 border border-rose-200 text-rose-800 text-xs px-4 py-3 rounded-xl flex items-center space-x-2 animate-pulse-subtle">
             <i className="fa-solid fa-circle-exclamation text-rose-500 text-sm flex-shrink-0"></i>
             <span>{error}</span>
           </div>
@@ -138,6 +152,7 @@ const AuthUnified = () => {
           {isSignUp && (
             <div className="premium-input-group">
               <input
+                id="register-fullName"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -157,6 +172,7 @@ const AuthUnified = () => {
           {isSignUp && (
             <div className="premium-input-group">
               <input
+                id="register-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -175,6 +191,7 @@ const AuthUnified = () => {
           {/* Email / Username */}
           <div className="premium-input-group">
             <input
+              id={isSignUp ? 'register-email' : 'login-username'}
               type={isSignUp ? 'email' : 'text'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -196,6 +213,7 @@ const AuthUnified = () => {
           {isSignUp && (
             <div className="premium-input-group">
               <input
+                id="register-phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -214,6 +232,7 @@ const AuthUnified = () => {
           {/* Password */}
           <div className="premium-input-group">
             <input
+              id={isSignUp ? 'register-password' : 'login-password'}
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -240,6 +259,7 @@ const AuthUnified = () => {
           {isSignUp && (
             <div className="premium-input-group">
               <input
+                id="register-confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -264,7 +284,7 @@ const AuthUnified = () => {
           )}
 
           {/* Submit Button */}
-          <button type="submit" className="premium-btn-submit">
+          <button type="submit" className="premium-btn-submit auth-submit-btn">
             {isSignUp ? 'Đăng ký ngay' : 'Đăng nhập'}
           </button>
         </form>

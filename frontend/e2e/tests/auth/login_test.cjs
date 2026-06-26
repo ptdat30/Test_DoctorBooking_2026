@@ -33,8 +33,7 @@ Scenario('TC-LOGIN-01: Patient đăng nhập thành công và được redirect 
   // Act
   await LoginPage.login(testPatient.username, testPatient.password);
   // Assert
-  I.waitForNavigation({ timeout: 10000 });
-  I.seeInCurrentUrl('/patient/dashboard');
+  I.waitInUrl('/patient/dashboard', 10);
 }).tag('@smoke').tag('@login').tag('@patient');
 
 /**
@@ -81,11 +80,10 @@ Scenario('TC-LOGIN-04: Để trống form → không thể submit (HTML5 require
 Scenario('TC-LOGIN-05: User đã login khi truy cập /login → redirect về dashboard', async ({ I, LoginPage }) => {
   // Arrange: login trước
   await LoginPage.login(testPatient.username, testPatient.password);
-  I.waitForNavigation({ timeout: 10000 });
+  I.waitInUrl('/patient/dashboard', 10);
   // Act: thử vào /login khi đã có token
   I.amOnPage('/login');
   // Assert: app phải redirect về dashboard (guard route)
-  I.waitForNavigation({ timeout: 5000 });
-  I.seeInCurrentUrl('/patient/dashboard');
+  I.waitInUrl('/patient/dashboard', 5);
 }).tag('@login').tag('@routing');
 

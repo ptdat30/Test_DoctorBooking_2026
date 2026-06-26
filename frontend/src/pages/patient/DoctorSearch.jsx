@@ -164,6 +164,7 @@ const DoctorSearch = () => {
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
+                  id="doctor-search-input"
                   type="text"
                   placeholder="Tìm kiếm theo tên, chuyên khoa, triệu chứng..."
                   value={searchTerm}

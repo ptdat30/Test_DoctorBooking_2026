@@ -16,6 +16,7 @@ module.exports = {
     username:  '#register-username',
     email:     '#register-email',
     password:  '#register-password',
+    confirmPassword: '#register-confirmPassword',
     phone:     '#register-phone',
     submitBtn: '.auth-form-wrapper:not(.active) + .auth-form-wrapper.active button[type="submit"], .auth-form-wrapper.active button[type="submit"]',
   },
@@ -51,6 +52,9 @@ module.exports = {
     I.clearField(this.fields.password);
     I.fillField(this.fields.password, userData.password);
 
+    I.clearField(this.fields.confirmPassword);
+    I.fillField(this.fields.confirmPassword, userData.password);
+
     if (userData.phone) {
       I.clearField(this.fields.phone);
       I.fillField(this.fields.phone, userData.phone);
@@ -61,8 +65,8 @@ module.exports = {
    * Submit form đăng ký
    */
   submit() {
-    // Tìm button submit trong form wrapper đang active
-    I.click('button[type="submit"]', '.auth-form-wrapper.active');
+    // Tìm button submit chuẩn
+    I.click('.auth-submit-btn');
   },
 
   /**
@@ -85,7 +89,6 @@ module.exports = {
    * Kiểm tra redirect sau khi register thành công
    */
   seeSuccessRedirect() {
-    I.waitForNavigation({ timeout: 10000 });
-    I.seeInCurrentUrl('/patient/dashboard');
+    I.waitInUrl('/patient/dashboard', 10);
   },
 };

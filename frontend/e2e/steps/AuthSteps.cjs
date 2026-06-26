@@ -54,8 +54,10 @@ module.exports = {
   logout() {
     // Dùng localStorage clear để đảm bảo state được reset hoàn toàn
     I.executeScript(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      try {
+        localStorage.clear();
+        window.location.reload();
+      } catch (e) {}
     });
     I.amOnPage('/login');
     I.waitForElement('#login-username', 5);
@@ -66,14 +68,17 @@ module.exports = {
    * @param {string} protectedPath
    */
   assertRedirectToLoginWhenUnauth(protectedPath) {
-    // Xóa token trước
+    // Thiết lập origin trước
+    I.amOnPage('/login');
+    // Xóa token
     I.executeScript(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      try {
+        localStorage.clear();
+        window.location.reload();
+      } catch (e) {}
     });
     I.amOnPage(protectedPath);
     // Phải bị redirect về /login
-    I.waitForNavigation({ timeout: 5000 });
-    I.seeInCurrentUrl('/login');
+    I.waitInUrl('/login', 5);
   },
 };

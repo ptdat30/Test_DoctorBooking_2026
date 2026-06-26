@@ -86,7 +86,6 @@ module.exports = {
       doctor:  '/doctor/dashboard',
       admin:   '/admin/dashboard',
     };
-    I.waitForNavigation({ timeout: 10000 });
-    I.seeInCurrentUrl(routes[role]);
+    I.waitInUrl(routes[role], 10);
   },
 };
