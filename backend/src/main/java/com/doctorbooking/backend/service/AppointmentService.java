@@ -32,12 +32,12 @@ public class AppointmentService {
 
     private static final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-    private static final List<String> AVAILABLE_TIME_SLOTS = List.of(
+    private static final List<String> VALID_APPOINTMENT_SLOTS = List.of(
             "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
             "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
             "15:00", "15:30", "16:00", "16:30", "17:00"
     );
-    private static final Set<String> AVAILABLE_TIME_SLOT_SET = Set.copyOf(AVAILABLE_TIME_SLOTS);
+    private static final Set<String> AVAILABLE_TIME_SLOT_SET = Set.copyOf(VALID_APPOINTMENT_SLOTS);
     
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
@@ -88,7 +88,7 @@ public class AppointmentService {
             .collect(Collectors.toList());
 
         // Trả về slots available (chưa bị book hoặc đã CANCELLED/COMPLETED)
-        return AVAILABLE_TIME_SLOTS.stream()
+        return VALID_APPOINTMENT_SLOTS.stream()
             .filter(slot -> !bookedTimes.contains(slot))
             .collect(Collectors.toList());
     }
@@ -97,6 +97,17 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
         return AppointmentResponse.fromEntity(appointment);
+    }
+
+    private void validateAppointmentTimeSlot(LocalTime appointmentTime) {
+        if (appointmentTime == null) {
+            throw new RuntimeException("Appointment time is required");
+        }
+
+        String normalizedTime = appointmentTime.format(TIME_FORMATTER);
+        if (!VALID_APPOINTMENT_SLOTS.contains(normalizedTime)) {
+            throw new RuntimeException("Invalid appointment time slot: " + normalizedTime);
+        }
     }
 
     // Patient Appointment Booking
@@ -113,7 +124,7 @@ public class AppointmentService {
             throw new RuntimeException("Doctor is not active");
         }
 
-        validateAppointmentTime(request.getAppointmentTime());
+        validateAppointmentTimeSlot(request.getAppointmentTime());
 
         // Check if appointment slot is already taken
         // CHỈ check các appointment PENDING hoặc CONFIRMED (không tính CANCELLED và COMPLETED)

@@ -107,6 +107,34 @@ class AppointmentServiceTest {
         return req;
     }
 
+    private LocalTime getValidSlotAfterNow() {
+        List<LocalTime> slots = List.of(
+                LocalTime.of(8, 0), LocalTime.of(8, 30), LocalTime.of(9, 0), LocalTime.of(9, 30),
+                LocalTime.of(10, 0), LocalTime.of(10, 30), LocalTime.of(11, 0), LocalTime.of(11, 30),
+                LocalTime.of(13, 0), LocalTime.of(13, 30), LocalTime.of(14, 0), LocalTime.of(14, 30),
+                LocalTime.of(15, 0), LocalTime.of(15, 30), LocalTime.of(16, 0), LocalTime.of(16, 30),
+                LocalTime.of(17, 0)
+        );
+        return slots.stream()
+                .filter(slot -> slot.isAfter(LocalTime.now()))
+                .findFirst()
+                .orElse(LocalTime.of(17, 0));
+    }
+
+    private LocalTime getValidSlotBeforeNow() {
+        List<LocalTime> slots = List.of(
+                LocalTime.of(8, 0), LocalTime.of(8, 30), LocalTime.of(9, 0), LocalTime.of(9, 30),
+                LocalTime.of(10, 0), LocalTime.of(10, 30), LocalTime.of(11, 0), LocalTime.of(11, 30),
+                LocalTime.of(13, 0), LocalTime.of(13, 30), LocalTime.of(14, 0), LocalTime.of(14, 30),
+                LocalTime.of(15, 0), LocalTime.of(15, 30), LocalTime.of(16, 0), LocalTime.of(16, 30),
+                LocalTime.of(17, 0)
+        );
+        return slots.stream()
+                .filter(slot -> slot.isBefore(LocalTime.now()))
+                .reduce((first, second) -> second)
+                .orElse(LocalTime.of(8, 0));
+    }
+
     // =========================================================
     // getAvailableTimeSlots TESTS
     // =========================================================
@@ -286,6 +314,25 @@ class AppointmentServiceTest {
             assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Doctor is not active");
+        }
+
+        @Test
+        @DisplayName("❌ Slot không hợp lệ như 08:15 → throw RuntimeException")
+        void createAppointment_invalidTimeSlot_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+            req.setAppointmentTime(LocalTime.of(8, 15));
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Invalid appointment time slot");
         }
 
         @Test

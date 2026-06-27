@@ -109,6 +109,9 @@ public class FamilyMemberService {
             member.setGender(request.getGender());
         }
         if (request.getRelationship() != null) {
+            if (request.getRelationship() == FamilyMember.Relationship.SELF) {
+                throw new RuntimeException("Cannot update relationship to SELF");
+            }
             member.setRelationship(request.getRelationship());
         }
         if (request.getPhone() != null) {
