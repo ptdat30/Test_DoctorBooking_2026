@@ -6,7 +6,6 @@ import com.doctorbooking.backend.dto.request.UpdateProfileRequest;
 import com.doctorbooking.backend.dto.response.DoctorResponse;
 import com.doctorbooking.backend.model.Doctor;
 import com.doctorbooking.backend.model.User;
-import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.repository.DoctorRepository;
 import com.doctorbooking.backend.repository.UserRepository;
 import com.doctorbooking.backend.util.TestMockFactory;

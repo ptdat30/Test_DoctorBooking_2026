@@ -6,6 +6,7 @@ import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.model.Treatment;
 import com.doctorbooking.backend.model.User;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -49,10 +50,11 @@ public class TestMockFactory {
         patient.setId(100L);
         patient.setFullName("Nguyen Van A");
         patient.setDateOfBirth(java.time.LocalDate.of(1990, 1, 1));
-        patient.setGender("Nam");
+        patient.setGender(Patient.Gender.MALE);
         patient.setAddress("123 Main St, Hanoi");
-        patient.setPhoneNumber("0912345678");
-        patient.setBloodType("O+");
+        patient.setPhone("0912345678");
+        patient.setEmergencyContact("Nguyen Van B");
+        patient.setEmergencyPhone("0912345679");
         patient.setUser(createValidActiveUser(User.Role.PATIENT));
         return patient;
     }
@@ -68,8 +70,8 @@ public class TestMockFactory {
         doctor.setSpecialization("Cardiology");
         doctor.setExperience(10);
         doctor.setPhone("0987654321");
-        doctor.setDescription("Expert in Cardiology");
-        doctor.setConsultationFee(500000.0);
+        doctor.setBio("Expert in Cardiology");
+        doctor.setConsultationFee(java.math.BigDecimal.valueOf(500000.0));
         doctor.setStatus(Doctor.DoctorStatus.ACTIVE);
         doctor.setUser(createValidActiveUser(User.Role.DOCTOR));
         return doctor;
@@ -90,8 +92,8 @@ public class TestMockFactory {
         treatment.setId(300L);
         // Note: appointment setting would be needed depending on the test
         treatment.setDiagnosis("Common Cold");
-        treatment.setNotes("Rest and drink water");
-        treatment.setFollowUpDate(LocalDateTime.now().plusDays(7));
+        treatment.setTreatmentNotes("Rest and drink water");
+        treatment.setFollowUpDate(LocalDate.now().plusDays(7));
         treatment.setCreatedAt(LocalDateTime.now());
         treatment.setUpdatedAt(LocalDateTime.now());
         return treatment;
