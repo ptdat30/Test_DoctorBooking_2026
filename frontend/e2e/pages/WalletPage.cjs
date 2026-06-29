@@ -72,6 +72,16 @@ module.exports = {
     I.click(this.topUpModal.confirmBtn);
   },
 
+  seeConfirmDisabled() {
+    I.waitForVisible(this.topUpModal.confirmBtn, 10);
+    I.seeElement(`${this.topUpModal.confirmBtn}[disabled]`);
+  },
+
+  seeConfirmEnabled() {
+    I.waitForVisible(this.topUpModal.confirmBtn, 10);
+    I.dontSeeElement(`${this.topUpModal.confirmBtn}[disabled]`);
+  },
+
   navigateToMockCallback(success = true, amount = 100000, txnRef = 'TX-MOCK-123') {
     const code = success ? '00' : '99';
     // Số tiền trong VNPAY callback nhân 100
