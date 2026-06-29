@@ -5,7 +5,6 @@ import com.doctorbooking.backend.dto.request.DoctorRequest;
 import com.doctorbooking.backend.dto.request.UpdateProfileRequest;
 import com.doctorbooking.backend.dto.response.DoctorResponse;
 import com.doctorbooking.backend.model.Doctor;
-import com.doctorbooking.backend.model.Role;
 import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.repository.DoctorRepository;
 import com.doctorbooking.backend.repository.UserRepository;
@@ -210,7 +209,7 @@ class DoctorServiceTest {
     
     @Test
     void testEnsureDoctorProfile_NotExists_UserNotDoctorRole() {
-        mockUser.setRole(Role.PATIENT);
+        mockUser.setRole(User.Role.PATIENT);
         when(doctorRepository.findByUserId(1L)).thenReturn(Optional.empty());
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
         

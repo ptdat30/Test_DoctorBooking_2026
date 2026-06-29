@@ -41,5 +41,10 @@ module.exports = {
 
   seeTextInAIChat(text) {
     I.waitForText(text, 10, this.aiMessage);
-  }
+  },
+
+  seeSendDisabled() {
+    I.waitForElement(this.sendBtn, 10);
+    I.seeElement(`${this.sendBtn}[disabled]`);
+  },
 };

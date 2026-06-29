@@ -87,3 +87,25 @@ Scenario('TC-PROFILE-03: Đổi mật khẩu thất bại do mật khẩu xác n
   // Assert: Thấy thông báo lỗi
   ProfilePage.seeErrorMessage('New passwords do not match');
 }).tag('@profile').tag('@patient').tag('@negative');
+
+Scenario('TC-PROFILE-04: Cập nhật liên hệ khẩn cấp SOS thành công', async ({ LoginPage, ProfilePage }) => {
+  await LoginPage.login(testPatient.username, testPatient.password);
+  LoginPage.seeSuccessRedirect('patient');
+
+  ProfilePage.navigateTo();
+
+  // Hoàn thiện hồ sơ trước (handleUpdateSOS gửi kèm toàn bộ formData → cần các field bắt buộc hợp lệ)
+  ProfilePage.openEditProfile();
+  ProfilePage.updateProfile({
+    fullName: testPatient.fullName,
+    dateOfBirth: '1992-08-24',
+    gender: 'MALE',
+    phone: '0912345678',
+    address: '456 Test Road, HCM City',
+  });
+
+  // Cập nhật liên hệ khẩn cấp SOS rồi xác minh đã lưu (mở lại modal kiểm tra giá trị)
+  ProfilePage.openSOS();
+  ProfilePage.updateSOS('Nguyen Van A', '0987654321');
+  ProfilePage.verifySOSPersisted('Nguyen Van A', '0987654321');
+}).tag('@profile').tag('@patient').tag('@smoke');

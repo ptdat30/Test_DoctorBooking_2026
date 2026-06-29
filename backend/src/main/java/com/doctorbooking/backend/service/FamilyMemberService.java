@@ -110,13 +110,10 @@ public class FamilyMemberService {
         }
         if (request.getRelationship() != null) {
             if (request.getRelationship() == FamilyMember.Relationship.SELF) {
-        long mainAccountCount = familyMemberRepository.countMainAccountByPatientId(patientId);
-                if (mainAccountCount > 0) {
-            throw new RuntimeException("Main account already exists");
+                throw new RuntimeException("Cannot update relationship to SELF");
+            }
+            member.setRelationship(request.getRelationship());
         }
-    }
-    member.setRelationship(request.getRelationship());
-}
         if (request.getPhone() != null) {
             member.setPhone(request.getPhone());
         }

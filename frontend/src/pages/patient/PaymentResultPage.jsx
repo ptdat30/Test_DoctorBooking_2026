@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import PatientLayout from '../../components/patient/PatientLayout';
 import './PaymentResultPage.css';
 
@@ -57,10 +59,12 @@ const PaymentResultPage = () => {
       amount = null; // Will be loaded from API if needed
     }
     
+    const resultMessage = message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code));
+
     setResult({
       success: isSuccess,
       code: code || vnp_ResponseCode || 'UNKNOWN',
-      message: message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code)),
+      message: resultMessage,
       transactionId: transactionId || vnp_TxnRef,
       transactionNo: vnp_TransactionNo,
       amount: amount,
@@ -86,6 +90,17 @@ const PaymentResultPage = () => {
     }
   }, [searchParams, navigate]);
 
+  useEffect(() => {
+    if (result && !result.success) {
+      toast.error('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', {
+        position: 'top-right',
+        autoClose: 4000,
+        closeOnClick: true,
+        pauseOnHover: true,
+      });
+    }
+  }, [result]);
+
   const handleBackToWallet = () => {
     // Navigate to wallet and force refresh
     navigate('/patient/wallet?tab=transactions&refresh=true');
@@ -110,6 +125,7 @@ const PaymentResultPage = () => {
   if (!result) {
     return (
       <PatientLayout>
+        <ToastContainer position="top-right" autoClose={4000} />
         <div className="payment-result-page">
           <div className="payment-result-loading">
             <div className="loading-spinner"></div>
@@ -122,6 +138,7 @@ const PaymentResultPage = () => {
 
   return (
     <PatientLayout>
+      <ToastContainer position="top-right" autoClose={4000} />
       <div className="payment-result-page">
         <div className="payment-result-container">
           {result.success ? (

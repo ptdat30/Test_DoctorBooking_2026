@@ -76,6 +76,16 @@ const factory = {
   createSearchQuery() {
     return faker.person.lastName(); // Tìm theo họ bác sĩ
   },
+
+  /**
+   * Chuỗi có độ dài cố định (dùng cho BVA username/password)
+   * @param {number} length
+   * @param {string} [char='a']
+   * @returns {string}
+   */
+  stringOfLength(length, char = 'a') {
+    return char.repeat(length);
+  },
 };
 
 module.exports = factory;

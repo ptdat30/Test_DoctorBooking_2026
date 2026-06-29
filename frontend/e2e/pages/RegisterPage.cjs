@@ -91,4 +91,27 @@ module.exports = {
   seeSuccessRedirect() {
     I.waitInUrl('/patient/dashboard', 10);
   },
+
+  seeStayOnRegister() {
+    I.seeInCurrentUrl('/register');
+  },
+
+  seeValidationBlocked() {
+    I.seeInCurrentUrl('/register');
+  },
+
+  seeApiError() {
+    I.waitForElement('[class*="error"], .error-message', 8);
+  },
+
+  // Xác minh email không hợp lệ theo HTML5 (type="email"): validity.valid === false
+  async seeEmailInvalid() {
+    const isInvalid = await I.executeScript(() => {
+      const el = document.querySelector('#register-email');
+      return el ? el.validity.valid === false : false;
+    });
+    if (!isInvalid) {
+      throw new Error('Expected email field to be invalid via HTML5 validation');
+    }
+  },
 };

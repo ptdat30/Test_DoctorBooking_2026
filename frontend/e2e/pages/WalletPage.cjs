@@ -72,6 +72,16 @@ module.exports = {
     I.click(this.topUpModal.confirmBtn);
   },
 
+  seeConfirmDisabled() {
+    I.waitForVisible(this.topUpModal.confirmBtn, 10);
+    I.seeElement(`${this.topUpModal.confirmBtn}[disabled]`);
+  },
+
+  seeConfirmEnabled() {
+    I.waitForVisible(this.topUpModal.confirmBtn, 10);
+    I.dontSeeElement(`${this.topUpModal.confirmBtn}[disabled]`);
+  },
+
   navigateToMockCallback(success = true, amount = 100000, txnRef = 'TX-MOCK-123') {
     const code = success ? '00' : '99';
     // Số tiền trong VNPAY callback nhân 100
@@ -91,6 +101,11 @@ module.exports = {
     I.see('Thanh toán thất bại', this.resultPage.errorTitle);
   },
 
+  seePaymentFailureToast() {
+    I.waitForElement('.Toastify__toast--error', 5);
+    I.see('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', '.Toastify__toast--error');
+  },
+
   clickBackToWallet() {
     I.waitForVisible(this.resultPage.backBtn, 10);
     I.click(this.resultPage.backBtn);
@@ -100,6 +115,10 @@ module.exports = {
   viewTransactionsTab() {
     I.waitForVisible(this.tabBtnTransactions, 10);
     I.click(this.tabBtnTransactions);
-    I.waitForElement(this.transactionItem, 10);
-  }
+    I.waitForElement('.transactions-list', 10);
+  },
+
+  seeEmptyTransactions() {
+    I.see('Chưa có giao dịch nào', '.transactions-list');
+  },
 };
