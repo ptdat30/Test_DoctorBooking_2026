@@ -422,7 +422,7 @@ jobs:
             --interval 2000 \
             --verbose
 
-      - name: Run E2E (smoke on PR, full on merge)
+      - name: Run E2E (smoke on PR/staging, full on main)
         working-directory: frontend
         env:
           TEST_BASE_URL: http://localhost:4173
@@ -431,11 +431,11 @@ jobs:
           TEST_ADMIN_PASSWORD: ${{ secrets.CI_TEST_ADMIN_PASSWORD || 'Admin@123' }}
           HEADLESS: 'true'
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "Pull request → chạy E2E @smoke"
+          if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.ref }}" = "refs/heads/staging" ]; then
+            echo "PR/staging → chạy E2E @smoke"
             npm run e2e:smoke
           else
-            echo "Push staging/main → chạy full E2E"
+            echo "main → chạy full E2E"
             npm run e2e:headless
           fi
 
