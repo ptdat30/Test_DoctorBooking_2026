@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,13 +32,13 @@ import java.util.stream.Collectors;
 public class AppointmentService {
 
     private static final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
-
-    /** 17 khung giờ khám chuẩn trong ngày (dùng cho available slots + validation khi đặt lịch). */
-    static final List<String> ALLOWED_TIME_SLOTS = List.of(
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final List<String> VALID_APPOINTMENT_SLOTS = List.of(
             "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
             "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
             "15:00", "15:30", "16:00", "16:30", "17:00"
     );
+    private static final Set<String> AVAILABLE_TIME_SLOT_SET = Set.copyOf(VALID_APPOINTMENT_SLOTS);
     
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
@@ -70,7 +72,8 @@ public class AppointmentService {
      * CHỈ tính các appointments PENDING hoặc CONFIRMED (không tính CANCELLED và COMPLETED)
      */
     public List<String> getAvailableTimeSlots(Long doctorId, LocalDate date) {
-        List<String> allSlots = ALLOWED_TIME_SLOTS;
+        // Danh sách tất cả time slots trong ngày
+        // Sử dụng chung với validateAppointmentTime để tránh duplicate
 
         // Lấy các appointments của bác sĩ trong ngày
         List<Appointment> appointments = appointmentRepository.findByDoctorAndDate(doctorId, date);
@@ -86,7 +89,7 @@ public class AppointmentService {
             .collect(Collectors.toList());
 
         // Trả về slots available (chưa bị book hoặc đã CANCELLED/COMPLETED và phải ở tương lai nếu là ngày hôm nay)
-        return allSlots.stream()
+        return VALID_APPOINTMENT_SLOTS.stream()
             .filter(slot -> !bookedTimes.contains(slot))
             .filter(slot -> {
                 if (date.equals(LocalDate.now())) {
@@ -103,6 +106,17 @@ public class AppointmentService {
         return AppointmentResponse.fromEntity(appointment);
     }
 
+    private void validateAppointmentTimeSlot(LocalTime appointmentTime) {
+        if (appointmentTime == null) {
+            throw new RuntimeException("Appointment time is required");
+        }
+
+        String normalizedTime = appointmentTime.format(TIME_FORMATTER);
+        if (!VALID_APPOINTMENT_SLOTS.contains(normalizedTime)) {
+            throw new RuntimeException("Invalid appointment time slot: " + normalizedTime);
+        }
+    }
+
     // Patient Appointment Booking
     @Transactional
     public AppointmentResponse createAppointment(Long patientId, CreateAppointmentRequest request) {
@@ -117,7 +131,7 @@ public class AppointmentService {
             throw new RuntimeException("Doctor is not active");
         }
 
-        validateTimeSlot(request.getAppointmentTime());
+        validateAppointmentTimeSlot(request.getAppointmentTime());
 
         // Check if appointment slot is already taken
         // CHỈ check các appointment PENDING hoặc CONFIRMED (không tính CANCELLED và COMPLETED)
@@ -502,6 +516,17 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
         appointmentRepository.delete(appointment);
     }
+
+    private void validateAppointmentTime(LocalTime appointmentTime) {
+        if (appointmentTime == null) {
+            throw new RuntimeException("Appointment time is required");
+        }
+
+        String formattedTime = appointmentTime.format(TIME_FORMATTER);
+        if (!AVAILABLE_TIME_SLOT_SET.contains(formattedTime)) {
+            throw new RuntimeException("Invalid appointment time. Available slots are from 08:00 to 17:00 in 30-minute increments excluding lunch break.");
+        }
+    }
     
     /**
      * Helper method to send confirmation email when appointment is confirmed
@@ -773,22 +798,6 @@ public class AppointmentService {
                 logger.error("Error processing refund for appointment: {}", appointment.getId(), e);
                 throw new RuntimeException("Failed to process refund: " + e.getMessage());
             }
-        }
-    }
-
-    /**
-     * Chỉ chấp nhận giờ khám thuộc 17 slot chuẩn (APT-B5/B8).
-     */
-    private void validateTimeSlot(LocalTime appointmentTime) {
-        if (appointmentTime == null) {
-            throw new RuntimeException("Appointment time is required");
-        }
-        String slot = appointmentTime.toString();
-        if (slot.length() >= 5) {
-            slot = slot.substring(0, 5);
-        }
-        if (!ALLOWED_TIME_SLOTS.contains(slot)) {
-            throw new RuntimeException("Invalid appointment time slot. Must be one of the standard time slots.");
         }
     }
 }
