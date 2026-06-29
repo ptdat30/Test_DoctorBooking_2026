@@ -28,8 +28,8 @@ class FamilyMemberServiceTest {
     private FamilyMemberService familyMemberService;
 
     @Test
-    @DisplayName("❌ Update thất bại khi đổi relationship sang SELF và main account đã tồn tại")
-    void updateFamilyMember_fails_whenChangingToSelfAndMainAccountAlreadyExists() {
+    @DisplayName("❌ Update thất bại khi đổi relationship sang SELF")
+    void updateFamilyMember_fails_whenChangingToSelf() {
 
         Long patientId = 1L;
         Long memberId = 2L;
@@ -45,14 +45,12 @@ class FamilyMemberServiceTest {
         when(familyMemberRepository.findByIdAndMainPatientId(memberId, patientId))
                 .thenReturn(member);
 
-        when(familyMemberRepository.countMainAccountByPatientId(patientId))
-                .thenReturn(1L);
-
         assertThatThrownBy(() ->
                 familyMemberService.updateFamilyMember(patientId, memberId, request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Main account already exists");
+                .hasMessageContaining("Cannot update relationship to SELF");
 
+        verify(familyMemberRepository, never()).countMainAccountByPatientId(anyLong());
         verify(familyMemberRepository, never()).save(any());
     }
 }

@@ -168,4 +168,25 @@ module.exports = {
   seeBookingSuccess() {
     I.waitInUrl('/patient', 15);
   },
+
+  async selectTimeSlot(time) {
+    I.waitForElement(this.timeSelect.select, 10);
+    I.selectOption(this.timeSelect.select, time);
+  },
+
+  submitAndConfirm() {
+    this.submitBooking();
+    this.confirmInModal();
+  },
+
+  seeBookingError(errorText) {
+    I.waitForText(errorText, 15);
+  },
+
+  seeFieldError(fieldName) {
+    I.waitForElement('.field-error', 10);
+    if (fieldName) {
+      I.see(fieldName, '.field-error');
+    }
+  },
 };

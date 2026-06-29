@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import PatientLayout from '../../components/patient/PatientLayout';
 import './PaymentResultPage.css';
 
@@ -59,7 +60,7 @@ const PaymentResultPage = () => {
     }
     
     const resultMessage = message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code));
-    
+
     setResult({
       success: isSuccess,
       code: code || vnp_ResponseCode || 'UNKNOWN',
@@ -71,16 +72,6 @@ const PaymentResultPage = () => {
       bankCode: vnp_BankCode,
       payDate: vnp_PayDate
     });
-
-    // Show toast notification based on payment result
-    if (!isSuccess) {
-      toast.error('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', {
-        position: 'top-right',
-        autoClose: 4000,
-        closeOnClick: true,
-        pauseOnHover: true,
-      });
-    }
 
     // Auto redirect after countdown
     if (isSuccess) {
@@ -98,6 +89,17 @@ const PaymentResultPage = () => {
       return () => clearInterval(timer);
     }
   }, [searchParams, navigate]);
+
+  useEffect(() => {
+    if (result && !result.success) {
+      toast.error('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', {
+        position: 'top-right',
+        autoClose: 4000,
+        closeOnClick: true,
+        pauseOnHover: true,
+      });
+    }
+  }, [result]);
 
   const handleBackToWallet = () => {
     // Navigate to wallet and force refresh
@@ -123,6 +125,7 @@ const PaymentResultPage = () => {
   if (!result) {
     return (
       <PatientLayout>
+        <ToastContainer position="top-right" autoClose={4000} />
         <div className="payment-result-page">
           <div className="payment-result-loading">
             <div className="loading-spinner"></div>

@@ -4,7 +4,6 @@ import com.doctorbooking.backend.dto.request.ChangePasswordRequest;
 import com.doctorbooking.backend.dto.request.UpdateUserRequest;
 import com.doctorbooking.backend.dto.request.UserRequest;
 import com.doctorbooking.backend.dto.response.UserResponse;
-import com.doctorbooking.backend.model.Role;
 import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.repository.AdminRepository;
 import com.doctorbooking.backend.repository.DoctorRepository;
@@ -54,7 +53,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        mockUser = TestMockFactory.createValidActiveUser(Role.PATIENT);
+        mockUser = TestMockFactory.createValidActiveUser(User.Role.PATIENT);
     }
 
     // ==========================================
@@ -128,7 +127,7 @@ class UserServiceTest {
         request.setUsername("newuser");
         request.setEmail("new@example.com");
         request.setPassword("password123");
-        request.setRole(Role.PATIENT);
+        request.setRole(User.Role.PATIENT);
         request.setEnabled(true);
 
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
@@ -138,7 +137,7 @@ class UserServiceTest {
         User savedUser = new User();
         savedUser.setId(10L);
         savedUser.setUsername("newuser");
-        savedUser.setRole(Role.PATIENT);
+        savedUser.setRole(User.Role.PATIENT);
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(patientRepository.findByUserId(10L)).thenReturn(Optional.empty());
 
@@ -185,7 +184,7 @@ class UserServiceTest {
         UpdateUserRequest request = new UpdateUserRequest();
         request.setUsername("updated");
         request.setEmail("updated@example.com");
-        request.setRole(Role.PATIENT);
+        request.setRole(User.Role.PATIENT);
         request.setEnabled(false);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));

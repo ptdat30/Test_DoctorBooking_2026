@@ -51,7 +51,8 @@ module.exports = {
 
   openEditProfile() {
     I.waitForVisible(this.buttons.editProfile, 10);
-    I.click(this.buttons.editProfile);
+    // forceClick: nút dùng framer-motion (whileHover/whileTap scale) nên không "stable" với click thường
+    I.forceClick(this.buttons.editProfile);
     I.waitForVisible(this.editModal.fullName, 10);
   },
 
@@ -83,13 +84,13 @@ module.exports = {
       I.clearField(this.editModal.address);
       I.fillField(this.editModal.address, data.address);
     }
-    I.click(this.editModal.saveBtn);
+    I.forceClick(this.editModal.saveBtn);
     I.waitForInvisible(this.editModal.saveBtn, 10);
   },
 
   openChangePassword() {
     I.waitForVisible(this.buttons.changePassword, 10);
-    I.click(this.buttons.changePassword);
+    I.forceClick(this.buttons.changePassword);
     I.waitForVisible(this.passwordModal.currentPassword, 10);
   },
 
@@ -97,12 +98,12 @@ module.exports = {
     I.fillField(this.passwordModal.currentPassword, oldPass);
     I.fillField(this.passwordModal.newPassword, newPass);
     I.fillField(this.passwordModal.confirmPassword, confirmPass);
-    I.click(this.passwordModal.saveBtn);
+    I.forceClick(this.passwordModal.saveBtn);
   },
 
   openSOS() {
     I.waitForVisible(this.buttons.sosEmergency, 10);
-    I.click(this.buttons.sosEmergency);
+    I.forceClick(this.buttons.sosEmergency);
     I.waitForVisible(this.sosModal.emergencyName, 10);
   },
 
@@ -111,8 +112,18 @@ module.exports = {
     I.fillField(this.sosModal.emergencyName, name);
     I.clearField(this.sosModal.emergencyPhone);
     I.fillField(this.sosModal.emergencyPhone, phone);
-    I.click(this.sosModal.saveBtn);
+    I.forceClick(this.sosModal.saveBtn);
+    // Modal đóng = handleUpdateSOS thành công (API trả về OK)
     I.waitForInvisible(this.sosModal.saveBtn, 10);
+  },
+
+  // Xác minh SOS đã lưu thật sự: mở lại modal và kiểm tra giá trị được điền sẵn.
+  // (Robust hơn việc bắt toast .alert-success vốn tự ẩn sau 3s và dễ bị race.)
+  verifySOSPersisted(name, phone) {
+    I.dontSeeElement(this.alerts.error);
+    this.openSOS();
+    I.seeInField(this.sosModal.emergencyName, name);
+    I.seeInField(this.sosModal.emergencyPhone, phone);
   },
 
   seeSuccessMessage(text) {
@@ -123,5 +134,20 @@ module.exports = {
   seeErrorMessage(text) {
     I.waitForElement(this.alerts.error, 10);
     I.see(text, this.alerts.error);
+  },
+
+  // Xác minh mật khẩu mới bị HTML5 minLength=6 chặn: field invalid (tooShort) và modal vẫn mở
+  async seeNewPasswordTooShort() {
+    const tooShort = await I.executeScript(() => {
+      const inputs = Array.from(document.querySelectorAll('.modal-content input[type="password"]'));
+      // input[1] = New Password (input[0] = Current Password)
+      const newPass = inputs[1];
+      return newPass ? (newPass.validity.valid === false && newPass.validity.tooShort) : false;
+    });
+    if (!tooShort) {
+      throw new Error('Expected New Password to be blocked by HTML5 minLength (tooShort)');
+    }
+    // Modal vẫn mở (chưa submit thành công)
+    I.seeElement(this.passwordModal.saveBtn);
   }
 };

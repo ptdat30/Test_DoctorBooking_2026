@@ -53,8 +53,7 @@ public class UserService implements UserDetailsService {
         
         // Try to find by username first, if not found, try email
         User user = userRepository.findByUsername(usernameOrEmail)
-                .orElse(userRepository.findByEmail(usernameOrEmail)
-                        .orElse(null));
+                .orElseGet(() -> userRepository.findByEmail(usernameOrEmail).orElse(null));
         
         if (user != null) {
             System.out.println("✅ UserService.loadUserByUsername - Found user: " + user.getUsername() + " (ID: " + user.getId() + ", Role: " + user.getRole() + ")");

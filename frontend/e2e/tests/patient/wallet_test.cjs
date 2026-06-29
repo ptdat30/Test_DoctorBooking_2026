@@ -119,6 +119,7 @@ Scenario('TC-WALLET-01: Bệnh nhân nạp tiền vào ví -> chuyển hướng 
 
   // Xem tab lịch sử và xác nhận giao dịch mới được ghi nhận
   WalletPage.viewTransactionsTab();
+  I.waitForElement(WalletPage.transactionItem, 10);
   I.see('+500.000 VNĐ', '.transactions-list');
   I.see('Nạp tiền vào ví', '.transactions-list');
 }).tag('@wallet').tag('@patient');
@@ -126,9 +127,7 @@ Scenario('TC-WALLET-01: Bệnh nhân nạp tiền vào ví -> chuyển hướng 
 Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùng -> Hiển thị thông báo lỗi', async ({ I, WalletPage }) => {
   let mockBalance = 200000;
 
-  // Intercept và Mock các API của Wallet
   await I.usePlaywrightTo('mock wallet stateful API for failed scenario', async ({ page }) => {
-    // 1. Mock GET wallet info
     await page.route('**/api/patient/wallet', route => {
       route.fulfill({
         status: 200,
@@ -141,7 +140,6 @@ Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùn
       });
     });
 
-    // 2. Mock GET transactions - trả về danh sách rỗng
     await page.route(url => url.pathname.includes('/api/patient/wallet/transactions') || url.pathname.includes('/api/patient/transactions'), route => {
       route.fulfill({
         status: 200,
@@ -153,7 +151,6 @@ Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùn
       });
     });
 
-    // 3. Mock POST top-up với response code 24 (hủy giao dịch)
     await page.route('**/api/patient/wallet/top-up', route => {
       route.fulfill({
         status: 200,
@@ -165,38 +162,27 @@ Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùn
     });
   });
 
-  // Act: 1. Truy cập Ví sức khỏe
   WalletPage.navigateTo();
 
-  // Xác nhận số dư ban đầu
   const initialBalance = await WalletPage.getBalance();
   assert.strictEqual(initialBalance, 200000);
 
-  // Act: 2. Nhấn nạp tiền và chọn mock VNPAY response 24 (hủy giao dịch)
   WalletPage.openTopUpModal();
   WalletPage.selectQuickAmount500k();
   WalletPage.selectPaymentMethod('VNPAY');
   WalletPage.submitTopUp();
 
-  // Đợi app chuyển hướng sang trang kết quả với response code 24
   I.waitInUrl('/patient/wallet/payment/result', 15);
 
-  // Assert: 3. Thấy thông báo thất bại trên trang kết quả
   WalletPage.seePaymentFailure();
+  WalletPage.seePaymentFailureToast();
 
-  // Assert: 4. Kiểm tra toast error xuất hiện với message mong đợi
-  I.waitForElement('.Toastify__toast--error', 5);
-  I.see('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', '.Toastify__toast-body');
-
-  // Act: 5. Nhấn "Thử lại" để quay về ví
   WalletPage.clickBackToWallet();
 
-  // Assert: 6. Số dư không thay đổi (không có tiền được nạp)
   const finalBalance = await WalletPage.getBalance();
   assert.strictEqual(finalBalance, 200000);
 
-  // Assert: 7. Không có giao dịch mới trong lịch sử
   WalletPage.viewTransactionsTab();
-  I.dontSee('500.000 VNĐ', '.transactions-list');
+  WalletPage.seeEmptyTransactions();
   I.dontSee('Nạp tiền vào ví', '.transactions-list');
 }).tag('@wallet').tag('@patient');

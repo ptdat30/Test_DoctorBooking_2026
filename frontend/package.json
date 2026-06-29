@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "e2e": "codeceptjs run --steps --config codecept.conf.cjs",
+    "e2e:bva": "codeceptjs run --config codecept.conf.cjs --grep @bva",
+    "e2e:smoke": "codeceptjs run --config codecept.conf.cjs --grep @smoke",
     "e2e:headless": "cross-env HEADLESS=true codeceptjs run --steps --config codecept.conf.cjs",
     "e2e:parallel": "cross-env HEADLESS=true codeceptjs run-workers 2 --config codecept.conf.cjs",
     "e2e:report": "allure generate e2e/output/allure-results --clean -o e2e/output/allure-report && allure open e2e/output/allure-report"

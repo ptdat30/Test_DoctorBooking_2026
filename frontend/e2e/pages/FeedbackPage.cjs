@@ -13,6 +13,10 @@ module.exports = {
     commentArea:       'textarea[name="comment"]',
     submitBtn:         'button[type="submit"]',
     successMsg:        '//div[contains(text(), "Feedback submitted successfully!")]',
+    editBtn:           '//button[contains(., "Chỉnh sửa")]',
+    cannotEdit24h:     'Không thể sửa',
+    editModalTitle:    '//h2[contains(text(), "Chỉnh Sửa Phản Hồi")]',
+    editSaveBtn:       '//div[contains(@class, "fixed")]//button[contains(., "Cập nhật")]',
   },
 
   doctor: {
@@ -63,6 +67,35 @@ module.exports = {
     }
     I.click(this.patient.submitBtn);
     I.waitForElement(this.patient.successMsg, 15);
+  },
+
+  navigateToMyFeedbacks() {
+    I.amOnPage('/patient/feedbacks');
+    I.waitInUrl('/patient/feedbacks', 10);
+  },
+
+  clickEditFeedback() {
+    I.waitForElement(this.patient.editBtn, 15);
+    I.click(this.patient.editBtn);
+    I.waitForElement(this.patient.editModalTitle, 10);
+  },
+
+  submitEditFeedback(rating, comment) {
+    // Chọn nút sao theo vị trí (1..5) — nút hiển thị ★ hoặc ☆ tùy rating hiện tại nên không thể lọc theo text="★"
+    const starXPath = `(//div[contains(@class, "fixed")]//button[contains(@class, "text-3xl")])[${rating}]`;
+    I.waitForElement(starXPath, 10);
+    I.click(starXPath);
+    I.clearField('//div[contains(@class, "fixed")]//textarea');
+    I.fillField('//div[contains(@class, "fixed")]//textarea', comment);
+    I.click(this.patient.editSaveBtn);
+  },
+
+  seeCannotEditWithin24h() {
+    I.waitForText('quá 24h', 10);
+  },
+
+  seeEditSuccessToast() {
+    I.waitForText('Cập nhật phản hồi thành công', 10);
   },
 
   // --- Doctor Actions ---
