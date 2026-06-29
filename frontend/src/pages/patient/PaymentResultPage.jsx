@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
 import PatientLayout from '../../components/patient/PatientLayout';
 import './PaymentResultPage.css';
 
@@ -57,10 +58,12 @@ const PaymentResultPage = () => {
       amount = null; // Will be loaded from API if needed
     }
     
+    const resultMessage = message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code));
+    
     setResult({
       success: isSuccess,
       code: code || vnp_ResponseCode || 'UNKNOWN',
-      message: message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code)),
+      message: resultMessage,
       transactionId: transactionId || vnp_TxnRef,
       transactionNo: vnp_TransactionNo,
       amount: amount,
@@ -68,6 +71,16 @@ const PaymentResultPage = () => {
       bankCode: vnp_BankCode,
       payDate: vnp_PayDate
     });
+
+    // Show toast notification based on payment result
+    if (!isSuccess) {
+      toast.error('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', {
+        position: 'top-right',
+        autoClose: 4000,
+        closeOnClick: true,
+        pauseOnHover: true,
+      });
+    }
 
     // Auto redirect after countdown
     if (isSuccess) {
@@ -122,6 +135,7 @@ const PaymentResultPage = () => {
 
   return (
     <PatientLayout>
+      <ToastContainer position="top-right" autoClose={4000} />
       <div className="payment-result-page">
         <div className="payment-result-container">
           {result.success ? (
