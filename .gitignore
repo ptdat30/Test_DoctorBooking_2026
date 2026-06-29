@@ -16,8 +16,12 @@ target/
 !**/src/test/**/target/
 *.md
 !.github/**/*.md
-# Blackbox BVA documentation must be versioned
+!README.md
+# Project & report documentation must be versioned
 !docs/blackbox/**/*.md
+!docs/Report/**/*.md
+!docs/project/**/*.md
+!docs/testing/**/*.md
 
 ### STS ###
 .apt_generated
