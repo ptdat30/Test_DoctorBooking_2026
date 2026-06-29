@@ -32,8 +32,8 @@ backgroundfe.mp4
 *.mov
 
 # Documentation
+docs/
 *.md
-DEVELOPMENT_PLAN.md
 
 # Logs
 *.log
