@@ -26,7 +26,7 @@ module.exports = {
    */
   async navigateTo() {
     I.amOnPage('/');
-    I.waitForURL('http://localhost:5173/', 10);
+    I.waitForElement('body', 10);
   },
 
   /**
@@ -46,7 +46,7 @@ module.exports = {
    */
   clickLogin() {
     I.click(this.nav.loginLink);
-    I.waitForURL('**/login', 5);
+    I.waitInUrl('/login', 10);
   },
 
   /**
@@ -54,7 +54,7 @@ module.exports = {
    */
   clickRegister() {
     I.click(this.nav.registerLink);
-    I.waitForURL('**/register', 5);
+    I.waitInUrl('/register', 10);
   },
 
   /**

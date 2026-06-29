@@ -7,6 +7,7 @@ import com.doctorbooking.backend.dto.response.AppointmentResponse;
 import com.doctorbooking.backend.model.*;
 import com.doctorbooking.backend.repository.*;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -47,6 +48,34 @@ class AppointmentServiceTest {
     private AppointmentService appointmentService;
 
     // ---- Helpers ----
+
+    // Các slot khám hợp lệ theo VALID_APPOINTMENT_SLOTS trong AppointmentService.
+    private static final List<String> STANDARD_SLOTS = List.of(
+            "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+            "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
+            "15:00", "15:30", "16:00", "16:30", "17:00"
+    );
+
+    // Slot chuẩn đầu tiên còn nằm trong tương lai của hôm nay (so với giờ chạy test).
+    // Trả về empty khi test chạy quá muộn (sau slot cuối) → dùng để skip an toàn,
+    // tránh test phụ thuộc đồng hồ thực bị fail vào buổi tối.
+    private static Optional<LocalTime> firstFutureSlotToday() {
+        LocalTime now = LocalTime.now();
+        return STANDARD_SLOTS.stream()
+                .map(LocalTime::parse)
+                .filter(slot -> slot.isAfter(now))
+                .findFirst();
+    }
+
+    // Slot chuẩn cuối cùng đã trôi qua so với giờ hiện tại của hôm nay.
+    // Trả về empty khi test chạy trước slot đầu tiên (sáng sớm) → skip an toàn.
+    private static Optional<LocalTime> lastPastSlotToday() {
+        LocalTime now = LocalTime.now();
+        return STANDARD_SLOTS.stream()
+                .map(LocalTime::parse)
+                .filter(slot -> slot.isBefore(now))
+                .reduce((first, second) -> second);
+    }
 
     private User buildUser(Long id, String username, String email, User.Role role) {
         User u = new User();
@@ -534,9 +563,14 @@ class AppointmentServiceTest {
             User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
             Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
 
+            // Chọn slot chuẩn đã trôi qua trong hôm nay; nếu chạy quá sớm thì skip.
+            Optional<LocalTime> pastSlot = lastPastSlotToday();
+            Assumptions.assumeTrue(pastSlot.isPresent(),
+                    "Chưa qua slot khám nào trong hôm nay (test chạy trước slot đầu tiên)");
+
             CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
             req.setAppointmentDate(LocalDate.now());
-            req.setAppointmentTime(LocalTime.of(8, 0)); // Slot hợp lệ nhưng đã qua so với thời điểm hiện tại
+            req.setAppointmentTime(pastSlot.get());
 
             when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
             when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
@@ -556,9 +590,14 @@ class AppointmentServiceTest {
             User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
             Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
 
+            // Chọn slot chuẩn còn ở tương lai trong hôm nay; nếu chạy quá muộn thì skip.
+            Optional<LocalTime> futureSlot = firstFutureSlotToday();
+            Assumptions.assumeTrue(futureSlot.isPresent(),
+                    "Không còn slot khám tương lai trong hôm nay (test chạy sau slot cuối)");
+
             CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
             req.setAppointmentDate(LocalDate.now());
-            req.setAppointmentTime(LocalTime.of(16, 0)); // Slot hợp lệ và nằm trong tương lai so với thời điểm hiện tại
+            req.setAppointmentTime(futureSlot.get());
 
             when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
             when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
@@ -821,9 +860,14 @@ class AppointmentServiceTest {
             apt.setAppointmentDate(LocalDate.now().plusDays(1));
             apt.setAppointmentTime(LocalTime.of(10, 0));
 
+            // Chọn slot chuẩn đã trôi qua trong hôm nay; tránh now.minusMinutes() wrap qua nửa đêm.
+            Optional<LocalTime> pastSlot = lastPastSlotToday();
+            Assumptions.assumeTrue(pastSlot.isPresent(),
+                    "Chưa qua slot khám nào trong hôm nay (test chạy trước slot đầu tiên)");
+
             UpdateAppointmentRequest req = new UpdateAppointmentRequest();
             req.setAppointmentDate(LocalDate.now());
-            req.setAppointmentTime(LocalTime.now().minusMinutes(30)); // Giờ đã qua
+            req.setAppointmentTime(pastSlot.get());
 
             when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
 
@@ -845,9 +889,15 @@ class AppointmentServiceTest {
             apt.setAppointmentDate(LocalDate.now().plusDays(1));
             apt.setAppointmentTime(LocalTime.of(10, 0));
 
+            // Chọn slot chuẩn còn ở tương lai trong hôm nay; tránh LocalTime.now().plusHours()
+            // bị "wrap" qua nửa đêm khi chạy buổi tối. Nếu quá muộn thì skip.
+            Optional<LocalTime> futureSlot = firstFutureSlotToday();
+            Assumptions.assumeTrue(futureSlot.isPresent(),
+                    "Không còn slot khám tương lai trong hôm nay (test chạy sau slot cuối)");
+
             UpdateAppointmentRequest req = new UpdateAppointmentRequest();
             req.setAppointmentDate(LocalDate.now());
-            req.setAppointmentTime(LocalTime.now().plusHours(2)); // Giờ trong tương lai
+            req.setAppointmentTime(futureSlot.get());
 
             when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
             when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

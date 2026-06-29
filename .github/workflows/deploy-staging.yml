@@ -14,6 +14,11 @@ name: Deploy Staging
 on:
   push:
     branches: [staging]
+    paths-ignore:
+      - 'docs/**'
+      - '*.xlsx'
+      - '*.png'
+      - '*.dtd'
 
 env:
   STAGING_BASE_URL: ${{ secrets.STAGING_URL }}
@@ -68,7 +73,7 @@ jobs:
       - name: Install Newman
         run: npm install -g newman
 
-      - name: Run Smoke Test (Setup + E2E)
+      - name: Run Stateless Smoke Test
         run: |
           cd postman/test_doctor_booking_2026
 
@@ -83,19 +88,12 @@ jobs:
             fs.writeFileSync('/tmp/staging-env.json', JSON.stringify(env,null,2));
           "
 
-          echo "Running 00_Setup..."
+          # Staging may not contain deterministic seed accounts, so deploy smoke
+          # must stay stateless and avoid login-dependent folders.
+          echo "Running 01_Public..."
           newman run test_doctor_booking_2026.postman_collection.json \
             -e /tmp/staging-env.json \
-            --folder "00_Setup" \
-            --timeout-request 15000 \
-            --export-environment /tmp/staging-env.json \
-            --reporters cli
-
-          echo ""
-          echo "Running 22_E2E_Flows..."
-          newman run test_doctor_booking_2026.postman_collection.json \
-            -e /tmp/staging-env.json \
-            --folder "22_E2E_Flows" \
+            --folder "01_Public" \
             --timeout-request 15000 \
             --export-environment /tmp/staging-env.json \
             --reporters cli

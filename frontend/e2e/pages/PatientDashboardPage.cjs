@@ -36,8 +36,7 @@ module.exports = {
    * Đợi dashboard load hoàn toàn sau khi login
    */
   waitForLoad() {
-    I.waitForNavigation({ timeout: 15000 });
-    I.seeInCurrentUrl('/patient/dashboard');
+    I.waitInUrl('/patient/dashboard', 15);
     // Đợi sidebar xuất hiện – dấu hiệu app đã render xong
     I.waitForElement(this.layout.sidebar, 10);
   },

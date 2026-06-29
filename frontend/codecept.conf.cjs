@@ -4,13 +4,13 @@ exports.config = {
   output: './e2e/output',
   helpers: {
     Playwright: {
-      url: 'http://localhost:5173',
+      url: process.env.TEST_BASE_URL || 'http://localhost:5173',
       show: false,
       browser: 'chromium'
     },
     ApiHelper: {
       require: './e2e/helpers/ApiHelper.cjs',
-      apiBaseUrl: 'http://localhost:8080/api'
+      apiBaseUrl: process.env.TEST_API_URL || 'http://localhost:8080/api'
     }
   },
   include: {
