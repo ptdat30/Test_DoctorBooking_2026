@@ -119,6 +119,70 @@ Scenario('TC-WALLET-01: Bệnh nhân nạp tiền vào ví -> chuyển hướng 
 
   // Xem tab lịch sử và xác nhận giao dịch mới được ghi nhận
   WalletPage.viewTransactionsTab();
+  I.waitForElement(WalletPage.transactionItem, 10);
   I.see('+500.000 VNĐ', '.transactions-list');
   I.see('Nạp tiền vào ví', '.transactions-list');
+}).tag('@wallet').tag('@patient');
+
+Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùng -> Hiển thị thông báo lỗi', async ({ I, WalletPage }) => {
+  let mockBalance = 200000;
+
+  await I.usePlaywrightTo('mock wallet stateful API for failed scenario', async ({ page }) => {
+    await page.route('**/api/patient/wallet', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          balance: mockBalance,
+          loyaltyPoints: 200,
+          loyaltyTier: 'BRONZE'
+        })
+      });
+    });
+
+    await page.route(url => url.pathname.includes('/api/patient/wallet/transactions') || url.pathname.includes('/api/patient/transactions'), route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          transactions: [],
+          total: 0
+        })
+      });
+    });
+
+    await page.route('**/api/patient/wallet/top-up', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          paymentUrl: 'http://localhost:5173/patient/wallet/payment/result?vnp_ResponseCode=24&vnp_Amount=50000000&vnp_TransactionNo=12345678&vnp_TxnRef=TX-MOCK-CANCEL-123&vnp_OrderInfo=Nap+tien+vao+vi&vnp_BankCode=NCB&vnp_PayDate=20260626213000'
+        })
+      });
+    });
+  });
+
+  WalletPage.navigateTo();
+
+  const initialBalance = await WalletPage.getBalance();
+  assert.strictEqual(initialBalance, 200000);
+
+  WalletPage.openTopUpModal();
+  WalletPage.selectQuickAmount500k();
+  WalletPage.selectPaymentMethod('VNPAY');
+  WalletPage.submitTopUp();
+
+  I.waitInUrl('/patient/wallet/payment/result', 15);
+
+  WalletPage.seePaymentFailure();
+  WalletPage.seePaymentFailureToast();
+
+  WalletPage.clickBackToWallet();
+
+  const finalBalance = await WalletPage.getBalance();
+  assert.strictEqual(finalBalance, 200000);
+
+  WalletPage.viewTransactionsTab();
+  WalletPage.seeEmptyTransactions();
+  I.dontSee('Nạp tiền vào ví', '.transactions-list');
 }).tag('@wallet').tag('@patient');
