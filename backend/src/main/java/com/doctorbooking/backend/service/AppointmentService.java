@@ -30,6 +30,13 @@ import java.util.stream.Collectors;
 public class AppointmentService {
 
     private static final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
+
+    /** 17 khung giờ khám chuẩn trong ngày (dùng cho available slots + validation khi đặt lịch). */
+    static final List<String> ALLOWED_TIME_SLOTS = List.of(
+            "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+            "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
+            "15:00", "15:30", "16:00", "16:30", "17:00"
+    );
     
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
@@ -63,12 +70,7 @@ public class AppointmentService {
      * CHỈ tính các appointments PENDING hoặc CONFIRMED (không tính CANCELLED và COMPLETED)
      */
     public List<String> getAvailableTimeSlots(Long doctorId, LocalDate date) {
-        // Danh sách tất cả time slots trong ngày
-        List<String> allSlots = List.of(
-            "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-            "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
-            "15:00", "15:30", "16:00", "16:30", "17:00"
-        );
+        List<String> allSlots = ALLOWED_TIME_SLOTS;
 
         // Lấy các appointments của bác sĩ trong ngày
         List<Appointment> appointments = appointmentRepository.findByDoctorAndDate(doctorId, date);
@@ -114,6 +116,8 @@ public class AppointmentService {
         if (doctor.getStatus() != Doctor.DoctorStatus.ACTIVE) {
             throw new RuntimeException("Doctor is not active");
         }
+
+        validateTimeSlot(request.getAppointmentTime());
 
         // Check if appointment slot is already taken
         // CHỈ check các appointment PENDING hoặc CONFIRMED (không tính CANCELLED và COMPLETED)
@@ -769,6 +773,22 @@ public class AppointmentService {
                 logger.error("Error processing refund for appointment: {}", appointment.getId(), e);
                 throw new RuntimeException("Failed to process refund: " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Chỉ chấp nhận giờ khám thuộc 17 slot chuẩn (APT-B5/B8).
+     */
+    private void validateTimeSlot(LocalTime appointmentTime) {
+        if (appointmentTime == null) {
+            throw new RuntimeException("Appointment time is required");
+        }
+        String slot = appointmentTime.toString();
+        if (slot.length() >= 5) {
+            slot = slot.substring(0, 5);
+        }
+        if (!ALLOWED_TIME_SLOTS.contains(slot)) {
+            throw new RuntimeException("Invalid appointment time slot. Must be one of the standard time slots.");
         }
     }
 }
