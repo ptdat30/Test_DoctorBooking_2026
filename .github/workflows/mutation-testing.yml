@@ -1,0 +1,90 @@
+# .github/workflows/mutation-testing.yml
+# ══════════════════════════════════════════════════════════════
+# Mutation Testing (PiTest) — chạy theo lịch, KHÔNG chặn merge PR.
+#
+# Mutation testing rất nặng (chạy lại bộ test nhiều lần) nên không
+# phù hợp để chạy trên mỗi PR. Tách riêng:
+#   - Lịch: 02:00 UTC Thứ Hai hằng tuần
+#   - Thủ công: workflow_dispatch khi cần đánh giá chất lượng test
+# ══════════════════════════════════════════════════════════════
+
+name: Mutation Testing (PiTest)
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'   # 02:00 UTC mỗi Thứ Hai
+  workflow_dispatch:
+
+env:
+  DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
+  DB_USERNAME: root
+  DB_PASSWORD: root
+  JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
+  JWT_EXPIRATION: '86400000'
+  JWT_REFRESH_EXPIRATION: '604800000'
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: '587'
+  SMTP_USERNAME: ci-test@example.com
+  SMTP_PASSWORD: ci-test-password
+  GROQ_API_KEY: ci-test-key
+  VNPAY_TMN_CODE: TESTTMN
+  VNPAY_HASH_SECRET: TESTHASH
+  VNPAY_URL: http://localhost
+  VNPAY_RETURN_URL: http://localhost/callback
+  VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
+  CORS_ALLOWED_ORIGINS: '*'
+  FRONTEND_URL: http://localhost:5173
+  EMAIL_FROM: noreply@doctorbooking.com
+  SKIP_AI_TESTS: 'true'
+  SEED_TEST_DATA: 'true'
+
+jobs:
+  pitest:
+    name: "PiTest: Mutation Coverage"
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: doctor_booking
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run PiTest (Mutation Coverage)
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+
+          echo "Waiting for MySQL to be ready..."
+          for i in $(seq 1 60); do
+            if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
+              mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
+              break
+            fi
+            sleep 2
+          done
+
+          ./mvnw test-compile pitest:mutationCoverage -B --no-transfer-progress
+
+      - name: Upload PiTest Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitest-reports
+          path: backend/target/pit-reports/
+          retention-days: 14

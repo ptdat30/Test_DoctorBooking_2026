@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [staging, main]
 
+# Hủy các lần chạy cũ trên cùng một nhánh/PR để tiết kiệm runner
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
   DB_USERNAME: root
@@ -55,9 +60,9 @@ jobs:
               - 'postman/**'
               - '.github/workflows/ci.yml'
 
-  # ── Job 1: Backend Build & Unit Test ─────────────────────────
+  # ── Job 1: Backend Build, Test & Coverage ────────────────────
   backend-build:
-    name: "Backend: Build & Unit Test"
+    name: "Backend: Build, Test & Coverage"
     runs-on: ubuntu-latest
     needs: filter
     if: ${{ needs.filter.outputs.backend == 'true' || needs.filter.outputs.frontend == 'true' || needs.filter.outputs.postman == 'true' }}
@@ -84,11 +89,11 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build + Unit Test
+      - name: Build + Unit/Integration Test (JaCoCo)
         working-directory: backend
         run: |
           chmod +x mvnw
-          
+
           echo "Waiting for MySQL to be ready..."
           for i in $(seq 1 60); do
             if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
@@ -99,12 +104,8 @@ jobs:
             echo "Waiting for MySQL... (attempt $i/60)"
             sleep 2
           done
-          
-          ./mvnw clean verify -B --no-transfer-progress
 
-      - name: Run PiTest (Mutation Testing)
-        working-directory: backend
-        run: ./mvnw pitest:mutationCoverage -B --no-transfer-progress
+          ./mvnw clean verify -B --no-transfer-progress
 
       - name: Upload Test Results
         if: always()
@@ -112,14 +113,6 @@ jobs:
         with:
           name: backend-test-results
           path: backend/target/surefire-reports/
-          retention-days: 7
-
-      - name: Upload PiTest Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pitest-reports
-          path: backend/target/pit-reports/
           retention-days: 7
 
       - name: Upload Backend Build Artifacts
@@ -188,7 +181,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  # ── Job 4: Integration Test — Newman API Tests ───────────────
+  # ── Job 4: API Integration — Newman ──────────────────────────
   integration-test:
     name: "Integration: Newman API Tests"
     runs-on: ubuntu-latest
@@ -331,7 +324,9 @@ jobs:
         if: always()
         run: kill $(cat backend.pid) 2>/dev/null || true
 
-  # ── Job 5: E2E Frontend Test — CodeceptJS + Playwright ──────────────
+  # ── Job 5: E2E — CodeceptJS + Playwright ─────────────────────
+  # PR: chỉ chạy @smoke (phản hồi nhanh). Push staging/main: chạy full suite.
+  # Tái dùng JAR từ backend-build (không biên dịch lại backend).
   e2e-test:
     name: "E2E: CodeceptJS + Playwright"
     runs-on: ubuntu-latest
@@ -358,7 +353,6 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -367,34 +361,16 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      # ── Khởi động Backend ──────────────────────────────────────────
-      - name: Start Backend (background)
-        working-directory: backend
-        env:
-          DB_URL: jdbc:mysql://127.0.0.1:3306/doctor_booking
-          DB_USERNAME: root
-          DB_PASSWORD: root
-          JWT_SECRET: ci-test-secret-key-minimum-256-bits-long-for-jwt-signing
-          JWT_EXPIRATION: '86400000'
-          JWT_REFRESH_EXPIRATION: '604800000'
-          SMTP_HOST: smtp.gmail.com
-          SMTP_PORT: '587'
-          SMTP_USERNAME: ci-test@example.com
-          SMTP_PASSWORD: ci-test-password
-          GROQ_API_KEY: ci-test-key
-          VNPAY_TMN_CODE: TESTTMN
-          VNPAY_HASH_SECRET: TESTHASH
-          VNPAY_URL: http://localhost
-          VNPAY_RETURN_URL: http://localhost/callback
-          VNPAY_APPOINTMENT_RETURN_URL: http://localhost/appointment-callback
-          CORS_ALLOWED_ORIGINS: '*'
-          FRONTEND_URL: http://localhost:4173
-          EMAIL_FROM: noreply@doctorbooking.com
-          SKIP_AI_TESTS: 'true'
-        run: |
-          chmod +x mvnw
+      - name: Download Backend JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build-artifacts
+          path: backend/target
 
-          # Chờ MySQL sẵn sàng
+      - name: Start Backend (background)
+        env:
+          FRONTEND_URL: http://localhost:4173
+        run: |
           for i in $(seq 1 60); do
             if mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT 1;" > /dev/null 2>&1; then
               mysql --protocol=tcp -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS doctor_booking;"
@@ -403,10 +379,9 @@ jobs:
             sleep 2
           done
 
-          ./mvnw spring-boot:run -DskipTests &
-          echo $! > ../backend.pid
+          java -jar backend/target/backend-0.0.1-SNAPSHOT.jar &
+          echo $! > backend.pid
 
-      # ── Build + Khởi động Frontend (Vite Preview) ─────────────────
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm ci --prefer-offline --no-audit --no-fund
@@ -423,25 +398,20 @@ jobs:
           npm run preview -- --port 4173 &
           echo $! > ../frontend.pid
 
-      # ── Cài Playwright Browsers ────────────────────────────────────
       - name: Install Playwright Browsers
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      # ── Chờ cả 2 server sẵn sàng với wait-on (smart wait) ─────────
-      - name: Wait for Servers (wait-on)
+      - name: Wait for Servers
         run: |
           npx wait-on \
             http://localhost:4173 \
-            http://localhost:8080/actuator/health \
+            http-get://localhost:8080/api/public/health \
             --timeout 120000 \
             --interval 2000 \
             --verbose
-        # wait-on thông minh: poll thực sự thay vì sleep cứng
-        # Timeout 2 phút là đủ cho Spring Boot cold start
 
-      # ── Chạy E2E Tests ────────────────────────────────────────────
-      - name: Run CodeceptJS E2E Tests
+      - name: Run E2E (smoke on PR, full on merge)
         working-directory: frontend
         env:
           TEST_BASE_URL: http://localhost:4173
@@ -449,34 +419,23 @@ jobs:
           TEST_ADMIN_USERNAME: admin
           TEST_ADMIN_PASSWORD: ${{ secrets.CI_TEST_ADMIN_PASSWORD || 'Admin@123' }}
           HEADLESS: 'true'
-        run: npm run e2e:headless
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Pull request → chạy E2E @smoke"
+            npm run e2e:smoke
+          else
+            echo "Push staging/main → chạy full E2E"
+            npm run e2e:headless
+          fi
 
-      # ── Upload Artifacts ────────────────────────────────────────────
-      - name: Upload Allure Results
-        if: always()  # Luôn upload kể cả khi test fail (để debug)
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-allure-results
-          path: frontend/e2e/output/allure-results/
-          retention-days: 14
-
-      - name: Upload Playwright Videos (on failure)
-        if: failure()  # Chỉ upload video khi có test fail
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-playwright-videos
-          path: frontend/e2e/output/video/
-          retention-days: 7
-
-      - name: Upload Playwright Traces (on failure)
+      - name: Upload E2E Artifacts (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-playwright-traces
-          path: frontend/e2e/output/trace/
+          name: e2e-artifacts
+          path: frontend/e2e/output/
           retention-days: 7
 
-      # ── Dọn dẹp ────────────────────────────────────────────────────
       - name: Stop Servers
         if: always()
         run: |
