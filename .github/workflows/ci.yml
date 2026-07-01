@@ -453,7 +453,7 @@ jobs:
           kill $(cat backend.pid) 2>/dev/null || true
           kill $(cat frontend.pid) 2>/dev/null || true
 
- # ── Job 6: Dependency Security Scan (Snyk) ───────────────────
+# ── Job 6: Dependency Security Scan (Snyk) ───────────────────
   security-scan:
     name: "Dependency Security Scan (Snyk)"
     runs-on: ubuntu-latest
@@ -478,14 +478,15 @@ jobs:
           cache: 'maven'
 
       # 3. Cấu hình Node.js để xử lý package.json
-      - name: Set up Node.js
+      # ĐÃ SỬA: Chuyển lên Node 22 và thêm đường dẫn file lock chính xác của frontend
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       # 4. Quét lỗ hổng Backend (Maven)
-      # Sử dụng working-directory trỏ vào thư mục backend chứa pom.xml
       - name: Scan Backend Dependencies (Maven)
         if: ${{ needs.filter.outputs.backend == 'true' }}
         working-directory: backend
@@ -494,7 +495,6 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       # 5. Quét lỗ hổng Frontend (npm)
-      # Sử dụng working-directory trỏ vào thư mục frontend chứa package.json
       - name: Scan Frontend Dependencies (npm)
         if: ${{ needs.filter.outputs.frontend == 'true' }}
         working-directory: frontend
