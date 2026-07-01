@@ -452,3 +452,46 @@ jobs:
         run: |
           kill $(cat backend.pid) 2>/dev/null || true
           kill $(cat frontend.pid) 2>/dev/null || true
+
+  # ── Job 6: Dependency Security Scan (Snyk) ─────────────────
+    security-scan:
+    name: Dependency Security Scan (Snyk)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. Khởi tạo Snyk CLI chính thức
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # 2. Cấu hình Java 21 (Khớp chính xác với cấu hình pom.xml)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # 3. Cấu hình Node.js để xử lý package.json
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Phiên bản LTS khuyến nghị cho React 19 / Vite
+          cache: 'npm'
+
+      # 4. Quét lỗ hổng Backend (Maven)
+      # Chỉ chặn build (fail) nếu có lỗ hổng mức độ HIGH hoặc CRITICAL (CVSS >= 7.0)
+      - name: Scan Backend Dependencies (Maven)
+        run: snyk test --file=pom.xml --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # 5. Quét lỗ hổng Frontend (npm)
+      # Chỉ chặn build (fail) nếu có lỗ hổng mức độ HIGH hoặc CRITICAL (CVSS >= 7.0)
+      - name: Scan Frontend Dependencies (npm)
+        run: snyk test --file=package.json --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
