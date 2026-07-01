@@ -453,10 +453,12 @@ jobs:
           kill $(cat backend.pid) 2>/dev/null || true
           kill $(cat frontend.pid) 2>/dev/null || true
 
-  # ── Job 6: Dependency Security Scan (Snyk) ─────────────────
-    security-scan:
-    name: Dependency Security Scan (Snyk)
+ # ── Job 6: Dependency Security Scan (Snyk) ───────────────────
+  security-scan:
+    name: "Dependency Security Scan (Snyk)"
     runs-on: ubuntu-latest
+    needs: filter
+    if: ${{ needs.filter.outputs.backend == 'true' || needs.filter.outputs.frontend == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -479,19 +481,23 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Phiên bản LTS khuyến nghị cho React 19 / Vite
+          node-version: '20'
           cache: 'npm'
 
       # 4. Quét lỗ hổng Backend (Maven)
-      # Chỉ chặn build (fail) nếu có lỗ hổng mức độ HIGH hoặc CRITICAL (CVSS >= 7.0)
+      # Sử dụng working-directory trỏ vào thư mục backend chứa pom.xml
       - name: Scan Backend Dependencies (Maven)
-        run: snyk test --file=pom.xml --severity-threshold=high
+        if: ${{ needs.filter.outputs.backend == 'true' }}
+        working-directory: backend
+        run: snyk test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       # 5. Quét lỗ hổng Frontend (npm)
-      # Chỉ chặn build (fail) nếu có lỗ hổng mức độ HIGH hoặc CRITICAL (CVSS >= 7.0)
+      # Sử dụng working-directory trỏ vào thư mục frontend chứa package.json
       - name: Scan Frontend Dependencies (npm)
-        run: snyk test --file=package.json --severity-threshold=high
+        if: ${{ needs.filter.outputs.frontend == 'true' }}
+        working-directory: frontend
+        run: snyk test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
