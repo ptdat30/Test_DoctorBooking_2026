@@ -495,6 +495,11 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      - name: Install Frontend Dependencies
+        if: ${{ needs.filter.outputs.frontend == 'true' }}
+        working-directory: frontend
+        run: npm ci --prefer-offline --no-audit --no-fund
+
       # 5. Quét lỗ hổng Frontend (Chỉ định rõ ĐÚNG file package.json)
       - name: Scan Frontend Dependencies (npm)
         if: ${{ needs.filter.outputs.frontend == 'true' }}
