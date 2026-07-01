@@ -28,14 +28,28 @@ class ApiHelper extends Helper {
   async _getAdminToken() {
     if (this._adminToken) return this._adminToken;
 
-    const resp = await axios.post(`${this.apiBaseUrl}/auth/login`, {
-      username: process.env.TEST_ADMIN_USERNAME || 'admin',
-      password: process.env.TEST_ADMIN_PASSWORD || 'admin123',
-    });
+    const username = process.env.TEST_ADMIN_USERNAME || 'admin';
+    const passwordCandidates = [
+      process.env.TEST_ADMIN_PASSWORD,
+      'admin123',
+      'Admin@123',
+    ].filter(Boolean);
 
-    // Cấu trúc response dựa trên AuthController của project
-    this._adminToken = resp.data?.token || resp.data?.accessToken;
-    return this._adminToken;
+    let lastError;
+    for (const password of passwordCandidates) {
+      try {
+        const resp = await axios.post(`${this.apiBaseUrl}/auth/login`, {
+          username,
+          password,
+        });
+        this._adminToken = resp.data?.token || resp.data?.accessToken;
+        if (this._adminToken) return this._adminToken;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    throw lastError || new Error('Unable to obtain admin token for E2E API helper');
   }
 
   /**

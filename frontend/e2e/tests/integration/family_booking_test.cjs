@@ -4,6 +4,7 @@
 'use strict';
 
 const factory = require('../../data/factory.cjs');
+const { resolveDoctor1Id } = require('../../helpers/doctorResolver.cjs');
 
 Feature('Tích hợp Đặt lịch cho người nhà (Family Profile Booking)');
 
@@ -24,6 +25,8 @@ After(async ({ I }) => {
 // ─────────────────────────────────────────────────────────────────────────
 
 Scenario('TC-INT-04: Thêm người nhà vào Hồ sơ -> Đặt lịch khám cho người nhà thành công', async ({ I, LoginPage, BookingPage }) => {
+  await I.acceptBrowserDialogs();
+
   // Step 1: Đăng nhập Patient
   await LoginPage.login(testPatient.username, testPatient.password);
   LoginPage.seeSuccessRedirect('patient');
@@ -55,15 +58,13 @@ Scenario('TC-INT-04: Thêm người nhà vào Hồ sơ -> Đặt lịch khám ch
 
   I.click('button.btn-submit');
 
-  // Chờ modal đóng và card thành viên xuất hiện
-  I.waitForElement('//h3[contains(@class, "member-name")][contains(., "' + familyMemberName + '")]', 15);
+  // Chờ modal đóng và card thành viên xuất hiện (alert success được auto-accept)
+  I.waitForInvisible('.modal-content', 20);
+  I.waitForElement('//h3[contains(@class, "member-name")][contains(., "' + familyMemberName + '")]', 20);
   I.see(familyMemberName, '.members-grid');
 
   // Step 3: Đặt lịch khám cho người nhà
-  // Lấy doctor ID của doctor1
-  const doctors = await I.getDoctors();
-  const targetDoctor = doctors.find(d => d.username === 'doctor1');
-  const doctorId = targetDoctor ? targetDoctor.id : 36;
+  const doctorId = await resolveDoctor1Id(I);
 
   await BookingPage.navigateTo();
 

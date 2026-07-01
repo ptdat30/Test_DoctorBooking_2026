@@ -2,6 +2,13 @@
 
 module.exports = function() {
   return actor({
-    // Define custom steps here, if any
+    /** Auto-accept window.alert / window.confirm (FamilyProfile, Admin flows). */
+    async acceptBrowserDialogs() {
+      await this.usePlaywrightTo('accept browser dialogs', async ({ page }) => {
+        page.on('dialog', async (dialog) => {
+          await dialog.accept();
+        });
+      });
+    },
   });
 }

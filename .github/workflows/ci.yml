@@ -428,7 +428,7 @@ jobs:
           TEST_BASE_URL: http://localhost:4173
           TEST_API_URL: http://localhost:8080/api
           TEST_ADMIN_USERNAME: admin
-          TEST_ADMIN_PASSWORD: ${{ secrets.CI_TEST_ADMIN_PASSWORD || 'Admin@123' }}
+          TEST_ADMIN_PASSWORD: admin123
           HEADLESS: 'true'
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.ref }}" = "refs/heads/staging" ]; then
