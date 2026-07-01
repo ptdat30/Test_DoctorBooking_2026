@@ -2,14 +2,14 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [staging, main]
+    branches: [staging, main, fix/SCRUM-193]
     paths-ignore:
       - 'docs/**'
       - '*.xlsx'
       - '*.png'
       - '*.dtd'
   pull_request:
-    branches: [staging, main]
+    branches: [staging, main, fix/SCRUM-193]
     paths-ignore:
       - 'docs/**'
       - '*.xlsx'
