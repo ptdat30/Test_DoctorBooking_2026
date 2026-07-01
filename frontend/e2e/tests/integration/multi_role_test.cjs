@@ -4,6 +4,7 @@
 'use strict';
 
 const factory = require('../../data/factory.cjs');
+const { resolveDoctor1Id } = require('../../helpers/doctorResolver.cjs');
 
 Feature('Tích hợp Đặt lịch & Khám bệnh (Patient <-> Doctor)');
 
@@ -24,9 +25,7 @@ After(async ({ I }) => {
 
 Scenario('TC-INT-01: Bệnh nhân đặt lịch khám -> Bác sĩ duyệt thành công', async ({ I, LoginPage, BookingPage, DoctorPage }) => {
   // Lấy doctor ID của doctor1 để book đúng bác sĩ
-  const doctors = await I.getDoctors();
-  const targetDoctor = doctors.find(d => d.username === 'doctor1');
-  const doctorId = targetDoctor ? targetDoctor.id : 36;
+  const doctorId = await resolveDoctor1Id(I);
 
   // Step 1: Bệnh nhân đặt lịch
   await LoginPage.login(testPatient.username, testPatient.password);
@@ -78,9 +77,7 @@ Scenario('TC-INT-01: Bệnh nhân đặt lịch khám -> Bác sĩ duyệt thành
 
 Scenario('TC-INT-02: Bệnh nhân đặt lịch khám -> Bác sĩ từ chối (Hủy lịch)', async ({ I, LoginPage, BookingPage, DoctorPage }) => {
   // Lấy doctor ID của doctor1 để book đúng bác sĩ
-  const doctors = await I.getDoctors();
-  const targetDoctor = doctors.find(d => d.username === 'doctor1');
-  const doctorId = targetDoctor ? targetDoctor.id : 36;
+  const doctorId = await resolveDoctor1Id(I);
 
   // Step 1: Bệnh nhân đặt lịch
   await LoginPage.login(testPatient.username, testPatient.password);
@@ -130,9 +127,7 @@ Scenario('TC-INT-02: Bệnh nhân đặt lịch khám -> Bác sĩ từ chối (H
 
 Scenario('TC-INT-03: Bác sĩ khám bệnh & kê đơn -> Bệnh nhân xem bệnh án', async ({ I, LoginPage, BookingPage, DoctorPage }) => {
   // Lấy doctor ID của doctor1 để book đúng bác sĩ
-  const doctors = await I.getDoctors();
-  const targetDoctor = doctors.find(d => d.username === 'doctor1');
-  const doctorId = targetDoctor ? targetDoctor.id : 36;
+  const doctorId = await resolveDoctor1Id(I);
 
   // Step 1: Bệnh nhân đặt lịch
   await LoginPage.login(testPatient.username, testPatient.password);

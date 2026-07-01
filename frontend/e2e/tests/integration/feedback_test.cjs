@@ -4,6 +4,7 @@
 'use strict';
 
 const factory = require('../../data/factory.cjs');
+const { resolveDoctor1Id } = require('../../helpers/doctorResolver.cjs');
 
 Feature('Tích hợp Đánh giá & Phản hồi (Feedback System)');
 
@@ -22,9 +23,7 @@ After(async ({ I }) => {
 
 Scenario('TC-FEEDBACK-ALL: Luồng gửi đánh giá -> Bác sĩ phản hồi -> Admin ẩn đánh giá', async ({ I, LoginPage, BookingPage, DoctorPage, FeedbackPage, AdminPage }) => {
   // --- BƯỚC 1: Bệnh nhân đặt lịch khám ---
-  const doctors = await I.getDoctors();
-  const targetDoctor = doctors.find(d => d.username === 'doctor1');
-  const doctorId = targetDoctor ? targetDoctor.id : 36;
+  const doctorId = await resolveDoctor1Id(I);
 
   await LoginPage.login(testPatient.username, testPatient.password);
   LoginPage.seeSuccessRedirect('patient');

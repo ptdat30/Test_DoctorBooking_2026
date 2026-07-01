@@ -4,6 +4,7 @@
 'use strict';
 
 const factory = require('../../data/factory.cjs');
+const { searchTermForDoctors } = require('../../helpers/doctorResolver.cjs');
 
 Feature('Tìm kiếm Bác sĩ (Doctor Search)');
 
@@ -41,8 +42,8 @@ Scenario('TC-SEARCH-02: Tìm kiếm bác sĩ → hiển thị danh sách kết q
   // Arrange: lấy danh sách bác sĩ thật từ API để biết tên tìm
   const doctors = await I.getDoctors();
   const searchName = doctors.length > 0
-    ? doctors[0].fullName?.split(' ').pop()  // Lấy họ bác sĩ đầu tiên
-    : factory.createSearchQuery();
+    ? searchTermForDoctors(doctors)
+    : 'One';
 
   await DoctorSearchPage.navigateTo();
 
