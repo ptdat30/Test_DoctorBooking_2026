@@ -2,14 +2,14 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [staging, main, fix/SCRUM-193]
+    branches: [staging, main]
     paths-ignore:
       - 'docs/**'
       - '*.xlsx'
       - '*.png'
       - '*.dtd'
   pull_request:
-    branches: [staging, main, fix/SCRUM-193]
+    branches: [staging, main]
     paths-ignore:
       - 'docs/**'
       - '*.xlsx'
@@ -463,13 +463,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Khởi tạo Snyk CLI chính thức
       - name: Setup Snyk CLI
         uses: snyk/actions/setup@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # 2. Cấu hình Java 21 (Khớp chính xác với cấu hình pom.xml)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -477,8 +475,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Cấu hình Node.js để xử lý package.json
-      # ĐÃ SỬA: Chuyển lên Node 22 và thêm đường dẫn file lock chính xác của frontend
+
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -486,11 +483,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-# 4. Quét lỗ hổng Backend (Chỉ định rõ ĐÚNG file pom.xml)
       - name: Scan Backend Dependencies (Maven)
         if: ${{ needs.filter.outputs.backend == 'true' }}
         working-directory: backend
-        continue-on-error: true # <--- THÊM DÒNG NÀY
+        continue-on-error: true
         run: snyk test --file=pom.xml --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -500,11 +496,10 @@ jobs:
         working-directory: frontend
         run: npm ci --prefer-offline --no-audit --no-fund
 
-      # 5. Quét lỗ hổng Frontend (Chỉ định rõ ĐÚNG file package.json)
       - name: Scan Frontend Dependencies (npm)
         if: ${{ needs.filter.outputs.frontend == 'true' }}
         working-directory: frontend
-        continue-on-error: true # <--- THÊM DÒNG NÀY
+        continue-on-error: true
         run: snyk test --file=package.json --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
