@@ -1,5 +1,7 @@
 package com.doctorbooking.backend.service;
 
+import com.doctorbooking.backend.exception.BadRequestException;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
 import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
@@ -26,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -102,18 +105,18 @@ public class AppointmentService {
 
     public AppointmentResponse getAppointmentById(Long id) {
         Appointment appointment = appointmentRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
         return AppointmentResponse.fromEntity(appointment);
     }
 
     private void validateAppointmentTimeSlot(LocalTime appointmentTime) {
         if (appointmentTime == null) {
-            throw new RuntimeException("Appointment time is required");
+            throw new BadRequestException("Appointment time is required");
         }
 
         String normalizedTime = appointmentTime.format(TIME_FORMATTER);
         if (!VALID_APPOINTMENT_SLOTS.contains(normalizedTime)) {
-            throw new RuntimeException("Invalid appointment time slot: " + normalizedTime);
+            throw new ResourceNotFoundException("Invalid appointment time slot: " + normalizedTime);
         }
     }
 
@@ -121,14 +124,14 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse createAppointment(Long patientId, CreateAppointmentRequest request) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + patientId));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
 
         Doctor doctor = doctorRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + request.getDoctorId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.getDoctorId()));
 
         // Check if doctor is active
         if (doctor.getStatus() != Doctor.DoctorStatus.ACTIVE) {
-            throw new RuntimeException("Doctor is not active");
+            throw new BadRequestException("Doctor is not active");
         }
 
         validateAppointmentTimeSlot(request.getAppointmentTime());
@@ -148,7 +151,7 @@ public class AppointmentService {
                 );
 
         if (slotTaken) {
-            throw new RuntimeException("Appointment slot is already taken");
+            throw new BadRequestException("Appointment slot is already taken");
         }
         
         // Nếu có appointment cũ ở slot này đã CANCELLED hoặc COMPLETED, DELETE nó để tránh duplicate constraint
@@ -170,13 +173,13 @@ public class AppointmentService {
 
         // Check if date is not in the past
         if (request.getAppointmentDate().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Cannot book appointment in the past");
+            throw new BadRequestException("Cannot book appointment in the past");
         }
 
         // Check if booking time slot has already passed today
         if (request.getAppointmentDate().equals(LocalDate.now()) &&
                 request.getAppointmentTime().isBefore(LocalTime.now())) {
-            throw new RuntimeException("Cannot book appointment time slot that has already passed today");
+            throw new BadRequestException("Cannot book appointment time slot that has already passed today");
         }
 
         // Get consultation fee
@@ -212,7 +215,7 @@ public class AppointmentService {
                 if (familyMember == null) {
                     logger.warn("Family member not found or does not belong to patient: familyMemberId={}, patientId={}", 
                                request.getFamilyMemberId(), patientId);
-                    throw new RuntimeException("Family member not found or does not belong to you");
+                    throw new ResourceNotFoundException("Family member not found or does not belong to you");
                 }
                 
                 // Tạo FamilyAppointment record
@@ -227,7 +230,7 @@ public class AppointmentService {
                            appointment.getId(), familyMember.getId(), patientId);
             } catch (Exception e) {
                 logger.error("Error creating family appointment: {}", e.getMessage(), e);
-                throw new RuntimeException("Failed to create family appointment: " + e.getMessage());
+                throw new BadRequestException("Failed to create family appointment: " + e.getMessage());
             }
         }
         
@@ -323,7 +326,7 @@ public class AppointmentService {
     @Transactional
     public void updatePaymentStatus(Long appointmentId, Appointment.PaymentStatus paymentStatus) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
         appointment.setPaymentStatus(paymentStatus);
         appointmentRepository.save(appointment);
     }
@@ -334,7 +337,7 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointmentDueToPaymentFailure(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
         appointment.setStatus(Appointment.AppointmentStatus.CANCELLED);
         appointment.setPaymentStatus(Appointment.PaymentStatus.UNPAID);
         appointmentRepository.save(appointment);
@@ -355,20 +358,20 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointment(Long appointmentId, Long patientId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Verify the appointment belongs to this patient
         if (!appointment.getPatient().getId().equals(patientId)) {
-            throw new RuntimeException("Appointment does not belong to this patient");
+            throw new BadRequestException("Appointment does not belong to this patient");
         }
 
         // Check if appointment can be cancelled
         if (appointment.getStatus() == Appointment.AppointmentStatus.COMPLETED) {
-            throw new RuntimeException("Cannot cancel a completed appointment");
+            throw new BadRequestException("Cannot cancel a completed appointment");
         }
 
         if (appointment.getStatus() == Appointment.AppointmentStatus.CANCELLED) {
-            throw new RuntimeException("Appointment is already cancelled");
+            throw new BadRequestException("Appointment is already cancelled");
         }
 
         // Xử lý hoàn tiền nếu đã thanh toán bằng WALLET
@@ -400,7 +403,7 @@ public class AppointmentService {
                 logger.info("Refund processed successfully for appointment: {}", appointmentId);
             } catch (Exception e) {
                 logger.error("Error processing refund for appointment: {}", appointmentId, e);
-                throw new RuntimeException("Failed to process refund: " + e.getMessage());
+                throw new BadRequestException("Failed to process refund: " + e.getMessage());
             }
         }
 
@@ -414,16 +417,16 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse confirmAppointment(Long appointmentId, Long doctorId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Verify the appointment belongs to this doctor
         if (!appointment.getDoctor().getId().equals(doctorId)) {
-            throw new RuntimeException("Appointment does not belong to this doctor");
+            throw new BadRequestException("Appointment does not belong to this doctor");
         }
 
         // Check if appointment can be confirmed
         if (appointment.getStatus() != Appointment.AppointmentStatus.PENDING) {
-            throw new RuntimeException("Only PENDING appointments can be confirmed");
+            throw new BadRequestException("Only PENDING appointments can be confirmed");
         }
 
         appointment.setStatus(Appointment.AppointmentStatus.CONFIRMED);
@@ -445,11 +448,11 @@ public class AppointmentService {
     @Transactional
     public void completeAppointment(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Only CONFIRMED appointments can be completed
         if (appointment.getStatus() != Appointment.AppointmentStatus.CONFIRMED) {
-            throw new RuntimeException("Only CONFIRMED appointments can be completed");
+            throw new BadRequestException("Only CONFIRMED appointments can be completed");
         }
 
         appointment.setStatus(Appointment.AppointmentStatus.COMPLETED);
@@ -460,7 +463,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse updateAppointmentByAdmin(Long id, com.doctorbooking.backend.dto.request.UpdateAppointmentRequest request) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
 
         Appointment.AppointmentStatus oldStatus = appointment.getStatus();
         boolean statusChangedToConfirmed = false;
@@ -484,10 +487,10 @@ public class AppointmentService {
         LocalDate checkDate = appointment.getAppointmentDate();
         LocalTime checkTime = appointment.getAppointmentTime();
         if (checkDate.isBefore(LocalDate.now())) {
-            throw new RuntimeException("Cannot update appointment to a past date");
+            throw new BadRequestException("Cannot update appointment to a past date");
         }
         if (checkDate.equals(LocalDate.now()) && checkTime.isBefore(LocalTime.now())) {
-            throw new RuntimeException("Cannot update appointment to a time slot that has already passed today");
+            throw new BadRequestException("Cannot update appointment to a time slot that has already passed today");
         }
 
         if (request.getNotes() != null) {
@@ -513,18 +516,18 @@ public class AppointmentService {
     @Transactional
     public void deleteAppointment(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
         appointmentRepository.delete(appointment);
     }
 
     private void validateAppointmentTime(LocalTime appointmentTime) {
         if (appointmentTime == null) {
-            throw new RuntimeException("Appointment time is required");
+            throw new BadRequestException("Appointment time is required");
         }
 
         String formattedTime = appointmentTime.format(TIME_FORMATTER);
         if (!AVAILABLE_TIME_SLOT_SET.contains(formattedTime)) {
-            throw new RuntimeException("Invalid appointment time. Available slots are from 08:00 to 17:00 in 30-minute increments excluding lunch break.");
+            throw new BadRequestException("Invalid appointment time. Available slots are from 08:00 to 17:00 in 30-minute increments excluding lunch break.");
         }
     }
     
@@ -604,26 +607,26 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointmentByDoctor(Long appointmentId, Long doctorId, String cancellationReason) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Verify the appointment belongs to this doctor
         if (!appointment.getDoctor().getId().equals(doctorId)) {
-            throw new RuntimeException("Appointment does not belong to this doctor");
+            throw new BadRequestException("Appointment does not belong to this doctor");
         }
 
         // Check if appointment can be cancelled
         if (appointment.getStatus() == Appointment.AppointmentStatus.COMPLETED) {
-            throw new RuntimeException("Cannot cancel a completed appointment");
+            throw new BadRequestException("Cannot cancel a completed appointment");
         }
 
         if (appointment.getStatus() == Appointment.AppointmentStatus.CANCELLED) {
-            throw new RuntimeException("Appointment is already cancelled");
+            throw new BadRequestException("Appointment is already cancelled");
         }
 
         // Only allow cancelling PENDING or CONFIRMED appointments
         if (appointment.getStatus() != Appointment.AppointmentStatus.PENDING && 
             appointment.getStatus() != Appointment.AppointmentStatus.CONFIRMED) {
-            throw new RuntimeException("Can only cancel pending or confirmed appointments");
+            throw new BadRequestException("Can only cancel pending or confirmed appointments");
         }
 
         // Check 24 hours before appointment
@@ -635,7 +638,7 @@ public class AppointmentService {
         java.time.Duration duration = java.time.Duration.between(now, appointmentDateTime);
         
         if (duration.toHours() < 24) {
-            throw new RuntimeException("Cannot cancel appointment less than 24 hours before scheduled time");
+            throw new BadRequestException("Cannot cancel appointment less than 24 hours before scheduled time");
         }
 
         // Process refund if paid by WALLET
@@ -677,15 +680,15 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointmentByAdmin(Long appointmentId, String cancellationReason) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Check if appointment can be cancelled
         if (appointment.getStatus() == Appointment.AppointmentStatus.COMPLETED) {
-            throw new RuntimeException("Cannot cancel a completed appointment");
+            throw new BadRequestException("Cannot cancel a completed appointment");
         }
 
         if (appointment.getStatus() == Appointment.AppointmentStatus.CANCELLED) {
-            throw new RuntimeException("Appointment is already cancelled");
+            throw new BadRequestException("Appointment is already cancelled");
         }
 
         // Process refund if paid by WALLET
@@ -740,7 +743,7 @@ public class AppointmentService {
                     appointment.setPaymentStatus(Appointment.PaymentStatus.PAID);
                     return appointmentRepository.save(appointment);
                 } catch (Exception e) {
-                    throw new RuntimeException("Payment failed: " + e.getMessage());
+                    throw new BadRequestException("Payment failed: " + e.getMessage());
                 }
             } else {
                 appointment.setPaymentStatus(Appointment.PaymentStatus.PAID);
@@ -796,7 +799,7 @@ public class AppointmentService {
                 logger.info("Refund processed successfully for appointment: {}", appointment.getId());
             } catch (Exception e) {
                 logger.error("Error processing refund for appointment: {}", appointment.getId(), e);
-                throw new RuntimeException("Failed to process refund: " + e.getMessage());
+                throw new BadRequestException("Failed to process refund: " + e.getMessage());
             }
         }
     }
