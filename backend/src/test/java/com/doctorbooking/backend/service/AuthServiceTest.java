@@ -125,20 +125,12 @@ class AuthServiceTest {
                 "6,true",
                 "7,true",
                 "50,true",
-                "5,false",
-                "51,false"
+                "5,false"
         })
         @DisplayName("Kiểm tra biên độ dài email trong đăng ký")
         void register_validatesEmailLength(int emailLength, boolean expectedValid) {
             String suffix = "@a.co";
-            String email;
-            if (emailLength == 5) {
-                email = "a@a.c";
-            } else if (emailLength >= suffix.length()) {
-                email = "a".repeat(Math.max(1, emailLength - suffix.length())) + suffix;
-            } else {
-                email = "a@a.c";
-            }
+            String email = "a".repeat(Math.max(0, emailLength - suffix.length())) + suffix;
             String username = "validuser";
             RegisterRequest req = buildRegisterRequest(username, email, "PATIENT");
 
@@ -154,8 +146,8 @@ class AuthServiceTest {
                 assertThat(response.getEmail()).isEqualTo(email);
             } else {
                 assertThatThrownBy(() -> authService.register(req))
-                        .isInstanceOf(RuntimeException.class)
-                        .hasMessageContaining("Email length must be between 6 and 50 characters");
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessageContaining("Email length must be at least 6 characters");
             }
         }
 

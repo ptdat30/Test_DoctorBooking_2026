@@ -584,7 +584,7 @@ public class AppointmentService {
                 appointment.getAppointmentDate(),
                 appointment.getAppointmentTime(),
                 appointment.getId().toString(),
-                appointment.getPaymentMethod() != null ? appointment.getPaymentMethod().toString() : "Chưa xác định",
+                appointment.getPaymentMethod() != null ? appointment.getPaymentMethod() : "Chưa xác định",
                 appointment.getPaymentStatus() != null ? appointment.getPaymentStatus().toString() : "Chưa thanh toán",
                 appointment.getPrice() != null ? appointment.getPrice().toString() : "0",
                 appointment.getNotes() != null ? appointment.getNotes() : "",
