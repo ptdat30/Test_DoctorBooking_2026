@@ -190,7 +190,7 @@ public class AISymptomService {
                 "Ví dụ: Nếu không có 'Gastroenterology' nhưng có 'Internal Medicine', thì chọn 'Internal Medicine' cho đau bụng.\n";
     }
 
-    private String callGroqApiWithRetry(String prompt) throws Exception {
+    String callGroqApiWithRetry(String prompt) throws Exception {
         Exception lastException = null;
 
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -210,7 +210,7 @@ public class AISymptomService {
         throw new AIServiceException("Không thể kết nối đến Groq API sau " + MAX_RETRIES + " lần thử", lastException);
     }
 
-    private String callGroqApi(String prompt) throws Exception {
+    String callGroqApi(String prompt) throws Exception {
         // Escape prompt đúng cách
         String escapedPrompt = prompt.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
