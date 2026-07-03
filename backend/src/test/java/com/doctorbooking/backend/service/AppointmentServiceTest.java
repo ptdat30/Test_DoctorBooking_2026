@@ -4,6 +4,7 @@ import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
 import com.doctorbooking.backend.dto.request.UpdateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
+import com.doctorbooking.backend.exception.BadRequestException;
 import com.doctorbooking.backend.model.*;
 import com.doctorbooking.backend.repository.*;
 import jakarta.persistence.EntityManager;
@@ -18,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.Mockito;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -174,6 +178,42 @@ class AppointmentServiceTest {
     class GetAvailableTimeSlotsTests {
 
         @Test
+        void buildBookingNotificationMessage_family() throws Exception {
+
+            Method m = AppointmentService.class
+                    .getDeclaredMethod(
+                            "buildBookingNotificationMessage",
+                            String.class,
+                            String.class,
+                            LocalDate.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            String result=(String)m.invoke(
+                    appointmentService,
+                    "An",
+                    "Doctor A",
+                    LocalDate.of(2026,1,1),
+                    LocalTime.of(8,0));
+
+            assertTrue(result.contains("An"));
+        }
+        @Test
+        void validateAppointmentTime_invalid() throws Exception {
+            Method m = AppointmentService.class
+                    .getDeclaredMethod("validateAppointmentTime", LocalTime.class);
+            m.setAccessible(true);
+
+            InvocationTargetException ex = assertThrows(
+                    InvocationTargetException.class,
+                    () -> m.invoke(appointmentService,
+                            LocalTime.of(7,15)));
+
+            assertTrue(ex.getCause() instanceof BadRequestException);
+        }
+
+        @Test
         @DisplayName("✅ Trả về tất cả slots khi bác sĩ chưa có lịch hẹn nào")
         void getAvailableSlots_noPendingAppointments_returnsAllSlots() {
             when(appointmentRepository.findByDoctorAndDate(1L, LocalDate.now().plusDays(1)))
@@ -204,6 +244,85 @@ class AppointmentServiceTest {
 
             assertThat(slots).doesNotContain("08:00");
             assertThat(slots).hasSize(16);
+        }
+        @Test
+        void validateAppointmentTime_valid() throws Exception {
+            Method m = AppointmentService.class
+                    .getDeclaredMethod("validateAppointmentTime", LocalTime.class);
+            m.setAccessible(true);
+
+            assertDoesNotThrow(() ->
+                    m.invoke(appointmentService,
+                            LocalTime.of(8,0)));
+        }
+
+        @Test
+        void buildBookingNotificationMessage_normal() throws Exception {
+
+            Method m = AppointmentService.class
+                    .getDeclaredMethod(
+                            "buildBookingNotificationMessage",
+                            String.class,
+                            String.class,
+                            LocalDate.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            String result=(String)m.invoke(
+                    appointmentService,
+                    null,
+                    "Doctor A",
+                    LocalDate.of(2026,1,1),
+                    LocalTime.of(8,0));
+
+            assertFalse(result.contains("cho An"));
+        }
+        @Test
+        void duplicateAppointment_throw() throws Exception {
+
+            Appointment a=new Appointment();
+            a.setAppointmentTime(LocalTime.of(8,0));
+            a.setStatus(Appointment.AppointmentStatus.PENDING);
+
+            Method m=AppointmentService.class
+                    .getDeclaredMethod(
+                            "checkForDuplicateAppointment",
+                            List.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            InvocationTargetException ex=
+                    assertThrows(
+                            InvocationTargetException.class,
+                            ()->m.invoke(
+                                    appointmentService,
+                                    List.of(a),
+                                    LocalTime.of(8,0)));
+
+            assertTrue(ex.getCause() instanceof BadRequestException);
+        }
+        @Test
+        void duplicateAppointment_ok() throws Exception {
+
+            Appointment a=new Appointment();
+            a.setAppointmentTime(LocalTime.of(8,0));
+            a.setStatus(Appointment.AppointmentStatus.CANCELLED);
+
+            Method m=AppointmentService.class
+                    .getDeclaredMethod(
+                            "checkForDuplicateAppointment",
+                            List.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            assertDoesNotThrow(()->
+                    m.invoke(
+                            appointmentService,
+                            List.of(a),
+                            LocalTime.of(8,0)));
         }
 
         @Test
