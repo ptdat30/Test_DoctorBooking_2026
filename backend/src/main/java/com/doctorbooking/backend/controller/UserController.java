@@ -28,6 +28,7 @@ public class UserController {
     private static final String FIELD_MESSAGE   = "message";
     private static final String FIELD_STATUS    = "status";
     private static final String FIELD_TIMESTAMP = "timestamp";
+    private static final String ASIA_HO_CHI_MINH_ZONE = "Asia/Ho_Chi_Minh";
 
     private final UserService userService;
 
@@ -81,19 +82,19 @@ public class UserController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put(FIELD_MESSAGE, "Không thể xóa người dùng này vì vẫn còn dữ liệu liên quan (ví dụ: lịch hẹn, phản hồi, v.v.). Bạn cần xóa hoặc chuyển các dữ liệu liên quan trước khi xóa người dùng này.");
             errorResponse.put(FIELD_STATUS, HttpStatus.CONFLICT.value());
-            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of(ASIA_HO_CHI_MINH_ZONE)));
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (ResourceNotFoundException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put(FIELD_MESSAGE, e.getMessage());
             errorResponse.put(FIELD_STATUS, HttpStatus.NOT_FOUND.value());
-            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of(ASIA_HO_CHI_MINH_ZONE)));
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put(FIELD_MESSAGE, e.getMessage());
             errorResponse.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
-            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of(ASIA_HO_CHI_MINH_ZONE)));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
