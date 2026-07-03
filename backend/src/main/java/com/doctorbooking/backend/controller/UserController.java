@@ -11,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.doctorbooking.backend.constant.AppConstants;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +46,7 @@ public class UserController {
         try {
             UserResponse user = userService.getUserById(id);
             return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
+        } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }
@@ -81,18 +84,18 @@ public class UserController {
             errorResponse.put(FIELD_STATUS, HttpStatus.CONFLICT.value());
             errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-        } catch (RuntimeException e) {
-            String msg = e.getMessage();
+        } catch (ResourceNotFoundException e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put(FIELD_MESSAGE, msg);
+            errorResponse.put(FIELD_MESSAGE, e.getMessage());
+            errorResponse.put(FIELD_STATUS, HttpStatus.NOT_FOUND.value());
             errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
-            if (msg != null && msg.contains("not found")) {
-                errorResponse.put(FIELD_STATUS, HttpStatus.NOT_FOUND.value());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-            } else {
-                errorResponse.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put(FIELD_MESSAGE, e.getMessage());
+            errorResponse.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
+            errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
 
@@ -101,7 +104,7 @@ public class UserController {
         try {
             UserResponse user = userService.toggleUserStatus(id);
             return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
+        } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }

@@ -144,33 +144,10 @@ public class AppointmentService {
                 request.getAppointmentDate()
         );
 
-        boolean slotTaken = existingAppointments.stream()
-                .anyMatch(apt -> 
-                    apt.getAppointmentTime().equals(request.getAppointmentTime()) &&
-                    (apt.getStatus() == Appointment.AppointmentStatus.PENDING || 
-                     apt.getStatus() == Appointment.AppointmentStatus.CONFIRMED)
-                );
-
-        if (slotTaken) {
-            throw new BadRequestException("Appointment slot is already taken");
-        }
+        checkForDuplicateAppointment(existingAppointments, request.getAppointmentTime());
         
         // Nếu có appointment cũ ở slot này đã CANCELLED hoặc COMPLETED, DELETE nó để tránh duplicate constraint
-        List<Appointment> oldAppointments = existingAppointments.stream()
-                .filter(apt -> apt.getAppointmentTime().equals(request.getAppointmentTime()) &&
-                              (apt.getStatus() == Appointment.AppointmentStatus.CANCELLED || 
-                               apt.getStatus() == Appointment.AppointmentStatus.COMPLETED))
-                .collect(Collectors.toList());
-        
-        if (!oldAppointments.isEmpty()) {
-            for (Appointment apt : oldAppointments) {
-                logger.info("Deleting old appointment (status={}) to reuse slot: appointmentId={}", apt.getStatus(), apt.getId());
-                appointmentRepository.delete(apt);
-            }
-            // QUAN TRỌNG: Flush để đảm bảo DELETE được commit trước khi INSERT
-            entityManager.flush();
-            logger.info("Flushed entity manager after deleting old appointments");
-        }
+        deleteOldAppointmentsToPreventConstraintViolation(existingAppointments, request.getAppointmentTime());
 
         // Check if date is not in the past
         if (request.getAppointmentDate().isBefore(LocalDate.now())) {
@@ -801,6 +778,37 @@ public class AppointmentService {
                 logger.error("Error processing refund for appointment: {}", appointment.getId(), e);
                 throw new BadRequestException("Failed to process refund: " + e.getMessage());
             }
+        }
+    }
+
+    private void checkForDuplicateAppointment(List<Appointment> existingAppointments, LocalTime appointmentTime) {
+        boolean slotTaken = existingAppointments.stream()
+                .anyMatch(apt -> 
+                    apt.getAppointmentTime().equals(appointmentTime) &&
+                    (apt.getStatus() == Appointment.AppointmentStatus.PENDING || 
+                     apt.getStatus() == Appointment.AppointmentStatus.CONFIRMED)
+                );
+
+        if (slotTaken) {
+            throw new BadRequestException("Appointment slot is already taken");
+        }
+    }
+
+    private void deleteOldAppointmentsToPreventConstraintViolation(List<Appointment> existingAppointments, LocalTime appointmentTime) {
+        List<Appointment> oldAppointments = existingAppointments.stream()
+                .filter(apt -> apt.getAppointmentTime().equals(appointmentTime) &&
+                              (apt.getStatus() == Appointment.AppointmentStatus.CANCELLED || 
+                               apt.getStatus() == Appointment.AppointmentStatus.COMPLETED))
+                .collect(Collectors.toList());
+        
+        if (!oldAppointments.isEmpty()) {
+            for (Appointment apt : oldAppointments) {
+                logger.info("Deleting old appointment (status={}) to reuse slot: appointmentId={}", apt.getStatus(), apt.getId());
+                appointmentRepository.delete(apt);
+            }
+            // QUAN TRỌNG: Flush để đảm bảo DELETE được commit trước khi INSERT
+            entityManager.flush();
+            logger.info("Flushed entity manager after deleting old appointments");
         }
     }
 }

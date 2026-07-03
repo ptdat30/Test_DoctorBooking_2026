@@ -112,7 +112,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({org.springframework.security.core.AuthenticationException.class, 
                       org.springframework.security.authentication.BadCredentialsException.class,
-                      org.springframework.security.core.userdetails.UsernameNotFoundException.class})
+                      org.springframework.security.core.userdetails.UsernameNotFoundException.class,
+                      BadCredentialsException.class})
     public ResponseEntity<Map<String, Object>> handleAuthenticationException(Exception ex) {
         Map<String, Object> response = new HashMap<>();
         response.put(FIELD_TIMESTAMP, LocalDateTime.now());

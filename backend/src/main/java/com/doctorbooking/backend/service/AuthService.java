@@ -23,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.doctorbooking.backend.constant.AppConstants;
+import com.doctorbooking.backend.exception.BadRequestException;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor
@@ -40,10 +43,10 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         // Check if username or email already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BadRequestException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         // Create user
@@ -59,12 +62,19 @@ public class AuthService {
         // Determine role
         User.Role role = User.Role.PATIENT; // Default
         if (request.getRole() != null && !request.getRole().isEmpty()) {
-            try {
-                role = User.Role.valueOf(request.getRole().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Invalid role, stick to default or throw error
-                // For now, let's default to PATIENT but log it
-                System.err.println("Invalid role provided: " + request.getRole());
+            String roleStr = request.getRole().toUpperCase();
+            if (roleStr.equals(AppConstants.ROLE_PATIENT) || roleStr.equals("PATIENT")) {
+                role = User.Role.PATIENT;
+            } else if (roleStr.equals(AppConstants.ROLE_DOCTOR) || roleStr.equals("DOCTOR")) {
+                role = User.Role.DOCTOR;
+            } else if (roleStr.equals("ADMIN")) {
+                role = User.Role.ADMIN;
+            } else {
+                try {
+                    role = User.Role.valueOf(roleStr);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Invalid role provided: " + request.getRole());
+                }
             }
         }
         user.setRole(role);
@@ -155,8 +165,8 @@ public class AuthService {
             user = userRepository.findByUsername(usernameFromDetails)
                     .orElse(userRepository.findByEmail(usernameFromDetails)
                             .orElseThrow(() -> {
-                                System.err.println("❌ User not found with username/email: " + usernameFromDetails);
-                                return new RuntimeException("User not found: " + usernameFromDetails);
+                                System.err.println("❌ " + AppConstants.USER_NOT_FOUND + " with username/email: " + usernameFromDetails);
+                                return new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + ": " + usernameFromDetails);
                             }));
         }
 

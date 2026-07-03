@@ -18,6 +18,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.doctorbooking.backend.constant.AppConstants;
+import com.doctorbooking.backend.exception.BadRequestException;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,7 +82,7 @@ public class UserService implements UserDetailsService {
 
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
     }
 
     public boolean existsByUsername(String username) {
@@ -116,7 +119,7 @@ public class UserService implements UserDetailsService {
 
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
         return UserResponse.fromUser(user);
     }
 
@@ -124,12 +127,12 @@ public class UserService implements UserDetailsService {
     public UserResponse createUser(UserRequest request) {
         // Check if username already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BadRequestException("Username already exists");
         }
 
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         User user = new User();
@@ -147,18 +150,18 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
 
         // Check if username is changed and already exists
         if (!user.getUsername().equals(request.getUsername()) &&
             userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BadRequestException("Username already exists");
         }
 
         // Check if email is changed and already exists
         if (!user.getEmail().equals(request.getEmail()) &&
             userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         user.setUsername(request.getUsername());
@@ -209,7 +212,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
         
         try {
             // Delete associated doctor if exists
@@ -227,16 +230,16 @@ public class UserService implements UserDetailsService {
             // Now delete the user
             userRepository.delete(user);
         } catch (DataIntegrityViolationException e) {
-            throw new RuntimeException("Không thể xóa người dùng này vì vẫn còn dữ liệu liên quan (ví dụ: lịch hẹn, phản hồi, v.v.). Bạn cần xóa hoặc chuyển các dữ liệu liên quan trước khi xóa người dùng này.");
+            throw new BadRequestException("Không thể xóa người dùng này vì vẫn còn dữ liệu liên quan (ví dụ: lịch hẹn, phản hồi, v.v.). Bạn cần xóa hoặc chuyển các dữ liệu liên quan trước khi xóa người dùng này.");
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi xóa người dùng: " + e.getMessage());
+            throw new BadRequestException("Lỗi khi xóa người dùng: " + e.getMessage());
         }
     }
 
     @Transactional
     public UserResponse toggleUserStatus(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
         user.setEnabled(!user.getEnabled());
         User updatedUser = userRepository.save(user);
         return UserResponse.fromUser(updatedUser);
@@ -245,7 +248,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void changeUserPassword(Long id, ChangePasswordRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
