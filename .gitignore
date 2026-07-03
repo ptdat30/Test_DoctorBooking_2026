@@ -3,6 +3,10 @@
 !.env.example
 !.env.staging.example
 
+# Root env file without dot prefix (contains secrets — never commit)
+env
+
+
 # Docker Secrets — NEVER commit actual secret values
 secrets/*.txt
 !secrets/*.txt.example
