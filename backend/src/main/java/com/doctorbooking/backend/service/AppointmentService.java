@@ -42,6 +42,7 @@ public class AppointmentService {
             "15:00", "15:30", "16:00", "16:30", "17:00"
     );
     private static final Set<String> AVAILABLE_TIME_SLOT_SET = Set.copyOf(VALID_APPOINTMENT_SLOTS);
+    private static final String APPOINTMENT_NOT_FOUND = "Appointment not found with id: ";
     
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
@@ -105,7 +106,7 @@ public class AppointmentService {
 
     public AppointmentResponse getAppointmentById(Long id) {
         Appointment appointment = appointmentRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + id));
         return AppointmentResponse.fromEntity(appointment);
     }
 
@@ -358,7 +359,7 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointment(Long appointmentId, Long patientId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + appointmentId));
 
         // Verify the appointment belongs to this patient
         if (!appointment.getPatient().getId().equals(patientId)) {
@@ -417,7 +418,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse confirmAppointment(Long appointmentId, Long doctorId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + appointmentId));
 
         // Verify the appointment belongs to this doctor
         if (!appointment.getDoctor().getId().equals(doctorId)) {
@@ -448,7 +449,7 @@ public class AppointmentService {
     @Transactional
     public void completeAppointment(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + appointmentId));
 
         // Only CONFIRMED appointments can be completed
         if (appointment.getStatus() != Appointment.AppointmentStatus.CONFIRMED) {
@@ -463,7 +464,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse updateAppointmentByAdmin(Long id, com.doctorbooking.backend.dto.request.UpdateAppointmentRequest request) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + id));
 
         Appointment.AppointmentStatus oldStatus = appointment.getStatus();
         boolean statusChangedToConfirmed = false;
@@ -516,7 +517,7 @@ public class AppointmentService {
     @Transactional
     public void deleteAppointment(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + id));
         appointmentRepository.delete(appointment);
     }
 
@@ -586,8 +587,7 @@ public class AppointmentService {
                 doctor.getAddress() != null ? doctor.getAddress() : "",
                 appointment.getAppointmentDate(),
                 appointment.getAppointmentTime(),
-                appointment.getId().toString(),
-                appointment.getPaymentMethod() != null ? appointment.getPaymentMethod().toString() : "Chưa xác định",
+                appointment.getId().toString(), appointment.getPaymentMethod() != null ? appointment.getPaymentMethod() : "Chưa xác định",
                 appointment.getPaymentStatus() != null ? appointment.getPaymentStatus().toString() : "Chưa thanh toán",
                 appointment.getPrice() != null ? appointment.getPrice().toString() : "0",
                 appointment.getNotes() != null ? appointment.getNotes() : "",
@@ -607,7 +607,7 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointmentByDoctor(Long appointmentId, Long doctorId, String cancellationReason) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + appointmentId));
 
         // Verify the appointment belongs to this doctor
         if (!appointment.getDoctor().getId().equals(doctorId)) {
@@ -680,7 +680,7 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointmentByAdmin(Long appointmentId, String cancellationReason) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(APPOINTMENT_NOT_FOUND + appointmentId));
 
         // Check if appointment can be cancelled
         if (appointment.getStatus() == Appointment.AppointmentStatus.COMPLETED) {
