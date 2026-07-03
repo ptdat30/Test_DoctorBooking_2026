@@ -11,13 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.exception.ResourceNotFoundException;
-import com.doctorbooking.backend.exception.BadRequestException;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.ZoneId;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -82,19 +81,19 @@ public class UserController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put(FIELD_MESSAGE, "Không thể xóa người dùng này vì vẫn còn dữ liệu liên quan (ví dụ: lịch hẹn, phản hồi, v.v.). Bạn cần xóa hoặc chuyển các dữ liệu liên quan trước khi xóa người dùng này.");
             errorResponse.put(FIELD_STATUS, HttpStatus.CONFLICT.value());
-            errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
+            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (ResourceNotFoundException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put(FIELD_MESSAGE, e.getMessage());
             errorResponse.put(FIELD_STATUS, HttpStatus.NOT_FOUND.value());
-            errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
+            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put(FIELD_MESSAGE, e.getMessage());
             errorResponse.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
-            errorResponse.put(FIELD_TIMESTAMP, java.time.LocalDateTime.now());
+            errorResponse.put(FIELD_TIMESTAMP, LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }

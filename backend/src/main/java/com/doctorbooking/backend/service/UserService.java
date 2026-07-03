@@ -49,6 +49,9 @@ public class UserService implements UserDetailsService {
         this.adminRepository = adminRepository;
     }
 
+    // ── Constants (java:S1192) ─────────────────────────────────────────────
+    private static final String WITH_ID = " with id: ";
+
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
@@ -82,7 +85,7 @@ public class UserService implements UserDetailsService {
 
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + WITH_ID + id));
     }
 
     public boolean existsByUsername(String username) {
@@ -119,7 +122,7 @@ public class UserService implements UserDetailsService {
 
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + WITH_ID + id));
         return UserResponse.fromUser(user);
     }
 
@@ -150,7 +153,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + WITH_ID + id));
 
         // Check if username is changed and already exists
         if (!user.getUsername().equals(request.getUsername()) &&
@@ -212,7 +215,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + WITH_ID + id));
         
         try {
             // Delete associated doctor if exists
@@ -239,7 +242,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserResponse toggleUserStatus(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + WITH_ID + id));
         user.setEnabled(!user.getEnabled());
         User updatedUser = userRepository.save(user);
         return UserResponse.fromUser(updatedUser);
@@ -248,7 +251,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void changeUserPassword(Long id, ChangePasswordRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + " with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + WITH_ID + id));
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
