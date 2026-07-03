@@ -36,8 +36,18 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
+        private static final int MIN_CREDENTIAL_LENGTH = 6;
+    private static final int MAX_CREDENTIAL_LENGTH = 50;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        if (request.getPassword() == null || request.getPassword().length() < MIN_CREDENTIAL_LENGTH || request.getPassword().length() > MAX_CREDENTIAL_LENGTH) {
+            throw new RuntimeException("Password length must be between 6 and 50 characters");
+        }
+        if (request.getEmail() == null || request.getEmail().length() < MIN_CREDENTIAL_LENGTH || request.getEmail().length() > MAX_CREDENTIAL_LENGTH) {
+            throw new RuntimeException("Email length must be between 6 and 50 characters");
+        }
+
         // Check if username or email already exists
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");

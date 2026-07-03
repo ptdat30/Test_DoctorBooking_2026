@@ -17,6 +17,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -85,6 +88,76 @@ class AuthServiceTest {
     @Nested
     @DisplayName("register()")
     class RegisterTests {
+
+        @ParameterizedTest(name = "[{index}] password length={0}")
+        @CsvSource({
+                "6,true",
+                "7,true",
+                "50,true",
+                "5,false",
+                "51,false"
+        })
+        @DisplayName("Kiểm tra biên độ dài password trong đăng ký")
+        void register_validatesPasswordLength(int passwordLength, boolean expectedValid) {
+            String email = "valid-email@test.com";
+            RegisterRequest req = buildRegisterRequest("validuser", email, "PATIENT");
+            req.setPassword("p".repeat(Math.max(0, Math.min(passwordLength, 100))));
+
+            if (expectedValid) {
+                when(userRepository.existsByUsername(any())).thenReturn(false);
+                when(userRepository.existsByEmail(any())).thenReturn(false);
+                when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+                when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+                when(userRepository.save(any(User.class))).thenReturn(buildUser(1L, "validuser", email, User.Role.PATIENT));
+
+                AuthResponse response = authService.register(req);
+                assertThat(response).isNotNull();
+                assertThat(response.getEmail()).isEqualTo(email);
+            } else {
+                assertThatThrownBy(() -> authService.register(req))
+                        .isInstanceOf(RuntimeException.class)
+                        .hasMessageContaining("Password length must be between 6 and 50 characters");
+            }
+        }
+
+        @ParameterizedTest(name = "[{index}] email length={0}")
+        @CsvSource({
+                "6,true",
+                "7,true",
+                "50,true",
+                "5,false",
+                "51,false"
+        })
+        @DisplayName("Kiểm tra biên độ dài email trong đăng ký")
+        void register_validatesEmailLength(int emailLength, boolean expectedValid) {
+            String suffix = "@a.co";
+            String email;
+            if (emailLength == 5) {
+                email = "a@a.c";
+            } else if (emailLength >= suffix.length()) {
+                email = "a".repeat(Math.max(1, emailLength - suffix.length())) + suffix;
+            } else {
+                email = "a@a.c";
+            }
+            String username = "validuser";
+            RegisterRequest req = buildRegisterRequest(username, email, "PATIENT");
+
+            if (expectedValid) {
+                when(userRepository.existsByUsername(any())).thenReturn(false);
+                when(userRepository.existsByEmail(any())).thenReturn(false);
+                when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+                when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+                when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                AuthResponse response = authService.register(req);
+                assertThat(response).isNotNull();
+                assertThat(response.getEmail()).isEqualTo(email);
+            } else {
+                assertThatThrownBy(() -> authService.register(req))
+                        .isInstanceOf(RuntimeException.class)
+                        .hasMessageContaining("Email length must be between 6 and 50 characters");
+            }
+        }
 
         @Test
         @DisplayName("✅ Đăng ký thành công với role PATIENT")

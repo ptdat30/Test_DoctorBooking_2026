@@ -168,8 +168,8 @@ public class AppointmentService {
             logger.info("Flushed entity manager after deleting old appointments");
         }
 
-        // Check if date is not in the past
-        if (request.getAppointmentDate().isBefore(LocalDate.now())) {
+        // Check if date is not at or before today
+        if (!request.getAppointmentDate().isAfter(LocalDate.now())) {
             throw new RuntimeException("Cannot book appointment in the past");
         }
 
