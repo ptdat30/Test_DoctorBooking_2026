@@ -233,6 +233,108 @@ class AISymptomServiceTest {
         assertNotNull(result);
     }
     @Test
+    void testGreetingBranch() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doThrow(new RuntimeException("fail"))
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res = spy.analyzeSymptoms("xin chào");
+
+        assertEquals("Other", res.getSuggestedSpecialization());
+        assertEquals("Low", res.getRiskLevel());
+    }
+    @Test
+    void testQuestionBranch() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doThrow(new RuntimeException("fail"))
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res =
+                spy.analyzeSymptoms("tôi nên khám bác sĩ nào");
+
+        assertNotNull(res.getAdvice());
+    }
+    @Test
+    void testNoChoicesBranch() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doReturn("{}")
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res =
+                spy.analyzeSymptoms("đau đầu");
+
+        assertEquals("Other", res.getSuggestedSpecialization());
+    }
+    @Test
+    void testEmptyChoicesBranch() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doReturn("{\"choices\":[]}")
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res =
+                spy.analyzeSymptoms("đau đầu");
+
+        assertNotNull(res);
+    }
+    @Test
+    void testMissingContentBranch() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doReturn("""
+        {
+          "choices":[
+            {
+              "message":{}
+            }
+          ]
+        }
+        """)
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res =
+                spy.analyzeSymptoms("đau đầu");
+
+        assertNotNull(res);
+    }
+    @Test
+    void testMarkdownCleanJson() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doReturn("""
+        {
+          "choices":[
+            {
+              "message":{
+                "content":"```json {\\\"suggestedSpecialization\\\":\\\"Neurology\\\",\\\"riskLevel\\\":\\\"Low\\\",\\\"advice\\\":\\\"ok\\\",\\\"reason\\\":\\\"\\\",\\\"homeRemedies\\\":[]} ```"
+              }
+            }
+          ]
+        }
+        """)
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res =
+                spy.analyzeSymptoms("đau đầu");
+
+        assertNotNull(res);
+    }
+    @Test
+    void testRandomFallbackBranch() throws Exception {
+        AISymptomService spy = Mockito.spy(aiSymptomService);
+
+        doThrow(new RuntimeException())
+                .when(spy).callGroqApi(anyString());
+
+        SymptomCheckResponse res =
+                spy.analyzeSymptoms("abcxyz123");
+
+        assertEquals("Other", res.getSuggestedSpecialization());
+    }
+    @Test
     void testAnalyzeSymptoms_success() throws Exception {
 
         AISymptomService spy = Mockito.spy(aiSymptomService);
