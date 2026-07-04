@@ -12,6 +12,8 @@ import com.doctorbooking.backend.repository.AppointmentRepository;
 import com.doctorbooking.backend.repository.DoctorRepository;
 import com.doctorbooking.backend.repository.FeedbackRepository;
 import com.doctorbooking.backend.repository.PatientRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,24 +45,24 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse createFeedback(Long patientId, CreateFeedbackRequest request) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
         Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
 
         // Verify appointment belongs to patient
         if (!appointment.getPatient().getId().equals(patientId)) {
-            throw new RuntimeException("Appointment does not belong to this patient");
+            throw new BadRequestException("Appointment does not belong to this patient");
         }
 
         // Verify appointment is completed
         if (appointment.getStatus() != Appointment.AppointmentStatus.COMPLETED) {
-            throw new RuntimeException("Can only create feedback for completed appointments");
+            throw new BadRequestException("Can only create feedback for completed appointments");
         }
 
         // Check if feedback already exists for this appointment
         if (feedbackRepository.findByAppointmentId(appointment.getId()).isPresent()) {
-            throw new RuntimeException("Feedback already exists for this appointment");
+            throw new BadRequestException("Feedback already exists for this appointment");
         }
 
         Feedback feedback = new Feedback();
@@ -83,20 +85,20 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse updateFeedback(Long patientId, Long feedbackId, UpdateFeedbackRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
 
         // Verify feedback belongs to patient
         if (!feedback.getPatient().getId().equals(patientId)) {
-            throw new RuntimeException("This feedback does not belong to you");
+            throw new BadRequestException("This feedback does not belong to you");
         }
 
         // Check if can edit (within 24 hours and no doctor reply)
         if (feedback.getDoctorReply() != null) {
-            throw new RuntimeException("Cannot edit feedback after doctor has replied");
+            throw new BadRequestException("Cannot edit feedback after doctor has replied");
         }
 
         if (feedback.getCreatedAt().plusHours(EDIT_WINDOW_HOURS).isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Feedback can only be edited within " + EDIT_WINDOW_HOURS + " hours");
+            throw new BadRequestException("Feedback can only be edited within " + EDIT_WINDOW_HOURS + " hours");
         }
 
         feedback.setRating(request.getRating());
@@ -121,10 +123,10 @@ public class FeedbackService {
      */
     public FeedbackResponse getPatientFeedbackById(Long patientId, Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getPatient().getId().equals(patientId)) {
-            throw new RuntimeException("This feedback does not belong to you");
+            throw new BadRequestException("This feedback does not belong to you");
         }
 
         return FeedbackResponse.fromEntity(feedback);
@@ -157,10 +159,10 @@ public class FeedbackService {
      */
     public FeedbackResponse getDoctorFeedbackById(Long doctorId, Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getDoctor().getId().equals(doctorId)) {
-            throw new RuntimeException("This feedback is not for you");
+            throw new BadRequestException("This feedback is not for you");
         }
 
         // Mark as READ if still PENDING
@@ -178,10 +180,10 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse replyToFeedback(Long doctorId, Long feedbackId, ReplyFeedbackRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getDoctor().getId().equals(doctorId)) {
-            throw new RuntimeException("This feedback is not for you");
+            throw new BadRequestException("This feedback is not for you");
         }
 
         feedback.setDoctorReply(request.getDoctorReply());
@@ -199,14 +201,14 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse updateDoctorReply(Long doctorId, Long feedbackId, ReplyFeedbackRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
 
         if (!feedback.getDoctor().getId().equals(doctorId)) {
-            throw new RuntimeException("This feedback is not for you");
+            throw new BadRequestException("This feedback is not for you");
         }
 
         if (feedback.getDoctorReply() == null) {
-            throw new RuntimeException("No reply exists to update");
+            throw new BadRequestException("No reply exists to update");
         }
 
         // Check if can edit (within 24 hours)
@@ -214,7 +216,7 @@ public class FeedbackService {
                 feedback.getDoctorRepliedAt()
                         .plusHours(EDIT_WINDOW_HOURS)
                         .isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Reply can only be edited within " + EDIT_WINDOW_HOURS + " hours");
+            throw new BadRequestException("Reply can only be edited within " + EDIT_WINDOW_HOURS + " hours");
         }
 
         feedback.setDoctorReply(request.getDoctorReply());
@@ -291,7 +293,7 @@ public class FeedbackService {
      */
     public FeedbackResponse getFeedbackById(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
         
         // Mark as READ if still PENDING
         if (feedback.getStatus() == Feedback.FeedbackStatus.PENDING) {
@@ -308,7 +310,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse hideFeedback(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
         
         feedback.setIsHidden(true);
         feedback = feedbackRepository.save(feedback);
@@ -322,7 +324,7 @@ public class FeedbackService {
     @Transactional
     public FeedbackResponse unhideFeedback(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(FEEDBACK_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(FEEDBACK_NOT_FOUND));
         
         feedback.setIsHidden(false);
         feedback = feedbackRepository.save(feedback);

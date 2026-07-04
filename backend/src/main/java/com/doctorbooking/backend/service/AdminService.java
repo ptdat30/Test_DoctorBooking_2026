@@ -8,6 +8,8 @@ import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.UserRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,10 +71,10 @@ public class AdminService {
     public PatientResponse createPatient(PatientRequest request) {
         // Check if username or email already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BadRequestException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         // Create User
@@ -102,13 +104,13 @@ public class AdminService {
     @Transactional
     public PatientResponse updatePatient(Long id, AdminUpdatePatientRequest request) {
         Patient patient = patientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + id));
 
         // Update User email if changed
         User user = patient.getUser();
         if (!user.getEmail().equals(request.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email already exists");
+                throw new BadRequestException("Email already exists");
             }
             user.setEmail(request.getEmail());
             userRepository.save(user);
@@ -130,7 +132,7 @@ public class AdminService {
     @Transactional
     public void deletePatient(Long id) {
         Patient patient = patientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + id));
         User user = patient.getUser();
         patientRepository.delete(patient);
         userRepository.delete(user);

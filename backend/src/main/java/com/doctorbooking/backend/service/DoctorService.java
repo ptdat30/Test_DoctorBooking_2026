@@ -8,6 +8,8 @@ import com.doctorbooking.backend.model.Doctor;
 import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.repository.DoctorRepository;
 import com.doctorbooking.backend.repository.UserRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -44,7 +46,7 @@ public class DoctorService {
 
     public DoctorResponse getDoctorById(Long id) {
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
         return DoctorResponse.fromEntity(doctor);
     }
 
@@ -52,10 +54,10 @@ public class DoctorService {
     public DoctorResponse createDoctor(DoctorRequest request) {
         // Check if username or email already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BadRequestException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         // Create user
@@ -86,21 +88,21 @@ public class DoctorService {
     @Transactional
     public DoctorResponse updateDoctor(Long id, DoctorRequest request) {
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
 
         User user = doctor.getUser();
 
         // Update user if username or email changed
         if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
             if (userRepository.existsByUsername(request.getUsername())) {
-                throw new RuntimeException("Username already exists");
+                throw new BadRequestException("Username already exists");
             }
             user.setUsername(request.getUsername());
         }
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email already exists");
+                throw new BadRequestException("Email already exists");
             }
             user.setEmail(request.getEmail());
         }
@@ -144,7 +146,7 @@ public class DoctorService {
     @Transactional
     public void deleteDoctor(Long id) {
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
         doctorRepository.delete(doctor);
         // User will be deleted by cascade if configured
     }
@@ -155,9 +157,9 @@ public class DoctorService {
         return doctorRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
                     if (user.getRole() != User.Role.DOCTOR) {
-                        throw new RuntimeException("Doctor not found with user id: " + userId);
+                        throw new ResourceNotFoundException("Doctor not found with user id: " + userId);
                     }
                     Doctor doctor = new Doctor();
                     doctor.setUser(user);
@@ -206,11 +208,11 @@ public class DoctorService {
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         // Verify current password (plain text comparison)
         if (!request.getCurrentPassword().equals(user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+            throw new BadRequestException("Current password is incorrect");
         }
 
         // Update password (plain text - tạm thời)
