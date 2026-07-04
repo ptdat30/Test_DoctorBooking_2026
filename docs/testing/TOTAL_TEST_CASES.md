@@ -1,228 +1,376 @@
 # Tổng Hợp Toàn Bộ Test Cases - Dự Án Doctor Booking System 2026
 
-Tài liệu này tổng hợp toàn bộ các kịch bản kiểm thử (Test Cases) của dự án, bao gồm:
-1. **Kiểm thử Đơn vị (JUnit Unit Tests)** ở phía Backend (Spring Boot).
-2. **Kiểm thử Tự động hóa API (Postman API Automation)** sử dụng Newman để chạy các kịch bản tích hợp và kiểm thử biên (BVA).
+Tài liệu này tổng hợp toàn bộ các kịch bản kiểm thử (Test Cases) của dự án, gồm 3 tầng:
+
+1. **Kiểm thử Đơn vị / Tích hợp (JUnit + Mockito)** ở Backend (Spring Boot) — Whitebox.
+2. **Kiểm thử Tự động hóa API (Postman + Newman)** — Integration/Blackbox.
+3. **Kiểm thử Giao diện E2E (CodeceptJS + Playwright)** — Blackbox/BVA trên UI.
+
+> Số liệu được đối soát trực tiếp từ mã nguồn (`backend/src/test`, `postman/`, `frontend/e2e`) — cập nhật lần cuối theo trạng thái repo hiện tại.
 
 ---
 
-## 📊 Tóm Tắt Tổng Quan
+## Tóm Tắt Tổng Quan
 
-| Thành phần kiểm thử | Tổng số Test Cases | Phương pháp áp dụng nổi bật | Trạng thái |
-|---------------------|--------------------|----------------------------|------------|
-| **JUnit Unit Tests** (Backend) | **67** | Phân tích giá trị biên (BVA), Mocking (Mockito) | Đạt 100% |
-| **Postman API Automation** | **114** | BVA, Data-Driven Testing (3 vai trò), Security (SQL Injection, XSS) | Đạt 100% |
-| **TỔNG CỘNG** | **181** | **BVA & Integration Testing** | **Passed** |
+| Thành phần kiểm thử | Số lượng | Phương pháp nổi bật | Trạng thái |
+|---------------------|----------|---------------------|------------|
+| **JUnit** (Backend, 30 lớp test) | **496 test method** | BVA, Mocking (Mockito), branch coverage | Passed |
+| **Postman API** (24 folder) | **114 kịch bản** (×3 vai trò ⇒ ~348 request, ~768 assertion) | BVA, Data-Driven, Security (SQLi/XSS) | Passed |
+| **E2E UI** (CodeceptJS) | **~30 file test** (`@smoke` + `@bva`) | Page Object, BVA trên UI | Passed |
+
+**JaCoCo coverage backend**: Instruction **90%**, Branch **70%**, Line **91%** (gate tối thiểu: line ≥ 80%, branch ≥ 70%).
+
+> Ghi chú số học: 496 test method = 493 `@Test` + 3 `@ParameterizedTest`. Các `@ParameterizedTest` chạy nhiều bộ dữ liệu nên tổng số **lần thực thi** còn cao hơn (~505). Một số test phụ thuộc đồng hồ dùng `Assumptions.assumeTrue(...)` để tự bỏ qua an toàn; `AISymptomServiceTest` có thể bị skip khi `SKIP_AI_TESTS=true`.
 
 ---
 
-## 1. Kiểm thử Đơn vị Backend (JUnit / Java)
-Phần này mô tả các unit test được viết bằng Java, sử dụng JUnit 5 và Mockito để cô lập các Service. Chúng tập trung đặc biệt vào các logic xử lý nghiệp vụ phức tạp và các miền giá trị biên (BVA).
+## 1. Kiểm thử Backend (JUnit / Mockito)
 
-### 1.1. WalletServiceTest ([WalletServiceTest.java](file:///c:/Users/DAT/OneDrive%20-%20ut.edu.vn/Documents/Desktop/Repo/backend/src/test/java/com/doctorbooking/backend/service/WalletServiceTest.java) - 19 Test Cases)
-Lớp này kiểm thử ví điện tử của bệnh nhân, cách tính điểm tích lũy và xếp hạng thành viên (Loyalty Tiers).
-* **Loyalty Tiers BVA (Phân tích giá trị biên cho các hạng thành viên):**
-  * Hạng **BRONZE**: Điểm tích lũy dưới 1000.
-  * Hạng **SILVER**: Điểm tích lũy từ 1000 đến 4999.
-  * Hạng **GOLD**: Điểm tích lũy từ 5000 đến 9999.
-  * Hạng **PLATINUM**: Điểm tích lũy từ 10000 trở lên.
+### 1.0. Bản đồ 30 lớp test
 
-| STT | Tên Test Case (JUnit) | Mô tả | Loại | Giá trị biên kiểm thử |
-|-----|----------------------|-------|------|-----------------------|
-| 1 | `payForAppointment_success_sufficientBalance` | Thanh toán phí khám thành công khi số dư đủ | Positive | |
-| 2 | `payForAppointment_insufficientBalance_throwsException` | Lỗi khi số dư không đủ thanh toán | Negative | |
-| 3 | `payForAppointment_enoughPoints_upgradesToPlatinum` | Tích lũy đủ điểm và nâng hạng thành viên lên PLATINUM | Positive | |
-| 4 | `payForAppointment_nullBalance_treatedAsZero` | Số dư rỗng (null) được xử lý là 0 và báo lỗi khi thanh toán phí > 0 | Negative | |
-| 5 | `refundAppointment_success` | Hoàn tiền phí khám thành công và trừ điểm tích lũy tương ứng | Positive | |
-| 6 | `refundAppointment_loyaltyPointsNotNegative` | Điểm tích lũy sau khi trừ hoàn phí không bao giờ bị âm | Positive | Biên dưới = 0 |
-| 7 | `createDepositTransaction_success` | Tạo yêu cầu nạp tiền ở trạng thái PENDING thành công | Positive | |
-| 8 | `completeDeposit_success` | Xác nhận nạp tiền thành công, cộng số dư, tích điểm và nâng hạng GOLD | Positive | |
-| 9 | `completeDeposit_alreadyCompleted_returnsEarly` | Giao dịch đã COMPLETED trước đó không xử lý lại | Positive | |
-| 10 | `completeDeposit_notFound_throwsException` | Báo lỗi khi mã giao dịch nạp tiền không tồn tại | Negative | |
-| 11 | `failDeposit_success` | Đánh dấu giao dịch nạp tiền thất bại thành công | Positive | |
-| 12 | `failDeposit_alreadyCompleted_returnsEarly` | Giao dịch đã COMPLETED không thể đổi sang FAILED | Negative | |
-| 13 | `loyaltyTier_bronze` | Điểm tích lũy < 1000 giữ hạng BRONZE | Positive | |
-| 14 | `loyaltyTier_silver` | Điểm tích lũy >= 1000 nâng hạng SILVER | Positive | |
-| 15 | `loyaltyTier_gold` | Điểm tích lũy >= 5000 nâng hạng GOLD | Positive | |
-| 16 | `loyaltyTier_platinum` | Điểm tích lũy >= 10000 nâng hạng PLATINUM | Positive | |
-| 17 | `loyaltyTier_bva_0_bronze` | Điểm tối thiểu bằng 0 | BVA Biên dưới | 0 |
-| 18 | `loyaltyTier_bva_999_bronze` | Điểm ngay dưới biên SILVER | BVA Biên dưới | 999 |
-| 19 | `loyaltyTier_bva_1000_silver` | Điểm vừa chạm biên SILVER | BVA Biên trên | 1000 |
-| 20 | `loyaltyTier_bva_1001_silver` | Điểm ngay trên biên SILVER | BVA Biên trên | 1001 |
-| 21 | `loyaltyTier_bva_4999_silver` | Điểm ngay dưới biên GOLD | BVA Biên dưới | 4999 |
-| 22 | `loyaltyTier_bva_5000_gold` | Điểm vừa chạm biên GOLD | BVA Biên trên | 5000 |
-| 23 | `loyaltyTier_bva_5001_gold` | Điểm ngay trên biên GOLD | BVA Biên trên | 5001 |
-| 24 | `loyaltyTier_bva_9999_gold` | Điểm ngay dưới biên PLATINUM | BVA Biên dưới | 9999 |
-| 25 | `loyaltyTier_bva_10000_platinum` | Điểm vừa chạm biên PLATINUM | BVA Biên trên | 10000 |
-| 26 | `loyaltyTier_bva_10001_platinum` | Điểm ngay trên biên PLATINUM | BVA Biên trên | 10001 |
+| # | Lớp test | Tầng | Số test | Trọng tâm |
+|---|----------|------|---------|-----------|
+| 1 | `AppointmentServiceTest` | Service | 32 | Đặt/hủy/xác nhận lịch, khung giờ hợp lệ (BVA slot) |
+| 2 | `AppointmentServiceExtraTest` | Service | 44 | Nhánh phụ: hủy bởi bác sĩ/admin, thanh toán ví, family |
+| 3 | `WalletServiceTest` | Service | 26 | Ví điện tử, tích điểm, hạng thành viên (BVA loyalty) |
+| 4 | `FeedbackServiceTest` | Service | 27 | Đánh giá bác sĩ, giới hạn sửa 24h (BVA thời gian) |
+| 5 | `AuthServiceTest` | Service | 11 | Đăng ký/đăng nhập 3 vai trò |
+| 6 | `DoctorServiceTest` | Service | 19 | CRUD bác sĩ, đổi mật khẩu, ensure profile |
+| 7 | `UserServiceTest` | Service | 17 | UserDetails, CRUD user, đổi trạng thái |
+| 8 | `AdminServiceTest` | Service | 29 | Facade quản trị (bác sĩ/BN/lịch/feedback) |
+| 9 | `PatientServiceTest` | Service | 14 | Hồ sơ bệnh nhân, tìm kiếm, đổi mật khẩu |
+| 10 | `FamilyMemberServiceTest` | Service | 15 | Người nhà, tài khoản chính, thống kê |
+| 11 | `NotificationServiceTest` | Service | 11 | Tạo/đọc/xóa thông báo, phân quyền chủ sở hữu |
+| 12 | `TreatmentServiceTest` | Service | 11 | Bệnh án / đơn thuốc |
+| 13 | `VNPayServiceTest` | Service | 8 | Tạo URL, verify checksum VNPAY |
+| 14 | `MedicationServiceTest` | Service | 4 | Tìm thuốc, giới hạn kết quả (BVA limit) |
+| 15 | `AISymptomServiceTest` | Service | 3 | Nhánh fallback chẩn đoán triệu chứng |
+| 16 | `AuthControllerTest` | Controller | 6 | Endpoint đăng ký/đăng nhập, mã HTTP |
+| 17 | `PublicControllerTest` | Controller | 1 | Health check |
+| 18 | `PatientControllerTest` | Controller | 45 | Toàn bộ endpoint bệnh nhân |
+| 19 | `DoctorControllerTest` | Controller | 47 | Toàn bộ endpoint bác sĩ |
+| 20 | `AdminControllerTest` | Controller | 37 | Toàn bộ endpoint quản trị |
+| 21 | `UserControllerTest` | Controller | 17 | CRUD user + mã lỗi (409/404/400) |
+| 22 | `PaymentControllerTest` | Controller | 18 | Ví, nạp tiền (BVA), callback VNPAY |
+| 23 | `NotificationControllerTest` | Controller | 11 | Endpoint thông báo |
+| 24 | `FamilyMemberControllerTest` | Controller | 10 | Endpoint người nhà |
+| 25 | `RegisterRequestValidationTest` | DTO/BVA | 13 | Validation đăng ký (username/password/email/fullName) |
+| 26 | `LoginRequestValidationTest` | DTO/BVA | 4 | Validation đăng nhập (@NotBlank) |
+| 27 | `FeedbackRequestValidationTest` | DTO/BVA | 5 | Validation rating [1,5] |
+| 28 | `TopUpRequestValidationTest` | DTO/BVA | 6 | Validation số tiền nạp ≥ 10.000 |
+| 29 | `SymptomCheckRequestValidationTest` | DTO/BVA | 4 | Validation triệu chứng (@NotBlank) |
+| 30 | `BackendApplicationTests` | App | 1 | Spring context khởi tạo |
 
-### 1.2. FeedbackServiceTest ([FeedbackServiceTest.java](file:///c:/Users/DAT/OneDrive%20-%20ut.edu.vn/Documents/Desktop/Repo/backend/src/test/java/com/doctorbooking/backend/service/FeedbackServiceTest.java) - 21 Test Cases)
-Kiểm thử tính năng đánh giá bác sĩ của bệnh nhân. Hạn chế biên đặc biệt: **Cho phép chỉnh sửa đánh giá trong vòng đúng 24 giờ kể từ lúc tạo, và chưa có bác sĩ phản hồi.**
+> Tổng: **496 test method** (Service 271 · Controller 192 · DTO validation 32 · App 1).
 
-| STT | Tên Test Case (JUnit) | Mô tả | Loại | Biên kiểm thử |
-|-----|----------------------|-------|------|---------------|
-| 1 | `createFeedback_success` | Tạo phản hồi thành công cho lịch khám đã hoàn thành | Positive | |
-| 2 | `createFeedback_appointmentNotCompleted_throwsException` | Báo lỗi khi tạo phản hồi cho lịch khám chưa hoàn thành | Negative | |
-| 3 | `createFeedback_appointmentNotBelongToPatient_throwsException` | Báo lỗi khi phản hồi lịch khám của bệnh nhân khác | Negative | |
-| 4 | `createFeedback_alreadyExists_throwsException` | Không cho phép tạo phản hồi lần 2 cho cùng 1 lịch khám | Negative | |
-| 5 | `updateFeedback_success` | Cập nhật phản hồi thành công (trong 24 giờ và chưa có phản hồi của bác sĩ) | Positive | |
-| 6 | `updateFeedback_wrongPatient_throwsException` | Không cho phép bệnh nhân khác sửa phản hồi | Negative | |
-| 7 | `updateFeedback_afterDoctorReply_throwsException` | Không cho phép chỉnh sửa sau khi bác sĩ đã phản hồi | Negative | |
-| 8 | `updateFeedback_bva_within24Hours_succeeds` | Sửa thành công ở 23 giờ 59 phút 59 giây | BVA Biên trong | 23h 59m 59s |
-| 9 | `updateFeedback_bva_exactly24Hours_succeeds` | Sửa thành công ở chính xác 24 giờ | BVA Biên | Đúng 24h 00m 00s |
-| 10 | `updateFeedback_bva_after24Hours_throwsException` | Thất bại khi sửa ở 24 giờ 00 phút 01 giây | BVA Biên ngoài | 24h 00m 01s |
-| 11 | `replyToFeedback_success` | Bác sĩ phản hồi nhận xét của bệnh nhân thành công | Positive | |
-| 12 | `replyToFeedback_wrongDoctor_throwsException` | Bác sĩ không thể phản hồi nhận xét dành cho bác sĩ khác | Negative | |
-| 13 | `averageRating_noFeedbacks_returnsZero` | Điểm đánh giá trung bình bằng 0.0 khi bác sĩ chưa có nhận xét nào | Positive | |
-| 14 | `averageRating_withHiddenFeedbacks_ignoresHidden` | Điểm đánh giá trung bình không tính các nhận xét bị ẩn | Positive | |
-| 15 | `averageRating_allHidden_returnsZero` | Trả về trung bình 0.0 nếu tất cả nhận xét của bác sĩ bị ẩn | Positive | |
-| 16 | `hideFeedback_success` | Admin ẩn nhận xét xấu/không phù hợp thành công | Positive | |
-| 17 | `unhideFeedback_success` | Admin bỏ ẩn nhận xét thành công | Positive | |
-| 18 | `getDoctorFeedbacks_filtersHidden` | Danh sách nhận xét trả về cho người dùng không chứa nhận xét bị ẩn | Positive | |
-| 19 | `getByStatus_nullStatus_returnsAll` | Admin lấy toàn bộ danh sách khi không chỉ định trạng thái lọc | Positive | |
-| 20 | `getByStatus_validStatus_filters` | Admin lấy danh sách phản hồi lọc theo trạng thái (PENDING, REPLIED) | Positive | |
-| 21 | `getByStatus_invalidStatus_returnsAll` | Lấy toàn bộ danh sách nếu truyền trạng thái không hợp lệ | Positive | |
+---
 
-### 1.3. AuthServiceTest ([AuthServiceTest.java](file:///c:/Users/DAT/OneDrive%20-%20ut.edu.vn/Documents/Desktop/Repo/backend/src/test/java/com/doctorbooking/backend/service/AuthServiceTest.java) - 11 Test Cases)
-Kiểm thử tính năng xác thực, đăng nhập và đăng ký thành viên.
+### 1.1. Service layer — Logic nghiệp vụ lõi
 
-| STT | Tên Test Case (JUnit) | Mô tả | Loại |
-|-----|----------------------|-------|------|
-| 1 | `register_success_patient` | Đăng ký tài khoản Bệnh nhân mới thành công | Positive |
-| 2 | `register_success_doctor` | Đăng ký tài khoản Bác sĩ mới thành công | Positive |
-| 3 | `register_success_admin` | Đăng ký tài khoản Quản trị viên mới thành công | Positive |
-| 4 | `register_noRole_defaultsToPatient` | Đăng ký không chỉ định role sẽ tự động gán là PATIENT | Positive |
-| 5 | `register_fails_usernameExists` | Thất bại khi đăng ký trùng Username | Negative |
-| 6 | `register_fails_emailExists` | Thất bại khi đăng ký trùng Email | Negative |
-| 7 | `register_invalidRole_defaultsToPatient` | Đăng ký với role không hợp lệ sẽ tự động gán là PATIENT | Positive |
-| 8 | `login_success` | Đăng nhập thành công, trả về JWT Token và thông tin cá nhân | Positive |
-| 9 | `login_success_admin` | Đăng nhập tài khoản Quản trị viên thành công | Positive |
-| 10 | `login_fails_badCredentials` | Từ chối đăng nhập khi sai mật khẩu | Negative |
-| 11 | `login_patientWithoutProfile_fullNameNull` | Đăng nhập tài khoản chưa điền thông tin cá nhân sẽ trả về tên rỗng | Positive |
+#### `WalletServiceTest` (26) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/WalletServiceTest.java)
+Ví điện tử, tính điểm tích lũy (1 điểm / 100đ) và hạng thành viên. **BVA hạng:** BRONZE < 1000 ≤ SILVER < 5000 ≤ GOLD < 10000 ≤ PLATINUM.
 
-### 1.4. AppointmentServiceTest ([AppointmentServiceTest.java](file:///c:/Users/DAT/OneDrive%20-%20ut.edu.vn/Documents/Desktop/Repo/backend/src/test/java/com/doctorbooking/backend/service/AppointmentServiceTest.java) - 15 Test Cases)
-Kiểm thử tính năng đặt lịch khám, chọn ca khám và hủy lịch/hoàn tiền.
+| # | Test | Mô tả | Loại |
+|---|------|-------|------|
+| 1 | `payForAppointment_success_sufficientBalance` | Thanh toán phí khám khi đủ số dư | Positive |
+| 2 | `payForAppointment_insufficientBalance_throwsException` | Số dư không đủ → lỗi | Negative |
+| 3 | `payForAppointment_enoughPoints_upgradesToPlatinum` | Đủ điểm → nâng hạng PLATINUM | Positive |
+| 4 | `payForAppointment_nullBalance_treatedAsZero` | Số dư null coi như 0 → lỗi khi fee>0 | Negative/BVA |
+| 5 | `refundAppointment_success` | Hoàn tiền + trừ điểm tương ứng | Positive |
+| 6 | `refundAppointment_loyaltyPointsNotNegative` | Điểm không bao giờ âm (biên 0) | BVA |
+| 7 | `createDepositTransaction_success` | Tạo giao dịch nạp tiền PENDING | Positive |
+| 8 | `completeDeposit_success` | Xác nhận nạp tiền → cộng dư, tích điểm, nâng GOLD | Positive |
+| 9 | `completeDeposit_alreadyCompleted_returnsEarly` | Giao dịch đã COMPLETED không xử lý lại | Positive |
+| 10 | `completeDeposit_notFound_throwsException` | referenceId không tồn tại → lỗi | Negative |
+| 11 | `failDeposit_success` | Đánh dấu giao dịch FAILED | Positive |
+| 12 | `failDeposit_alreadyCompleted_returnsEarly` | COMPLETED không thể đổi sang FAILED | Negative |
+| 13-16 | `loyaltyTier_bronze/silver/gold/platinum` | Xác định hạng theo mốc điểm | Positive |
+| 17 | `loyaltyTier_bva_0_bronze` | Điểm = 0 → BRONZE | BVA |
+| 18 | `loyaltyTier_bva_999_bronze` | Điểm = 999 (dưới biên SILVER) | BVA |
+| 19 | `loyaltyTier_bva_1000_silver` | Điểm = 1000 (chạm biên SILVER) | BVA |
+| 20 | `loyaltyTier_bva_1001_silver` | Điểm = 1001 (trên biên) | BVA |
+| 21 | `loyaltyTier_bva_4999_silver` | Điểm = 4999 (dưới biên GOLD) | BVA |
+| 22 | `loyaltyTier_bva_5000_gold` | Điểm = 5000 (chạm biên GOLD) | BVA |
+| 23 | `loyaltyTier_bva_5001_gold` | Điểm = 5001 (trên biên) | BVA |
+| 24 | `loyaltyTier_bva_9999_gold` | Điểm = 9999 (dưới biên PLATINUM) | BVA |
+| 25 | `loyaltyTier_bva_10000_platinum` | Điểm = 10000 (chạm biên PLATINUM) | BVA |
+| 26 | `loyaltyTier_bva_10001_platinum` | Điểm = 10001 (trên biên) | BVA |
 
-| STT | Tên Test Case (JUnit) | Mô tả | Loại |
-|-----|----------------------|-------|------|
-| 1 | `getAvailableSlots_noPendingAppointments_returnsAllSlots` | Trả về toàn bộ 17 khung giờ khám trống khi bác sĩ chưa có lịch hẹn | Positive |
-| 2 | `getAvailableSlots_removePendingSlot` | Loại bỏ các khung giờ đang có lịch hẹn ở trạng thái PENDING | Positive |
-| 3 | `getAvailableSlots_confirmedRemovedCancelledKept` | Loại bỏ các ca đã CONFIRMED, nhưng giữ lại các ca đã CANCELLED | Positive |
-| 4 | `createAppointment_cash_success` | Đặt lịch khám thành công với hình thức thanh toán bằng Tiền mặt | Positive |
-| 5 | `createAppointment_wallet_success` | Đặt lịch khám và tự động thanh toán qua Ví điện tử thành công | Positive |
-| 6 | `createAppointment_doctorNotFound_throwsException` | Báo lỗi khi đặt lịch khám với bác sĩ không tồn tại | Negative |
-| 7 | `createAppointment_doctorNotActive_throwsException` | Không cho phép đặt lịch khám với bác sĩ đang tạm ngưng hoạt động | Negative |
-| 8 | `createAppointment_slotAlreadyTaken_throwsException` | Trả về lỗi khi chọn ca khám đã có người đặt trước | Negative |
-| 9 | `createAppointment_pastDate_throwsException` | Không cho phép đặt lịch khám vào các ngày trong quá khứ | Negative |
-| 10 | `cancelAppointment_pending_success` | Bệnh nhân tự hủy lịch hẹn PENDING thành công (không cần hoàn tiền mặt) | Positive |
-| 11 | `cancelAppointment_wallet_refund` | Hủy lịch hẹn đã thanh toán bằng ví → Tự động hoàn lại tiền vào ví điện tử | Positive |
-| 12 | `cancelAppointment_wrongPatient_throwsException` | Không cho phép bệnh nhân này hủy lịch hẹn của bệnh nhân khác | Negative |
-| 13 | `cancelAppointment_completed_throwsException` | Không thể hủy lịch hẹn đã khám xong (COMPLETED) | Negative |
-| 14 | `cancelAppointment_alreadyCancelled_throwsException` | Không thể hủy một lịch hẹn đã được hủy trước đó | Negative |
-| 15 | `confirmAppointment_success` | Bác sĩ xác nhận lịch hẹn PENDING chuyển sang CONFIRMED thành công | Positive |
-| 16 | `confirmAppointment_wrongDoctor_throwsException` | Bác sĩ không thể xác nhận lịch khám của bác sĩ khác | Negative |
-| 17 | `confirmAppointment_notPending_throwsException` | Chỉ cho phép xác nhận các lịch hẹn ở trạng thái PENDING | Negative |
-| 18 | `getAppointmentsByDate_nullDate_returnsAll` | Lấy toàn bộ lịch hẹn khi không lọc theo ngày | Positive |
-| 19 | `getAppointmentsByDate_withDate_filtersCorrectly` | Lọc danh sách lịch hẹn chính xác theo ngày chỉ định | Positive |
+#### `FeedbackServiceTest` (27) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/FeedbackServiceTest.java)
+Đánh giá bác sĩ. **Ràng buộc biên: chỉ sửa được trong đúng 24 giờ kể từ khi tạo và khi bác sĩ chưa phản hồi.**
 
-### 1.5. BackendApplicationTests ([BackendApplicationTests.java](file:///c:/Users/DAT/OneDrive%20-%20ut.edu.vn/Documents/Desktop/Repo/backend/src/test/java/com/doctorbooking/backend/BackendApplicationTests.java) - 1 Test Case)
-| STT | Tên Test Case (JUnit) | Mô tả | Loại |
-|-----|----------------------|-------|------|
-| 1 | `contextLoads` | Đảm bảo context của ứng dụng Spring Boot khởi tạo thành công | Positive |
+| # | Test | Mô tả | Loại |
+|---|------|-------|------|
+| 1 | `createFeedback_success` | Tạo feedback cho lịch COMPLETED | Positive |
+| 2 | `createFeedback_appointmentNotCompleted_throwsException` | Lịch chưa hoàn tất → lỗi | Negative |
+| 3 | `createFeedback_appointmentNotBelongToPatient_throwsException` | Lịch của bệnh nhân khác → lỗi | Negative |
+| 4 | `createFeedback_alreadyExists_throwsException` | Đã có feedback → không tạo lần 2 | Negative |
+| 5 | `updateFeedback_success` | Sửa trong 24h, chưa có reply | Positive |
+| 6 | `updateFeedback_wrongPatient_throwsException` | Người khác sửa → lỗi | Negative |
+| 7 | `updateFeedback_afterDoctorReply_throwsException` | Đã có reply của bác sĩ → không sửa | Negative |
+| 8 | `updateFeedback_bva_within24Hours_succeeds` | Sửa ở 23h59m59s → OK | BVA |
+| 9 | `updateFeedback_bva_exactly24Hours_succeeds` | Sửa ở đúng 24h → OK | BVA |
+| 10 | `updateFeedback_bva_after24Hours_throwsException` | Sửa ở 24h00m01s → lỗi | BVA |
+| 11 | `replyToFeedback_success` | Bác sĩ phản hồi thành công | Positive |
+| 12 | `replyToFeedback_wrongDoctor_throwsException` | Bác sĩ khác phản hồi → lỗi | Negative |
+| 13 | `updateDoctorReply_success` | Bác sĩ sửa phản hồi trong 24h | Positive |
+| 14 | `updateDoctorReply_after24Hours_throwsException` | Sửa phản hồi quá 24h → lỗi | BVA |
+| 15 | `updateDoctorReply_legacyFeedbackRepliedAtNull_throwsException` | Dữ liệu cũ `repliedAt` null → lỗi thay vì NPE | Negative |
+| 16 | `fromEntity_nullCreatedAt_success` | Map entity `createdAt` null không NPE, `canEdit=false` | Positive |
+| 17 | `averageRating_noFeedbacks_returnsZero` | Chưa có feedback → 0.0 | Positive |
+| 18 | `averageRating_withHiddenFeedbacks_ignoresHidden` | Bỏ qua feedback bị ẩn | Positive |
+| 19 | `averageRating_allHidden_returnsZero` | Tất cả bị ẩn → 0.0 | Positive |
+| 20 | `averageRating_withNullHiddenFeedbacks_ignoresNullHidden` | `isHidden` null coi như hiển thị | Positive |
+| 21 | `hideFeedback_success` | Admin ẩn feedback | Positive |
+| 22 | `unhideFeedback_success` | Admin bỏ ẩn feedback | Positive |
+| 23 | `getDoctorFeedbacks_filtersHidden` | Danh sách công khai loại feedback ẩn | Positive |
+| 24 | `getDoctorFeedbacks_withNullHiddenFeedbacks_succeeds` | Không NPE khi `isHidden` null | Positive |
+| 25 | `getByStatus_nullStatus_returnsAll` | Status null → tất cả | Positive |
+| 26 | `getByStatus_validStatus_filters` | Lọc theo status hợp lệ | Positive |
+| 27 | `getByStatus_invalidStatus_returnsAll` | Status không hợp lệ → tất cả | Positive |
+
+#### `AppointmentServiceTest` (32) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/AppointmentServiceTest.java)
+Đặt lịch, khung giờ hợp lệ (17 slot 08:00–17:00, nghỉ trưa 12:00), hủy & hoàn tiền, xác nhận.
+
+| # | Test | Mô tả | Loại |
+|---|------|-------|------|
+| 1 | `getAvailableSlots_noPendingAppointments_returnsAllSlots` | Trả về đủ 17 slot khi trống | Positive |
+| 2 | `getAvailableSlots_removePendingSlot` | Loại slot đang PENDING | Positive |
+| 3 | `getAvailableSlots_confirmedRemovedCancelledKept` | Bỏ CONFIRMED, giữ CANCELLED | Positive |
+| 4 | `getAvailableSlots_completedAppointment_kept` | Giữ slot COMPLETED | Positive |
+| 5 | `createAppointment_cash_success` | Đặt lịch tiền mặt | Positive |
+| 6 | `createAppointment_wallet_success` | Đặt lịch trả ví (tự trừ tiền) | Positive |
+| 7 | `createAppointment_doctorNotFound_throwsException` | Bác sĩ không tồn tại | Negative |
+| 8 | `createAppointment_doctorNotActive_throwsException` | Bác sĩ ngưng hoạt động | Negative |
+| 9 | `createAppointment_invalidTimeSlot_throwsException` | Slot 08:15 không hợp lệ | Negative/BVA |
+| 10 | `createAppointment_slotAlreadyTaken_throwsException` | Slot đã có người đặt | Negative |
+| 11 | `createAppointment_pastDate_throwsException` | Ngày quá khứ | Negative |
+| 12 | `shouldRejectInvalidTimeSlot` | 08:15 → lỗi | BVA |
+| 13 | `shouldAcceptValidTimeSlot` | 14:30 → OK | BVA |
+| 14 | `shouldAcceptEightOClockSlot` | 08:00 (biên đầu) → OK | BVA |
+| 15 | `shouldAcceptFivePmSlot` | 17:00 (biên cuối) → OK | BVA |
+| 16 | `shouldRejectLunchBreakTimeSlot` | 12:00 nghỉ trưa → lỗi | BVA |
+| 17 | `shouldRejectAfterWorkingHours` | 17:30 sau giờ làm → lỗi | BVA |
+| 18 | `createAppointment_pastTimeToday_throwsException` | Hôm nay nhưng giờ đã qua | Negative/BVA |
+| 19 | `createAppointment_futureTimeToday_success` | Hôm nay giờ tương lai → OK | BVA |
+| 20 | `cancelAppointment_pending_success` | Hủy lịch PENDING | Positive |
+| 21 | `cancelAppointment_wallet_refund` | Hủy lịch trả ví → hoàn tiền | Positive |
+| 22 | `cancelAppointment_wrongPatient_throwsException` | Hủy lịch người khác | Negative |
+| 23 | `cancelAppointment_completed_throwsException` | Không hủy lịch COMPLETED | Negative |
+| 24 | `cancelAppointment_alreadyCancelled_throwsException` | Không hủy lịch đã hủy | Negative |
+| 25 | `confirmAppointment_success` | Bác sĩ xác nhận PENDING→CONFIRMED | Positive |
+| 26 | `confirmAppointment_wrongDoctor_throwsException` | Xác nhận lịch không của mình | Negative |
+| 27 | `confirmAppointment_notPending_throwsException` | Chỉ PENDING mới xác nhận | Negative |
+| 28 | `getByDate_nullDate_returnsAll` | Không lọc → tất cả | Positive |
+| 29 | `getByDate_withDate_filtersCorrectly` | Lọc theo ngày | Positive |
+| 30 | `updateAppointmentByAdmin_pastDate_throwsException` | Admin dời về ngày quá khứ | Negative |
+| 31 | `updateAppointmentByAdmin_pastTimeToday_throwsException` | Admin dời về giờ đã qua hôm nay | Negative/BVA |
+| 32 | `updateAppointmentByAdmin_futureTimeToday_success` | Admin dời tới giờ tương lai | BVA |
+
+#### `AppointmentServiceExtraTest` (44) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/AppointmentServiceExtraTest.java)
+Bổ sung phủ nhánh: hoàn tất khám, hủy bởi bác sĩ/admin, thanh toán ví, đặt lịch cho người nhà.
+
+| # | Test | Mô tả | Loại |
+|---|------|-------|------|
+| 1-2 | `getAppointmentById_found` / `_notFound` | Chi tiết lịch theo ID | Positive / Negative |
+| 3 | `getPatientAppointments_withAndWithoutFeedback` | Danh sách lịch + cờ đã/chưa feedback | Positive |
+| 4-5 | `updatePaymentStatus_success` / `_notFound` | Cập nhật trạng thái thanh toán | Positive / Negative |
+| 6-7 | `cancelDueToPaymentFailure_success` / `_notFound` | Hủy do thanh toán thất bại | Positive / Negative |
+| 8 | `completeAppointment_success` | Hoàn tất khám (CONFIRMED→COMPLETED) | Positive |
+| 9 | `completeAppointment_notConfirmed_throws` | Chỉ CONFIRMED mới hoàn tất | Negative |
+| 10 | `completeAppointment_notFound` | Không tồn tại | Negative |
+| 11-12 | `deleteAppointment_success` / `_notFound` | Xóa lịch | Positive / Negative |
+| 13 | `cancelByDoctor_success_noRefund` | Bác sĩ hủy lịch tiền mặt | Positive |
+| 14 | `cancelByDoctor_walletRefund` | Bác sĩ hủy → hoàn ví | Positive |
+| 15 | `cancelByDoctor_wrongDoctor` | Hủy lịch không của mình | Negative |
+| 16-17 | `cancelByDoctor_completed` / `_alreadyCancelled` | Trạng thái không hợp lệ | Negative |
+| 18 | `cancelByDoctor_within24h_throws` | Không hủy trong 24h trước giờ khám | BVA |
+| 19-20 | `cancelByAdmin_success` / `_walletRefund` | Admin hủy (± hoàn ví) | Positive |
+| 21-23 | `cancelByAdmin_completed` / `_alreadyCancelled` / `_notFound` | Trạng thái không hợp lệ | Negative |
+| 24 | `createAppointment_walletPaid_success` | Đặt lịch trả ví | Positive |
+| 25 | `createAppointment_walletPaymentFails` | Ví thanh toán lỗi | Negative |
+| 26 | `createAppointment_walletFreeConsultation_paid` | Phí = 0 vẫn đánh dấu PAID | BVA |
+| 27-28 | `createAppointment_doctorNotActive_throws` / `_slotTaken_throws` | Bác sĩ ngưng / slot đã đặt | Negative |
+| 29 | `createAppointment_forFamilyMember_success` | Đặt lịch cho người nhà | Positive |
+| 30 | `createAppointment_familyMemberNotFound_throws` | Người nhà không tồn tại | Negative |
+| 31 | `getAllAppointments_returnsList` | Toàn bộ lịch | Positive |
+| 32-33 | `getAppointmentsByDate_null_returnsAll` / `_withDate` | Lọc theo ngày | Positive |
+| 34-36 | `getAvailableTimeSlots_futureDate...` / `_excludesBookedPending` / `_ignoresCancelledSlots` | Slot trống theo trạng thái | Positive |
+| 37 | `createAppointment_pastDate_throws` | Ngày quá khứ | Negative |
+| 38 | `createAppointment_reuseCancelledSlot_deletesOld` | Đặt lại slot đã hủy → xóa bản ghi cũ | Positive |
+| 39 | `createAppointment_nullConsultationFee_treatedAsZero` | Phí null coi như 0 | BVA |
+| 40 | `createAppointment_patientEmailEmpty_skipsEmail` | Email rỗng → bỏ qua gửi mail | Positive |
+| 41 | `cancelAppointment_walletRefundFails_throws` | Hoàn ví lỗi khi hủy → throw | Negative |
+| 42-43 | `cancelAppointment_notFound` / `cancelByDoctor_notFound` | Không tồn tại | Negative |
+| 44 | `updateAppointmentByAdmin_statusToConfirmed_sendsEmail` | Admin đổi sang CONFIRMED → gửi email | Positive |
+
+#### `AuthServiceTest` (11) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/AuthServiceTest.java)
+
+| # | Test | Mô tả | Loại |
+|---|------|-------|------|
+| 1-3 | `register_success_patient/doctor/admin` | Đăng ký 3 vai trò | Positive |
+| 4 | `register_noRole_defaultsToPatient` | Không role → PATIENT | Positive |
+| 5 | `register_fails_usernameExists` | Trùng username | Negative |
+| 6 | `register_fails_emailExists` | Trùng email | Negative |
+| 7 | `register_invalidRole_defaultsToPatient` | Role sai → PATIENT | Positive |
+| 8 | `login_success` | Đăng nhập trả JWT + thông tin | Positive |
+| 9 | `login_success_admin` | Đăng nhập admin | Positive |
+| 10 | `login_fails_badCredentials` | Sai mật khẩu | Negative |
+| 11 | `login_patientWithoutProfile_fullNameNull` | Chưa có hồ sơ → fullName null | Positive |
+
+#### `DoctorServiceTest` (19) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/DoctorServiceTest.java)
+`getAllDoctors`, `searchDoctors`, `getActiveDoctors`, `getDoctorById` (Success/NotFound), `createDoctor` (Success/UsernameExists/EmailExists), `updateDoctor` (Success/UsernameConflict/EmailConflict), `ensureDoctorProfile` (Exists/CreatesNew/UserNotDoctorRole/UserNotFound), `updateDoctorProfile`, `changePassword` (Success/IncorrectCurrentPassword), `deleteDoctor`. — CRUD + đổi mật khẩu + đảm bảo hồ sơ (Positive/Negative).
+
+#### `UserServiceTest` (17) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/UserServiceTest.java)
+`loadUserByUsername` (byUsername/byEmail/NotFound), `findById` (Success/NotFound), `findByUsername_NotFound`, `createUser` (Success/UsernameExists/EmailExists), `updateUser` (Success/EmailConflict), `deleteUser` (Success/DataIntegrityViolation), `toggleUserStatus`, `changeUserPassword`, `searchUsers` (EmptySearch/WithQuery). — Xác thực UserDetails + CRUD.
+
+#### `AdminServiceTest` (29) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/AdminServiceTest.java)
+Facade uỷ quyền cho các service con: quản lý bác sĩ (`getAll/search/getById/create/update/delete`), bệnh nhân (`create/update/delete` + biên email trùng/không đổi), lịch hẹn (`getAll ± date/getById/update/delete`), feedback (`getAll/byDoctor/byPatient/getById/hide/unhide`). — Positive + Negative (NotFound/EmailExists).
+
+#### `PatientServiceTest` (14) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/PatientServiceTest.java)
+`searchPatients` (Empty/Null/WithKeyword), `getPatientById` (Success/NotFound), `getAllPatients`, `getPatientByUserId` (Success/NotFound), `updatePatientProfile` (Success/InvalidGender/PatientNotFound), `changePassword` (Success/IncorrectCurrentPassword/UserNotFound).
+
+#### `FamilyMemberServiceTest` (15) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/FamilyMemberServiceTest.java)
+`getFamilyMembers`, `createFamilyMember` (nonSelf/self/self_mainExists/patientNotFound), `updateFamilyMember` (notFound/mainAccount_throws/relationshipSelf_throws/allFields/emptyMedicalHistory→null), `deleteFamilyMember` (notFound/nonMain/onlyMainAccount_throws/mainAccount_multiple), `getFamilyStats`.
+
+#### `NotificationServiceTest` (11) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/NotificationServiceTest.java)
+`createNotification` (success/patientNotFound), `getNotificationsByPatientId`, `getUnreadCount`, `markAsRead` (success/notFound/wrongOwner), `markAllAsRead`, `deleteNotification` (success/notFound/wrongOwner). — Có kiểm tra phân quyền chủ sở hữu.
+
+#### `TreatmentServiceTest` (11) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/TreatmentServiceTest.java)
+`getAllTreatments`, `getTreatmentsByDoctorId`, `getTreatmentsByPatientId`, `getTreatmentById` (Success/NotFound), `getTreatmentByAppointmentId`, `createTreatment` (Success/DoctorNotFound/PatientNotFound), `updateTreatment_Success`, `deleteTreatment_Success`.
+
+#### `VNPayServiceTest` (8) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/VNPayServiceTest.java)
+`init` trim tmnCode/hashSecret; `createPaymentUrl` (normalize tiếng Việt); `createPaymentUrlForAppointment`; `verifyPayment` (checksum hợp lệ→true / sai→false / thiếu `vnp_SecureHash`→false); `getResponseCode`; `isPaymentSuccess` ('00'→true, khác→false).
+
+#### `MedicationServiceTest` (4) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/MedicationServiceTest.java)
+`searchMedications` với `limit`: underLimit_returnsAll / overLimit_truncates / nullLimit_returnsAll / zeroLimit_returnsAll — **BVA giới hạn kết quả**.
+
+#### `AISymptomServiceTest` (3) — [file](../../backend/src/test/java/com/doctorbooking/backend/service/AISymptomServiceTest.java)
+Đường fallback khi không gọi được AI ngoài: lời chào → thân thiện (riskLevel Low); hỏi khám khoa nào → gợi ý; mô tả triệu chứng → phản hồi chung. *(Có thể skip khi `SKIP_AI_TESTS=true`.)*
+
+---
+
+### 1.2. Controller layer — Kiểm thử API & mã HTTP (MockMvc)
+
+#### `AuthControllerTest` (6) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/AuthControllerTest.java)
+`register` thành công→201 / lỗi nghiệp vụ→400; `login` thành công→200 / sai thông tin→401 / lỗi hệ thống→500; `test` endpoint→200.
+
+#### `PublicControllerTest` (1) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/PublicControllerTest.java)
+`healthCheck_ok` → 200 với status UP.
+
+#### `PatientControllerTest` (45) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/PatientControllerTest.java)
+Bao phủ toàn bộ endpoint bệnh nhân: hồ sơ (`getProfile`/`updateProfile`/`changePassword` + case notFound/badRequest); đặt lịch (`createAppointment` cash/vnpay/urlError/serviceError), `getAppointments`, `getAppointmentById` (success/forbidden/notFound), `cancelAppointment`, `getAvailableTimeSlots` (success/invalidDate); tìm bác sĩ (`searchDoctors`, `getDoctorById` active/inactive/exception); bệnh án (`getTreatments`, `getTreatmentById`, `getTreatmentByAppointmentId` + forbidden/notFound/null); feedback (`createFeedback`, `getFeedbacks`, `getFeedbackById`, `updateFeedback` + badRequest); AI (`checkSymptoms` empty/success/illegalArgument/genericError). — Đủ Positive + Negative (400/403/404/500).
+
+#### `DoctorControllerTest` (47) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/DoctorControllerTest.java)
+Toàn bộ endpoint bác sĩ: hồ sơ & đổi mật khẩu; lịch hẹn (`getAppointments` byDate/all/error, `getAppointmentById` success/forbidden/notFound, `confirm`/`cancel` success/badRequest); bệnh án/đơn thuốc (`getTreatments`, `getTreatmentById`, `create`/`update`/`delete` + forbidden/notFound/badRequest); bệnh nhân (`searchPatients`, `getPatientById`, `getPatientTreatments`); thuốc (`searchMedications`); feedback (`getDoctorFeedbacks`, `getFeedbacksByRating`, `getFeedbackById`, `replyToFeedback`, `updateDoctorReply`, `getAverageRating` + exception→0).
+
+#### `AdminControllerTest` (37) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/AdminControllerTest.java)
+Quản trị bác sĩ (`getAll` ±search, `getById` found/notFound, `create`/`update`/`delete` + badRequest/notFound); bệnh nhân (tương tự); lịch hẹn (`getAll`, `getById`, `update`, `cancel`, `delete` + badRequest/notFound); feedback (`getAll`, `byDoctor`, `byPatient`, `getById`, `hide`/`unhide` + notFound).
+
+#### `UserControllerTest` (17) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/UserControllerTest.java)
+`getAllUsers` (noSearch/withSearch/blankSearch), `getUserById` (found/notFound), `createUser` (success/badRequest), `updateUser` (success/badRequest), `deleteUser` (success/**dataIntegrity→409**/notFound/otherError→400), `toggleUserStatus` (success/notFound), `changePassword` (success/badRequest).
+
+#### `PaymentControllerTest` (18) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/PaymentControllerTest.java)
+`getWallet` (success/nullFields→defaults/patientNotFound→500); `topUp` (success/**amountTooLow→400**/**amountTooHigh→400**/patientNotFound→500); `getTransactions` (success/error); callback ví `vnpayCallback` (success/failedPayment/invalidChecksum/missingTxnRef/exception); callback lịch hẹn `vnpayAppointmentCallback` (success/failed/invalidChecksum/exception).
+
+#### `NotificationControllerTest` (11) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/NotificationControllerTest.java)
+`getNotifications` (success/notAuthenticated/patientNotFound), `getUnreadCount` (success/error), `markAsRead` (success/error), `markAllAsRead` (success/error), `deleteNotification` (success/error).
+
+#### `FamilyMemberControllerTest` (10) — [file](../../backend/src/test/java/com/doctorbooking/backend/controller/FamilyMemberControllerTest.java)
+`getFamilyMembers`, `getFamilyStats`, `createFamilyMember`, `updateFamilyMember`, `deleteFamilyMember` — mỗi endpoint có case success + lỗi (500/400).
+
+---
+
+### 1.3. DTO Validation layer — Blackbox EP & BVA (Jakarta Validation)
+
+Kiểm thử ràng buộc `@NotBlank`, `@Size`, `@Email`, `@NotNull`, `@DecimalMin` ở tầng DTO bằng `Validator` — thiết kế theo tài liệu `docs/blackbox/`.
+
+#### `RegisterRequestValidationTest` (13) — [file](../../backend/src/test/java/com/doctorbooking/backend/dto/RegisterRequestValidationTest.java)
+- **username `@Size(3,50)`**: B1=3 / B2=4 / B3=26 / B4=49 / B5=50 hợp lệ; X1/B0=2 & X2/B6=51 không hợp lệ; rỗng→lỗi `@NotBlank`.
+- **password `@Size(min=6)`**: B8=6/B9=7/B10=20 hợp lệ (parameterized); X4/B7=5 không hợp lệ; rỗng→lỗi.
+- **email `@Email`+`@NotBlank`**: đúng định dạng hợp lệ; thiếu `@` không hợp lệ; rỗng→lỗi.
+- **fullName `@NotBlank`**: 1 ký tự hợp lệ; chỉ khoảng trắng→lỗi.
+- **nominal**: tất cả hợp lệ → 0 vi phạm.
+
+#### `LoginRequestValidationTest` (4) — [file](../../backend/src/test/java/com/doctorbooking/backend/dto/LoginRequestValidationTest.java)
+username & password không rỗng → hợp lệ; username rỗng / chỉ khoảng trắng / password rỗng → lỗi `@NotBlank`.
+
+#### `FeedbackRequestValidationTest` (5) — [file](../../backend/src/test/java/com/doctorbooking/backend/dto/FeedbackRequestValidationTest.java)
+rating ∈ [1,5] hợp lệ (parameterized B1..B5); rating=0 (<min) / 6 (>max) / -1 (âm) / null (`@NotNull`) → không hợp lệ.
+
+#### `TopUpRequestValidationTest` (6) — [file](../../backend/src/test/java/com/doctorbooking/backend/dto/TopUpRequestValidationTest.java)
+amount ≥ 10.000 hợp lệ (parameterized 10000/10001/50000/1000000); 9.999 (<min) / 100 / 0 / null → không hợp lệ; paymentMethod null → lỗi `@NotNull`.
+
+#### `SymptomCheckRequestValidationTest` (4) — [file](../../backend/src/test/java/com/doctorbooking/backend/dto/SymptomCheckRequestValidationTest.java)
+symptoms hợp lệ → OK; rỗng / chỉ khoảng trắng / null → lỗi `@NotBlank`.
+
+#### `BackendApplicationTests` (1) — [file](../../backend/src/test/java/com/doctorbooking/backend/BackendApplicationTests.java)
+`contextLoads` — Spring Boot context khởi tạo thành công.
 
 ---
 
 ## 2. Kiểm thử Tự động hóa API (Postman / Newman)
-Bộ API Automation Test Suite kiểm thử tích hợp toàn diện luồng nghiệp vụ của hệ thống (End-to-End) và thực thi các kiểm thử giá trị biên trực tiếp thông qua API HTTP.
-* **Tổng số kịch bản API**: **114**
-* **Cơ chế đặc biệt**: Dùng tập tin dữ liệu `data/users_login.json` để tự động chạy lặp 3 lần với 3 tài khoản vai trò khác nhau (PATIENT, DOCTOR, ADMIN), thực thi tổng cộng **348 yêu cầu HTTP** và kiểm tra **768 assertions** mà không gặp lỗi.
-* **Cơ chế chống nghẽn email**: Toàn bộ luồng gửi email xác nhận và đơn thuốc qua SMTP được cấu hình chạy bất đồng bộ (Asynchronous via CompletableFuture) giúp tốc độ phản hồi API cực nhanh (< 500ms) và loại bỏ hoàn toàn các lỗi nghẽn cổng kết nối (`ESOCKETTIMEDOUT`).
 
-### 2.1. Danh sách các nhóm API và Phân tích giá trị biên (BVA)
+Bộ API Test Suite kiểm thử tích hợp end-to-end và BVA trực tiếp qua HTTP.
 
-#### Nhóm 02_Auth (Xác thực & Biên đăng ký tài khoản)
-* **Quy định biên Username (3 - 50 ký tự)** và **Password (>= 6 ký tự)**:
-  1. `POST Register - Username Too Short (2 chars)` -> Trạng thái mong đợi: **400** (BVA Biên dưới ngoài)
-  2. `POST Register - Username Min Length (3 chars) - Valid` -> Trạng thái mong đợi: **201** (BVA Biên dưới trong)
-  3. `POST Register - Username Max Length (50 chars) - Valid` -> Trạng thái mong đợi: **201** (BVA Biên trên trong)
-  4. `POST Register - Username Too Long (51 chars)` -> Trạng thái mong đợi: **400** (BVA Biên trên ngoài)
-  5. `POST Register - Password Too Short (5 chars)` -> Trạng thái mong đợi: **400** (BVA Biên dưới ngoài)
-  6. `POST Register - Password Min Length (6 chars) - Valid` -> Trạng thái mong đợi: **201** (BVA Biên dưới trong)
-* **Security & Negative API Cases**:
-  * Đăng ký Email không hợp lệ (Trạng thái **400**)
-  * Đăng nhập thiếu mật khẩu (Trạng thái **400**)
-  * Đăng nhập sai thông tin (Trạng thái **401**)
-  * Kiểm thử chống tấn công SQL Injection trên trường Username (Trạng thái **400/401**, không gây lỗi sập Server 500)
-  * Kiểm thử chống tấn công XSS trên trường Họ tên bệnh nhân (Xử lý lưu trữ an toàn)
+* **114 kịch bản** trong **24 folder**. Dùng data file `data/users_login.json` chạy lặp cho **3 vai trò** (PATIENT/DOCTOR/ADMIN) ⇒ ~**348 request**, ~**768 assertion**.
+* **Async email**: luồng gửi email/đơn thuốc qua SMTP chạy bất đồng bộ (`CompletableFuture`) → phản hồi API < 500ms, tránh `ESOCKETTIMEDOUT`.
+* CI chạy tuần tự 23 folder `00_Setup` → `22_E2E_Flows` (folder `23_Debug_Test` dành cho debug thủ công).
 
-#### Nhóm 07_Patient_Feedbacks (Đánh giá Bác sĩ & Biên Điểm đánh giá)
-* **Quy định biên Điểm đánh giá (Rating từ 1 đến 5 sao)**:
-  1. `POST Feedback - Rating Too Low (0)` -> Trạng thái mong đợi: **400** (BVA Biên dưới ngoài)
-  2. `POST Feedback - Rating Min Valid (1)` -> Trạng thái mong đợi: **201** (BVA Biên dưới trong)
-  3. `POST Feedback - Rating Max Valid (5)` -> Trạng thái mong đợi: **201** (BVA Biên trên trong)
-  4. `POST Feedback - Rating Too High (6)` -> Trạng thái mong đợi: **400** (BVA Biên trên ngoài)
-  5. `POST Feedback - Missing Rating` -> Trạng thái mong đợi: **400**
+### 2.1. Điểm nhấn BVA qua API
 
-#### Nhóm 09_Patient_Wallet (Nạp tiền ví & Biên số tiền nạp tối thiểu)
-* **Quy định biên Số tiền nạp tối thiểu (Min = 10,000 VNĐ)**:
-  1. `POST Wallet Top-Up - Below Min BVA (9999 VNĐ)` -> Trạng thái mong đợi: **400** (BVA Biên dưới ngoài)
-  2. `POST Wallet Top-Up - Min Valid (10000 VNĐ)` -> Trạng thái mong đợi: **201** (BVA Biên dưới trong)
-  3. `POST Wallet Top-Up - Slightly Above Min (10001 VNĐ) - Valid` -> Trạng thái mong đợi: **201** (BVA Biên trên trong)
-  4. `POST Top-Up - Below Minimum (100 VNĐ)` -> Trạng thái mong đợi: **400**
+| Nhóm | Biên | Case | Mã mong đợi |
+|------|------|------|-------------|
+| `02_Auth` | username [3,50] | 2 ký tự / 3 / 50 / 51 | 400 / 201 / 201 / 400 |
+| `02_Auth` | password ≥ 6 | 5 ký tự / 6 ký tự | 400 / 201 |
+| `02_Auth` | Security | SQL Injection, XSS trên username/họ tên | 400/401, không 500 |
+| `07_Patient_Feedbacks` | rating [1,5] | 0 / 1 / 5 / 6 / thiếu | 400 / 201 / 201 / 400 / 400 |
+| `09_Patient_Wallet` | nạp ≥ 10.000đ | 9.999 / 10.000 / 10.001 / 100 | 400 / 201 / 201 / 400 |
 
-### 2.2. Bảng ánh xạ kịch bản API Automation Test Suite
+### 2.2. Bảng ánh xạ 24 folder
 
-| Thư mục Postman | Loại kịch bản | Mô tả kịch bản / endpoint kiểm thử | Trạng thái mong đợi |
-|-----------------|---------------|------------------------------------|---------------------|
-| **00_Setup** | Setup | Khởi tạo lại cờ bỏ qua và đăng nhập 3 vai trò để lấy Token | 200 / 201 |
-| **01_Public** | Positive | Kiểm tra Endpoint y tế công khai (Health Check) | 200 |
-| | Negative | Gọi Health Check sai phương thức POST | 405 / 403 / 500 |
-| **02_Auth** | Positive | Đăng ký/Đăng nhập các vai trò & Kiểm tra BVA Biên trong | 201 |
-| | Negative | Đăng ký sai định dạng, SQL Injection, XSS & Kiểm tra BVA Biên ngoài | 400 / 401 |
-| **03_Patient_Profile** | Positive | Xem và Cập nhật hồ sơ bệnh nhân hiện tại | 200 |
-| | Negative | Xem hồ sơ khi không truyền Token, dùng Token bác sĩ | 403 |
-| **04_Patient_Doctors** | Positive | Xem danh sách bác sĩ và chi tiết bác sĩ theo ID | 200 |
-| | Negative | Tìm bác sĩ với ID không tồn tại | 404 |
-| **05_Patient_Appointments**| Positive | Lấy giờ trống và Đặt lịch khám mới thành công (CASH) | 200 / 201 |
-| | Negative | Đặt lịch thiếu ID bác sĩ, sai định dạng thời gian, không Token | 400 / 403 / 404 |
-| **06_Patient_Treatments** | Positive | Bệnh nhân xem danh sách đơn thuốc và chi tiết đơn thuốc | 200 |
-| | Negative | Xem đơn thuốc không tồn tại | 404 |
-| **07_Patient_Feedbacks** | Positive | Xem phản hồi và Đăng phản hồi biên hợp lệ | 200 / 201 |
-| | Negative | Đăng phản hồi thiếu rating hoặc rating ngoài biên [1-5] | 400 |
-| **08_Patient_Family** | Positive | Lọc, xem số liệu và thêm người nhà thành công | 200 / 201 |
-| | Negative | Thêm người nhà thiếu tên, xóa người nhà không tồn tại | 400 / 404 |
-| **09_Patient_Wallet** | Positive | Xem số dư, lịch sử giao dịch và nạp tiền biên hợp lệ | 200 / 201 |
-| | Negative | Nạp tiền số lượng dưới 10,000 VNĐ | 400 |
-| **10_Patient_AI** | Positive | Gọi AI chẩn đoán triệu chứng thông thường | 200 / 503 |
-| | Negative | Gửi triệu chứng rỗng lên AI | 400 |
-| **11_Patient_Notif** | Positive | Xem thông báo, đếm thông báo chưa đọc, đánh dấu đã đọc | 200 |
-| | Negative | Đọc thông báo không tồn tại | 404 / 400 |
-| **12_Doctor_Profile** | Positive | Bác sĩ xem và cập nhật hồ sơ cá nhân | 200 |
-| | Negative | Xem hồ sơ bác sĩ bằng Token bệnh nhân | 403 |
-| **13_Doctor_Appointments** | Positive | Bác sĩ xem lịch hẹn, chi tiết lịch hẹn và xác nhận ca khám | 200 |
-| | Negative | Xem ca khám không tồn tại | 404 |
-| **14_Doctor_Treatments** | Positive | Bác sĩ xem danh sách bệnh án và tạo bệnh án mới (Toa thuốc) | 200 / 201 |
-| | Negative | Tạo bệnh án thiếu thông tin bệnh nhân | 400 |
-| **15_Doctor_Patients** | Positive | Bác sĩ xem danh sách bệnh nhân và thông tin chi tiết từng người | 200 |
-| | Negative | Xem chi tiết bệnh nhân không tồn tại | 404 |
-| **16_Doctor_Misc** | Positive | Xem danh sách thuốc kê toa, nhận xét của bệnh nhân, điểm TB | 200 |
-| | Negative | Lọc nhận xét theo điểm đánh giá không hợp lệ | 400 / 404 |
-| **17_Admin_Doctors** | Positive | Admin quản lý danh sách bác sĩ, xem chi tiết và tìm kiếm | 200 |
-| | Negative | Tìm bác sĩ không có thực, tạo mới thiếu trường bắt buộc | 400 / 404 |
-| **18_Admin_Patients** | Positive | Admin quản lý bệnh nhân và xem chi tiết hồ sơ bệnh nhân | 200 |
-| | Negative | Xem bệnh nhân không tồn tại | 404 |
-| **19_Admin_Appts** | Positive | Admin quản lý toàn bộ ca khám của hệ thống | 200 |
-| | Negative | Xem chi tiết ca khám không tồn tại | 404 |
-| **20_Admin_Feedbacks** | Positive | Admin xem toàn bộ nhận xét và lọc nhận xét theo bác sĩ | 200 |
-| | Negative | Xem nhận xét không tồn tại | 404 |
-| **21_Admin_Users** | Positive | Admin xem danh sách tài khoản và tạo tài khoản mới | 200 / 201 |
-| | Negative | Tạo tài khoản sai email, tìm tài khoản không tồn tại | 400 / 404 |
-| **22_E2E_Flows** | Setup/E2E | Kịch bản trọn vẹn: Đặt lịch → Xác nhận → Khám & Kê đơn → Đánh giá → Dọn dẹp dữ liệu | 200 / 201 / 204 |
-| **23_Debug_Test** | Setup/E2E | Endpoint kiểm tra thông tin phân quyền và kết nối CSDL | 200 |
+| Folder | Positive | Negative |
+|--------|----------|----------|
+| `00_Setup` | Reset cờ + đăng nhập 3 vai trò lấy token (200/201) | — |
+| `01_Public` | Health check (200) | Sai method POST (405/403) |
+| `02_Auth` | Đăng ký/đăng nhập + BVA biên trong (201) | Sai định dạng, SQLi, XSS, BVA biên ngoài (400/401) |
+| `03_Patient_Profile` | Xem/cập nhật hồ sơ (200) | Thiếu token / token bác sĩ (403) |
+| `04_Patient_Doctors` | Danh sách & chi tiết bác sĩ (200) | ID không tồn tại (404) |
+| `05_Patient_Appointments` | Lấy giờ trống + đặt lịch CASH (200/201) | Thiếu ID, sai thời gian, không token (400/403/404) |
+| `06_Patient_Treatments` | Xem đơn thuốc & chi tiết (200) | Đơn không tồn tại (404) |
+| `07_Patient_Feedbacks` | Xem & đăng feedback hợp lệ (200/201) | Thiếu/ngoài biên rating (400) |
+| `08_Patient_FamilyMembers` | Lọc, thống kê, thêm người nhà (200/201) | Thiếu tên, xóa không tồn tại (400/404) |
+| `09_Patient_Wallet_Payments` | Số dư, lịch sử, nạp tiền biên hợp lệ (200/201) | Nạp < 10.000đ (400) |
+| `10_Patient_AI` | Chẩn đoán triệu chứng (200/503) | Triệu chứng rỗng (400) |
+| `11_Patient_Notifications` | Xem, đếm chưa đọc, đánh dấu đã đọc (200) | Thông báo không tồn tại (404/400) |
+| `12_Doctor_Profile` | Xem/cập nhật hồ sơ bác sĩ (200) | Token bệnh nhân (403) |
+| `13_Doctor_Appointments` | Lịch hẹn, chi tiết, xác nhận (200) | Ca không tồn tại (404) |
+| `14_Doctor_Treatments` | Danh sách + tạo bệnh án (200/201) | Thiếu thông tin bệnh nhân (400) |
+| `15_Doctor_Patients` | Danh sách & chi tiết bệnh nhân (200) | Bệnh nhân không tồn tại (404) |
+| `16_Doctor_Medications_Feedbacks` | Thuốc, nhận xét, điểm TB (200) | Lọc rating không hợp lệ (400/404) |
+| `17_Admin_Doctors` | Quản lý & tìm kiếm bác sĩ (200) | Không tồn tại / thiếu trường (400/404) |
+| `18_Admin_Patients` | Quản lý bệnh nhân (200) | Không tồn tại (404) |
+| `19_Admin_Appointments` | Quản lý toàn bộ ca khám (200) | Không tồn tại (404) |
+| `20_Admin_Feedbacks` | Xem & lọc nhận xét (200) | Không tồn tại (404) |
+| `21_Admin_Users` | Danh sách & tạo tài khoản (200/201) | Sai email, không tồn tại (400/404) |
+| `22_E2E_Flows` | Đặt lịch→Xác nhận→Khám & kê đơn→Đánh giá→Dọn dữ liệu | (200/201/204) |
+| `23_Debug_Test` | Kiểm tra phân quyền & kết nối CSDL | (200) |
 
 ---
 
-## 3. Kết Luận
-* Bộ test cases được xây dựng vững chắc bao phủ cả tầng **Logic nghiệp vụ (JUnit)** và tầng **Giao tiếp API (Postman)**.
-* Việc tích hợp phương pháp **Phân tích giá trị biên (BVA)** ở cả 2 tầng giúp hệ thống phát hiện sớm các lỗi về độ dài chuỗi (Username, Password), khoảng số (Rating, Top-up) và thời gian (Feedback 24h limit), đảm bảo ứng dụng hoạt động chính xác và bảo mật.
-* Giao dịch gửi email qua SMTP bất đồng bộ giúp hệ thống hoạt động trơn tru và ngăn chặn hoàn toàn lỗi nghẽn kiểm thử tự động.
+## 3. Kiểm thử Giao diện E2E (CodeceptJS + Playwright)
+
+Chạy khi backend `:8080` và frontend đang hoạt động. Lệnh: `npm run e2e:smoke` (`@smoke`), `npm run e2e:bva` (`@bva`), `npm run e2e` (toàn bộ). Chi tiết map file↔ticket xem `docs/Report/04_E2E/test-matrix.md`.
+
+* **Blackbox BVA (`@bva`)** — 10 file: Register, Login, Appointment Booking, Feedback Rating, Feedback Edit 24h, Wallet Top-up, Loyalty Tier, Health AI, Notifications, Profile Password.
+* **Smoke (`@smoke`)** — theo vai trò: Public (`/doctors`, `/specialties`, `/about`, `/contact`), Patient (đăng nhập/đăng ký, dashboard, hồ sơ, đặt lịch, ví, AI, tìm bác sĩ, lịch sử, thanh toán), Doctor, Admin.
+* **Integration flows** — đặt lịch cho người nhà, feedback end-to-end, luồng admin, đa vai trò.
+
+---
+
+## 4. Kết Luận
+
+* Bộ test phủ 3 tầng: **Logic nghiệp vụ (JUnit)** → **API (Postman)** → **Giao diện (E2E)**, với **496 test method** backend, **114 kịch bản** API và **~30 file** E2E.
+* **Phân tích giá trị biên (BVA)** được áp dụng nhất quán ở cả 3 tầng cho: độ dài chuỗi (username/password), khoảng số (rating 1–5, nạp ≥ 10.000đ, hạng loyalty), khung giờ khám (08:00–17:00, nghỉ trưa) và thời gian (giới hạn sửa feedback 24h).
+* Độ phủ backend đạt Instruction 90% / Branch 70% / Line 91%, vượt cổng chất lượng JaCoCo (line ≥ 80%, branch ≥ 70%).
+* Email SMTP bất đồng bộ giúp API phản hồi nhanh và loại bỏ lỗi nghẽn khi chạy kiểm thử tự động.

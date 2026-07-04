@@ -55,15 +55,15 @@ const Footer = () => {
             </div>
             <div className="footer-contact">
               <div className="contact-item">
-                <i data-feather="map-pin"></i>
+                <ShellIcon name="map-pin" />
                 <span>123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</span>
               </div>
               <div className="contact-item">
-                <i data-feather="mail"></i>
+                <ShellIcon name="mail" />
                 <a href="mailto:support@doctorbooking.com">support@doctorbooking.com</a>
               </div>
               <div className="contact-item">
-                <i data-feather="phone"></i>
+                <ShellIcon name="phone" />
                 <a href="tel:+84123456789">+84 123 456 789</a>
               </div>
             </div>
@@ -119,19 +119,19 @@ const Footer = () => {
             <h4 className="footer-column-title">Kết nối với chúng tôi</h4>
             <div className="footer-social-icons">
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Facebook">
-                <i data-feather="facebook"></i>
+                <ShellIcon name="facebook" />
               </a>
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Twitter">
-                <i data-feather="twitter"></i>
+                <ShellIcon name="twitter" />
               </a>
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="LinkedIn">
-                <i data-feather="linkedin"></i>
+                <ShellIcon name="linkedin" />
               </a>
               <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="YouTube">
-                <i data-feather="youtube"></i>
+                <ShellIcon name="youtube" />
               </a>
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Instagram">
-                <i data-feather="instagram"></i>
+                <ShellIcon name="instagram" />
               </a>
             </div>
 
@@ -148,7 +148,7 @@ const Footer = () => {
                   className="newsletter-input"
                 />
                 <button type="submit" className="newsletter-button">
-                  <i data-feather="send"></i>
+                  <ShellIcon name="send" />
                   <span>Đăng ký</span>
                 </button>
               </form>

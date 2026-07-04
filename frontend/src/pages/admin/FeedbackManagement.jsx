@@ -7,7 +7,7 @@ import ErrorMessage from '../../components/common/ErrorMessage';
 import { formatDate } from '../../utils/formatDate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import feather from 'feather-icons';
+import ShellIcon from '../../components/shell/ShellIcon';
 
 const FeedbackManagement = () => {
   const navigate = useNavigate();
@@ -23,10 +23,6 @@ const FeedbackManagement = () => {
   useEffect(() => {
     loadFeedbacks();
   }, []);
-
-  useEffect(() => {
-    feather.replace();
-  }, [feedbacks, selectedFeedback]);
 
   const loadFeedbacks = async () => {
     try {
@@ -108,7 +104,7 @@ const FeedbackManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -168,7 +164,7 @@ const FeedbackManagement = () => {
         </div>
 
         {/* Feedbacks Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="app-card overflow-hidden">
           {loading ? (
             <div className="p-8"><Loading /></div>
           ) : (
@@ -230,7 +226,7 @@ const FeedbackManagement = () => {
                               className="text-blue-600 hover:text-blue-800"
                               title="Xem chi tiết"
                             >
-                              <i data-feather="eye" className="w-4 h-4"></i>
+                              <ShellIcon name="eye" className="w-4 h-4" />
                             </button>
                             {feedback.isHidden ? (
                               <button
@@ -238,7 +234,7 @@ const FeedbackManagement = () => {
                                 className="text-green-600 hover:text-green-800"
                                 title="Bỏ ẩn"
                               >
-                                <i data-feather="eye" className="w-4 h-4"></i>
+                                <ShellIcon name="eye" className="w-4 h-4" />
                               </button>
                             ) : (
                               <button
@@ -246,7 +242,7 @@ const FeedbackManagement = () => {
                                 className="text-red-600 hover:text-red-800"
                                 title="Ẩn phản hồi"
                               >
-                                <i data-feather="eye-off" className="w-4 h-4"></i>
+                                <ShellIcon name="eye-off" className="w-4 h-4" />
                               </button>
                             )}
                           </div>
@@ -272,7 +268,7 @@ const FeedbackManagement = () => {
                   onClick={() => setShowDetailModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  <i data-feather="x" className="w-6 h-6"></i>
+                  <ShellIcon name="x" className="w-6 h-6" />
                 </button>
               </div>
 

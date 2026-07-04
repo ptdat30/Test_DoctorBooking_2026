@@ -4,5 +4,6 @@
         "frontend"
     ],
     "markdown.extension.completion.enabled": false,
-    "markdown.extension.tableFormatter.enabled": false
+    "markdown.extension.tableFormatter.enabled": false,
+    "livePreview.defaultPreviewPath": "/docs/Report/03_Whitebox/jacoco/index.html"
 }

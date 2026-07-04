@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { CheckCircle, XCircle } from 'lucide-react';
 import PatientLayout from '../../components/patient/PatientLayout';
-import './PaymentResultPage.css';
+import { AppPage, BtnPrimary, BtnSecondary } from '../../components/shell/DashboardPrimitives';
 
 const PaymentResultPage = () => {
   const [searchParams] = useSearchParams();
@@ -11,30 +10,37 @@ const PaymentResultPage = () => {
   const [countdown, setCountdown] = useState(5);
   const [result, setResult] = useState(null);
 
-  // Helper function to get error message from VNPAY response code
   const getErrorMessage = (code) => {
     const errorMessages = {
-      '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).',
-      '09': 'Thẻ/Tài khoản chưa đăng ký dịch vụ InternetBanking',
-      '10': 'Xác thực thông tin thẻ/tài khoản không đúng. Quá 3 lần',
-      '11': 'Đã hết hạn chờ thanh toán. Xin vui lòng thực hiện lại giao dịch.',
-      '12': 'Thẻ/Tài khoản bị khóa.',
-      '13': 'Nhập sai mật khẩu xác thực giao dịch (OTP). Quá 3 lần',
-      '24': 'Bạn đã hủy giao dịch',
-      '51': 'Tài khoản không đủ số dư để thực hiện giao dịch.',
-      '65': 'Tài khoản đã vượt quá hạn mức giao dịch trong ngày.',
-      '70': 'Giao dịch bị từ chối do thông tin thẻ/tài khoản không đúng hoặc đã hủy giao dịch',
-      '75': 'Ngân hàng thanh toán đang bảo trì.',
-      '79': 'Nhập sai mật khẩu thanh toán quá số lần quy định.',
-      '97': 'Checksum không hợp lệ',
-      '99': 'Lỗi không xác định',
+      '07': 'Giao dịch bị nghi ngờ gian lận.',
+      '09': 'Thẻ/tài khoản chưa đăng ký Internet Banking.',
+      '10': 'Xác thực thông tin không đúng quá 3 lần.',
+      '11': 'Hết hạn chờ thanh toán.',
+      '12': 'Thẻ/tài khoản bị khóa.',
+      '13': 'Nhập sai OTP quá 3 lần.',
+      '24': 'Bạn đã hủy giao dịch.',
+      '51': 'Tài khoản không đủ số dư.',
+      '65': 'Vượt hạn mức giao dịch trong ngày.',
+      '75': 'Ngân hàng đang bảo trì.',
+      '79': 'Nhập sai mật khẩu thanh toán quá số lần.',
+      '97': 'Checksum không hợp lệ.',
+      '99': 'Lỗi không xác định.',
     };
-    return errorMessages[code] || 'Thanh toán thất bại. Vui lòng thử lại sau.';
+    return errorMessages[code] || 'Thanh toán thất bại. Vui lòng thử lại.';
+  };
+
+  const formatPayDate = (dateStr) => {
+    if (!dateStr || dateStr.length < 14) return dateStr;
+    const year = dateStr.substring(0, 4);
+    const month = dateStr.substring(4, 6);
+    const day = dateStr.substring(6, 8);
+    const hour = dateStr.substring(8, 10);
+    const minute = dateStr.substring(10, 12);
+    const second = dateStr.substring(12, 14);
+    return `${day}/${month}/${year} ${hour}:${minute}:${second}`;
   };
 
   useEffect(() => {
-    // Parse query params from VNPAY callback
-    // VNPAY returns params directly, backend also adds code and message
     const code = searchParams.get('code');
     const message = searchParams.get('message');
     const transactionId = searchParams.get('transactionId');
@@ -46,201 +52,122 @@ const PaymentResultPage = () => {
     const vnp_BankCode = searchParams.get('vnp_BankCode');
     const vnp_PayDate = searchParams.get('vnp_PayDate');
 
-    // Determine result based on response code
-    // VNPAY success code is '00', or use backend code
     const isSuccess = code === '00' || vnp_ResponseCode === '00';
-    
-    // Get amount - VNPAY returns amount * 100
-    let amount = null;
-    if (vnp_Amount) {
-      amount = parseInt(vnp_Amount) / 100;
-    } else if (transactionId) {
-      // Try to get from transaction if available
-      amount = null; // Will be loaded from API if needed
-    }
-    
-    const resultMessage = message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code));
+    const amount = vnp_Amount ? parseInt(vnp_Amount, 10) / 100 : null;
 
     setResult({
       success: isSuccess,
       code: code || vnp_ResponseCode || 'UNKNOWN',
-      message: resultMessage,
+      message: message || (isSuccess ? 'Thanh toán thành công' : getErrorMessage(vnp_ResponseCode || code)),
       transactionId: transactionId || vnp_TxnRef,
       transactionNo: vnp_TransactionNo,
-      amount: amount,
+      amount,
       orderInfo: vnp_OrderInfo,
       bankCode: vnp_BankCode,
-      payDate: vnp_PayDate
+      payDate: vnp_PayDate,
     });
-
-    // Auto redirect after countdown
-    if (isSuccess) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            navigate('/patient/wallet');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   useEffect(() => {
-    if (result && !result.success) {
-      toast.error('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', {
-        position: 'top-right',
-        autoClose: 4000,
-        closeOnClick: true,
-        pauseOnHover: true,
+    if (!result?.success) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          navigate('/patient/wallet');
+          return 0;
+        }
+        return prev - 1;
       });
-    }
-  }, [result]);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [result?.success, navigate]);
 
   const handleBackToWallet = () => {
-    // Navigate to wallet and force refresh
-    navigate('/patient/wallet?tab=transactions&refresh=true');
-    // Force reload to refresh transactions
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  };
-
-  // Format VNPAY pay date (format: yyyyMMddHHmmss)
-  const formatPayDate = (payDate) => {
-    if (!payDate || payDate.length !== 14) return payDate;
-    const year = payDate.substring(0, 4);
-    const month = payDate.substring(4, 6);
-    const day = payDate.substring(6, 8);
-    const hour = payDate.substring(8, 10);
-    const minute = payDate.substring(10, 12);
-    const second = payDate.substring(12, 14);
-    return `${day}/${month}/${year} ${hour}:${minute}:${second}`;
+    if (result?.success) navigate('/patient/wallet');
+    else navigate('/patient/wallet?action=deposit');
   };
 
   if (!result) {
     return (
       <PatientLayout>
-        <ToastContainer position="top-right" autoClose={4000} />
-        <div className="payment-result-page">
-          <div className="payment-result-loading">
-            <div className="loading-spinner"></div>
-            <p>Đang xử lý kết quả thanh toán...</p>
-          </div>
-        </div>
+        <AppPage className="flex items-center justify-center min-h-[40vh]">
+          <p className="text-sm text-neutral-500">Đang xử lý kết quả thanh toán...</p>
+        </AppPage>
       </PatientLayout>
     );
   }
 
   return (
     <PatientLayout>
-      <ToastContainer position="top-right" autoClose={4000} />
-      <div className="payment-result-page">
-        <div className="payment-result-container">
-          {result.success ? (
-            <>
-              <div className="result-icon success">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
-                  <path d="M8 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <h1 className="result-title success">Thanh toán thành công!</h1>
-              <p className="result-message">
-                Giao dịch của bạn đã được xử lý thành công. Số dư ví đã được cập nhật.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="result-icon error">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
-                  <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <h1 className="result-title error">Thanh toán thất bại</h1>
-              <p className="result-message">
-                {result.message || 'Giao dịch không thể hoàn tất. Vui lòng thử lại sau.'}
-              </p>
-            </>
-          )}
+      <AppPage className="max-w-lg mx-auto">
+        <div className="app-card p-6 sm:p-8 text-center space-y-6">
+          <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${result.success ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+            {result.success ? <CheckCircle className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
+          </div>
 
-          <div className="result-details">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900">
+              {result.success ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
+            </h1>
+            <p className="text-sm text-neutral-500 mt-2">{result.message}</p>
+          </div>
+
+          <div className="text-left rounded-xl border border-neutral-100 bg-neutral-50 p-4 space-y-2 text-sm">
             {result.transactionId && (
-              <div className="detail-item">
-                <span className="detail-label">Mã giao dịch:</span>
-                <span className="detail-value">{result.transactionId}</span>
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Mã giao dịch</span>
+                <span className="font-medium">{result.transactionId}</span>
               </div>
             )}
             {result.transactionNo && (
-              <div className="detail-item">
-                <span className="detail-label">Mã tham chiếu VNPAY:</span>
-                <span className="detail-value">{result.transactionNo}</span>
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Mã VNPAY</span>
+                <span className="font-medium">{result.transactionNo}</span>
               </div>
             )}
             {result.amount && (
-              <div className="detail-item">
-                <span className="detail-label">Số tiền:</span>
-                <span className="detail-value">{result.amount.toLocaleString('vi-VN')} VNĐ</span>
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Số tiền</span>
+                <span className="font-medium">{result.amount.toLocaleString('vi-VN')} VNĐ</span>
               </div>
             )}
             {result.bankCode && (
-              <div className="detail-item">
-                <span className="detail-label">Ngân hàng:</span>
-                <span className="detail-value">{result.bankCode}</span>
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Ngân hàng</span>
+                <span className="font-medium">{result.bankCode}</span>
               </div>
             )}
             {result.payDate && (
-              <div className="detail-item">
-                <span className="detail-label">Thời gian thanh toán:</span>
-                <span className="detail-value">{formatPayDate(result.payDate)}</span>
-              </div>
-            )}
-            {result.orderInfo && (
-              <div className="detail-item">
-                <span className="detail-label">Mô tả:</span>
-                <span className="detail-value">{result.orderInfo}</span>
-              </div>
-            )}
-            {result.code && result.code !== '00' && (
-              <div className="detail-item">
-                <span className="detail-label">Mã phản hồi:</span>
-                <span className="detail-value">{result.code}</span>
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Thời gian</span>
+                <span className="font-medium">{formatPayDate(result.payDate)}</span>
               </div>
             )}
           </div>
 
-          <div className="result-actions">
+          <div className="flex flex-col gap-3">
             {result.success && countdown > 0 && (
-              <p className="countdown-text">
-                Tự động chuyển về trang ví sau {countdown} giây...
-              </p>
+              <p className="text-xs text-neutral-500">Chuyển về ví sau {countdown}s...</p>
             )}
-            <button className="btn-back-to-wallet" onClick={handleBackToWallet}>
+            <BtnPrimary className="w-full" onClick={handleBackToWallet}>
               {result.success ? 'Quay về ví' : 'Thử lại'}
-            </button>
+            </BtnPrimary>
             {result.success && (
-              <button className="btn-view-transactions" onClick={() => {
-                // Navigate to wallet with transactions tab and force refresh
-                navigate('/patient/wallet?tab=transactions&refresh=true');
-                // Force page reload to refresh transactions
-                setTimeout(() => {
-                  window.location.reload();
-                }, 100);
-              }}>
+              <BtnSecondary
+                className="w-full"
+                onClick={() => {
+                  navigate('/patient/wallet?tab=transactions&refresh=true');
+                  setTimeout(() => window.location.reload(), 100);
+                }}
+              >
                 Xem lịch sử giao dịch
-              </button>
+              </BtnSecondary>
             )}
           </div>
         </div>
-      </div>
+      </AppPage>
     </PatientLayout>
   );
 };
 
 export default PaymentResultPage;
-

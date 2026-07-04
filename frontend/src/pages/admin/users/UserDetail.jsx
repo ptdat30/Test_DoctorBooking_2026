@@ -5,7 +5,7 @@ import userService from '../../../services/userService';
 import Loading from '../../../components/common/Loading';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
 
 const UserDetail = () => {
   const navigate = useNavigate();
@@ -19,8 +19,6 @@ const UserDetail = () => {
   }, [id]);
 
   // Initialize Feather Icons safely using custom hook
-  useFeatherIcons([user]);
-
   const loadUser = async () => {
     try {
       const allUsers = await userService.getAllUsers('');
@@ -93,19 +91,19 @@ const UserDetail = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Chi Tiết Người Dùng</h1>
           <button 
             onClick={() => navigate('/admin/users')} 
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <i data-feather="arrow-left" className="w-5 h-5"></i>
+            <ShellIcon name="arrow-left" className="w-5 h-5" />
             Quay lại danh sách
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="app-card p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">ID</label>
@@ -148,14 +146,14 @@ const UserDetail = () => {
               onClick={handleEdit}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-              <i data-feather="edit-2" className="w-4 h-4"></i>
+              <ShellIcon name="edit-2" className="w-4 h-4" />
               Chỉnh sửa
             </button>
             <button
               onClick={handleDeleteClick}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
             >
-              <i data-feather="trash-2" className="w-4 h-4"></i>
+              <ShellIcon name="trash-2" className="w-4 h-4" />
               Xóa
             </button>
           </div>
@@ -165,7 +163,7 @@ const UserDetail = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+          <div className="app-card-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">Xác nhận xóa</h2>
             
             <p className="text-gray-600 text-sm mb-4 text-center">

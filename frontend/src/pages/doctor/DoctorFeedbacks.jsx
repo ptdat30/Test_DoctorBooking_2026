@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MessageSquare, Pencil } from 'lucide-react';
 import DoctorLayout from '../../components/doctor/DoctorLayout';
 import { doctorService } from '../../services/doctorService';
 import Loading from '../../components/common/Loading';
@@ -6,7 +7,17 @@ import ErrorMessage from '../../components/common/ErrorMessage';
 import { formatDate } from '../../utils/formatDate';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import feather from 'feather-icons';
+import {
+  AppPage,
+  PageHeader,
+  BtnPrimary,
+  BtnSecondary,
+  Modal,
+  Textarea,
+  FormField,
+  EmptyState,
+  Select,
+} from '../../components/shell/DashboardPrimitives';
 
 const DoctorFeedbacks = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -24,24 +35,16 @@ const DoctorFeedbacks = () => {
     loadAverageRating();
   }, [filterRating]);
 
-  useEffect(() => {
-    feather.replace();
-  }, [feedbacks, selectedFeedback, showReplyModal]);
-
   const loadFeedbacks = async () => {
     try {
       setLoading(true);
-      let data;
-      if (filterRating) {
-        data = await doctorService.getFeedbacksByRating(filterRating);
-      } else {
-        data = await doctorService.getFeedbacks();
-      }
+      const data = filterRating
+        ? await doctorService.getFeedbacksByRating(filterRating)
+        : await doctorService.getFeedbacks();
       setFeedbacks(data);
       setError('');
-    } catch (err) {
+    } catch {
       setError('Không thể tải danh sách phản hồi');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -52,7 +55,7 @@ const DoctorFeedbacks = () => {
       const rating = await doctorService.getAverageRating();
       setAverageRating(rating || 0);
     } catch (err) {
-      console.error('Cannot load average rating:', err);
+      console.error(err);
     }
   };
 
@@ -69,10 +72,8 @@ const DoctorFeedbacks = () => {
       toast.error('Vui lòng nhập nội dung phản hồi', { position: 'top-right' });
       return;
     }
-
     try {
       const replyData = { doctorReply: replyText.trim() };
-      
       if (isEditingReply) {
         await doctorService.updateDoctorReply(selectedFeedback.id, replyData);
         toast.success('Cập nhật phản hồi thành công!', { position: 'top-right' });
@@ -80,223 +81,146 @@ const DoctorFeedbacks = () => {
         await doctorService.replyToFeedback(selectedFeedback.id, replyData);
         toast.success('Gửi phản hồi thành công!', { position: 'top-right' });
       }
-      
       setShowReplyModal(false);
       setSelectedFeedback(null);
       setReplyText('');
       loadFeedbacks();
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể gửi phản hồi';
-      toast.error(errorMsg, { position: 'top-right' });
-      console.error(err);
+      toast.error(err.response?.data?.message || 'Không thể gửi phản hồi', { position: 'top-right' });
     }
   };
 
-  const getStatusDisplay = (status) => {
-    const statusMap = {
-      'PENDING': 'Chưa đọc',
-      'READ': 'Đã đọc',
-      'REPLIED': 'Đã phản hồi'
-    };
-    return statusMap[status] || status;
-  };
+  const getStatusDisplay = (status) => ({
+    PENDING: 'Chưa đọc',
+    READ: 'Đã đọc',
+    REPLIED: 'Đã phản hồi',
+  }[status] || status);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'READ':
-        return 'bg-blue-100 text-blue-800';
-      case 'REPLIED':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'PENDING': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'READ': return 'bg-sky-50 text-sky-700 border-sky-200';
+      case 'REPLIED': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      default: return 'bg-neutral-100 text-neutral-600 border-neutral-200';
     }
   };
 
   return (
     <DoctorLayout>
-      <div className="space-y-8 bg-[#111827] min-h-screen py-8 px-2 md:px-6">
-        {/* Page Header with Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-          <div className="md:col-span-2">
-            <h1 className="text-3xl font-bold text-gray-100 mb-2">Phản Hồi Của Bệnh Nhân</h1>
-            <p className="text-gray-400 text-lg">Xem và trả lời phản hồi từ bệnh nhân</p>
+      <AppPage>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-2">
+            <PageHeader
+              title="Phản hồi bệnh nhân"
+              subtitle="Xem và trả lời đánh giá từ bệnh nhân"
+            />
           </div>
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-6 rounded-2xl shadow-lg text-white flex flex-col items-center justify-center min-w-[260px]">
-            <p className="text-sm opacity-90">Đánh giá trung bình</p>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-4xl font-bold">{averageRating.toFixed(1)}</span>
-              <div>
-                <div className="text-2xl">{'★'.repeat(Math.round(averageRating))}</div>
-                <p className="text-xs opacity-90">{feedbacks.length} đánh giá</p>
-              </div>
-            </div>
+          <div className="app-card p-5 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Đánh giá trung bình</p>
+            <p className="text-4xl font-bold text-neutral-900 mt-2">{averageRating.toFixed(1)}</p>
+            <p className="text-amber-400 mt-1">{'★'.repeat(Math.round(averageRating))}</p>
+            <p className="text-xs text-neutral-500 mt-2">{feedbacks.length} đánh giá</p>
           </div>
         </div>
 
         {error && <ErrorMessage message={error} onClose={() => setError('')} />}
 
-        {/* Filter */}
-        <div className="bg-[#181f2a] border border-[#232b3b] p-4 rounded-xl shadow flex flex-col md:flex-row md:items-center md:gap-6 gap-3">
-          <label className="text-sm font-medium text-gray-300 mb-1 md:mb-0">Lọc theo đánh giá:</label>
-          <select
+        <div className="app-card p-4 flex flex-wrap items-center gap-3">
+          <label className="text-sm font-medium text-neutral-700">Lọc theo sao:</label>
+          <Select
             value={filterRating}
             onChange={(e) => setFilterRating(e.target.value)}
-            className="px-3 py-2 border border-[#232b3b] rounded-lg focus:ring-2 focus:ring-blue-500 bg-[#232b3b] text-gray-100 min-w-[140px]"
+            className="!w-auto min-w-[140px]"
           >
             <option value="">Tất cả</option>
-            <option value="5">★★★★★ (5 sao)</option>
-            <option value="4">★★★★ (4 sao)</option>
-            <option value="3">★★★ (3 sao)</option>
-            <option value="2">★★ (2 sao)</option>
-            <option value="1">★ (1 sao)</option>
-          </select>
+            {[5, 4, 3, 2, 1].map((n) => (
+              <option key={n} value={n}>{n} sao</option>
+            ))}
+          </Select>
           {filterRating && (
-            <button
-              onClick={() => setFilterRating('')}
-              className="text-sm text-blue-400 hover:text-blue-300 px-3 py-1 rounded border border-blue-400 ml-2"
-            >
-              Xóa bộ lọc
-            </button>
+            <BtnSecondary className="!py-1.5 !px-3 !text-xs" onClick={() => setFilterRating('')}>
+              Xóa lọc
+            </BtnSecondary>
           )}
         </div>
 
-        {/* Feedbacks List */}
-        <div className="bg-[#181f2a] border border-[#232b3b] rounded-2xl shadow-lg overflow-hidden">
+        <div className="app-card overflow-hidden">
           {loading ? (
-            <div className="p-8"><Loading /></div>
+            <Loading />
           ) : feedbacks.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
-              {filterRating ? 'Không có phản hồi với đánh giá này' : 'Chưa có phản hồi nào'}
-            </div>
+            <EmptyState title={filterRating ? 'Không có phản hồi với mức sao này' : 'Chưa có phản hồi'} />
           ) : (
-            <div className="divide-y divide-[#232b3b]">
+            <div className="divide-y divide-neutral-100">
               {feedbacks.map((feedback) => (
-                <div key={feedback.id} className="p-6 md:p-7 hover:bg-[#232b3b] transition-colors flex flex-col gap-2">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-gray-100 text-lg">{feedback.patientName}</h3>
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-400 text-base">{'★'.repeat(feedback.rating)}</span>
-                          <span className="text-xs text-gray-400">({feedback.rating}/5)</span>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(feedback.status)} shadow-sm border border-[#232b3b]`}> {getStatusDisplay(feedback.status)} </span>
+                <div key={feedback.id} className="p-5 sm:p-6 hover:bg-neutral-50/80 transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-neutral-900">{feedback.patientName}</h3>
+                        <span className="text-amber-400 text-sm">{'★'.repeat(feedback.rating)}</span>
+                        <span className={`app-badge border ${getStatusColor(feedback.status)}`}>
+                          {getStatusDisplay(feedback.status)}
+                        </span>
                       </div>
-                      <p className="text-xs text-gray-400 mb-1">{formatDate(feedback.createdAt)}</p>
-                      <p className="text-base text-gray-200 mb-3">{feedback.comment || 'Không có nhận xét'}</p>
+                      <p className="text-xs text-neutral-500">{formatDate(feedback.createdAt)}</p>
+                      <p className="text-sm text-neutral-700">{feedback.comment || 'Không có nhận xét'}</p>
                       {feedback.doctorReply && (
-                        <div className="bg-[#202a3c] p-4 rounded-xl mb-3 border border-[#232b3b]">
-                          <p className="text-sm font-medium text-blue-300 mb-1">Phản hồi của bạn:</p>
-                          <p className="text-base text-gray-100">{feedback.doctorReply}</p>
-                          {feedback.doctorRepliedAt && (
-                            <p className="text-xs text-gray-400 mt-1">{formatDate(feedback.doctorRepliedAt)}</p>
-                          )}
+                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 mt-2">
+                          <p className="text-xs font-semibold text-neutral-600 mb-1">Phản hồi của bạn</p>
+                          <p className="text-sm text-neutral-700">{feedback.doctorReply}</p>
                         </div>
                       )}
                     </div>
-                    <div className="mt-2 md:mt-0 md:ml-4 flex-shrink-0 flex flex-col items-end">
-                      {feedback.canEdit || !feedback.doctorReply ? (
-                        <button
-                          onClick={() => handleReply(feedback)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow"
-                        >
-                          <i data-feather={feedback.doctorReply ? "edit-2" : "message-square"} className="w-4 h-4"></i>
-                          {feedback.doctorReply ? 'Sửa' : 'Trả lời'}
-                        </button>
-                      ) : (
-                        <p className="text-xs text-gray-500 text-center opacity-80">
-                          Không thể chỉnh sửa<br/>(sau 24h)
-                        </p>
-                      )}
-                    </div>
+                    {(feedback.canEdit || !feedback.doctorReply) && (
+                      <BtnSecondary onClick={() => handleReply(feedback)} className="shrink-0">
+                        {feedback.doctorReply ? (
+                          <><Pencil className="w-4 h-4" /> Sửa</>
+                        ) : (
+                          <><MessageSquare className="w-4 h-4" /> Trả lời</>
+                        )}
+                      </BtnSecondary>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* Reply Modal */}
-      {showReplyModal && selectedFeedback && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#232b3b] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-[#232b3b] shadow-xl">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-100">
-                  {isEditingReply ? 'Chỉnh Sửa Phản Hồi' : 'Trả Lời Phản Hồi'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowReplyModal(false);
-                    setSelectedFeedback(null);
-                    setReplyText('');
-                  }}
-                  className="text-gray-400 hover:text-gray-200"
-                >
-                  <i data-feather="x" className="w-6 h-6"></i>
-                </button>
+        <Modal
+          open={showReplyModal && !!selectedFeedback}
+          onClose={() => { setShowReplyModal(false); setSelectedFeedback(null); setReplyText(''); }}
+          title={isEditingReply ? 'Chỉnh sửa phản hồi' : 'Trả lời phản hồi'}
+          footer={
+            <>
+              <BtnSecondary onClick={() => { setShowReplyModal(false); setSelectedFeedback(null); setReplyText(''); }}>
+                Hủy
+              </BtnSecondary>
+              <BtnPrimary onClick={handleSubmitReply}>
+                {isEditingReply ? 'Cập nhật' : 'Gửi phản hồi'}
+              </BtnPrimary>
+            </>
+          }
+        >
+          {selectedFeedback && (
+            <form onSubmit={handleSubmitReply} className="space-y-4">
+              <div className="rounded-xl bg-neutral-50 border border-neutral-100 p-4 text-sm">
+                <p className="font-medium text-neutral-900">{selectedFeedback.patientName}</p>
+                <p className="text-amber-400 my-1">{'★'.repeat(selectedFeedback.rating)}</p>
+                <p className="text-neutral-600">{selectedFeedback.comment || 'Không có nhận xét'}</p>
               </div>
-
-              {/* Original Feedback */}
-              <div className="bg-[#181f2a] p-4 rounded-xl mb-5 border border-[#232b3b]">
-                <h3 className="font-semibold text-gray-100 mb-2">Phản hồi gốc:</h3>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-gray-100">{selectedFeedback.patientName}</span>
-                  <span className="text-yellow-400">{'★'.repeat(selectedFeedback.rating)}</span>
-                </div>
-                <p className="text-gray-300">{selectedFeedback.comment || 'Không có nhận xét'}</p>
-                <p className="text-xs text-gray-400 mt-2">{formatDate(selectedFeedback.createdAt)}</p>
-              </div>
-
-              {/* Reply Form */}
-              <form onSubmit={handleSubmitReply} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Nội dung phản hồi <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    rows={5}
-                    className="w-full px-3 py-2 border border-[#232b3b] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#181f2a] text-gray-100"
-                    placeholder="Nhập phản hồi của bạn cho bệnh nhân..."
-                    required
-                  />
-                  {isEditingReply && selectedFeedback.canEdit && (
-                    <p className="text-xs text-amber-400 mt-1">
-                       Bạn chỉ có thể chỉnh sửa trong vòng 24 giờ sau khi gửi phản hồi
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowReplyModal(false);
-                      setSelectedFeedback(null);
-                      setReplyText('');
-                    }}
-                    className="px-4 py-2 bg-gray-700 text-gray-100 rounded-lg border border-gray-500 hover:bg-gray-600 transition-colors"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg border border-transparent hover:from-green-500 hover:to-green-800 transition-colors"
-                  >
-                    {isEditingReply ? 'Cập nhật' : 'Gửi phản hồi'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
+              <FormField label="Nội dung phản hồi" required>
+                <Textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Nhập phản hồi cho bệnh nhân..."
+                  required
+                />
+              </FormField>
+            </form>
+          )}
+        </Modal>
+      </AppPage>
       <ToastContainer />
     </DoctorLayout>
   );

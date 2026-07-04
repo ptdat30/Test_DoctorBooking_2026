@@ -43,7 +43,10 @@ jobs:
       - name: Health Check — Production Backend
         run: |
           PROD_URL="${{ secrets.PRODUCTION_URL }}"
-          PROD_URL="${PROD_URL:-https://doctor-booking-backend-yjpf.onrender.com}"
+          if [ -z "$PROD_URL" ]; then
+            echo "❌ PRODUCTION_URL secret is not set. Set it to your live Render backend URL (e.g. https://doctor-booking-backend.onrender.com)."
+            exit 1
+          fi
           HEALTH_URL="${PROD_URL%/}/api/public/health"
 
           echo "Checking production health at: ${HEALTH_URL}"

@@ -5,7 +5,8 @@ import userService from '../../../services/userService';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
+import { BtnPrimary, BtnSecondary } from '../../../components/shell/DashboardPrimitives';
 
 const UserForm = () => {
   const navigate = useNavigate();
@@ -30,8 +31,6 @@ const UserForm = () => {
   }, [id]);
 
   // Initialize Feather Icons safely using custom hook
-  useFeatherIcons([formData]);
-
   const loadUser = async () => {
     try {
       const allUsers = await userService.getAllUsers('');
@@ -117,7 +116,7 @@ const UserForm = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -130,7 +129,7 @@ const UserForm = () => {
             onClick={() => navigate('/admin/users')} 
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <i data-feather="arrow-left" className="w-5 h-5"></i>
+            <ShellIcon name="arrow-left" className="w-5 h-5" />
             Quay lại danh sách
           </button>
         </div>
@@ -144,8 +143,8 @@ const UserForm = () => {
         )}
 
         {/* User Form */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="app-card p-6">
+          <form onSubmit={handleSubmit} className="app-page space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Username */}
               <div>
@@ -156,7 +155,7 @@ const UserForm = () => {
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent ${
                     formErrors.username ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Nhập tên đăng nhập"
@@ -175,7 +174,7 @@ const UserForm = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent ${
                     formErrors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Nhập email"
@@ -195,7 +194,7 @@ const UserForm = () => {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent ${
                       formErrors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
@@ -214,7 +213,7 @@ const UserForm = () => {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent ${
                     formErrors.role ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
@@ -235,7 +234,7 @@ const UserForm = () => {
                 <select
                   value={formData.enabled ? 'active' : 'inactive'}
                   onChange={(e) => setFormData({ ...formData, enabled: e.target.value === 'active' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
                 >
                   <option value="active">Hoạt động</option>
                   <option value="inactive">Không hoạt động</option>
@@ -244,32 +243,11 @@ const UserForm = () => {
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center gap-3 pt-4 border-t">
-              <button
-                type="button"
-                onClick={() => navigate('/admin/users')}
-                disabled={submitting}
-                style={{ borderRadius: '0.5rem', minHeight: '44px', height: '44px', margin: 0 }}
-                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', borderWidth: '2px', borderRadius: '0.5rem', minHeight: '44px', height: '44px', margin: 0 }}
-                onMouseEnter={(e) => { e.target.style.backgroundColor = '#15803d'; e.target.style.borderColor = '#15803d'; }}
-                onMouseLeave={(e) => { e.target.style.backgroundColor = '#16a34a'; e.target.style.borderColor = '#16a34a'; }}
-                className="flex-1 px-4 py-2.5 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {submitting && (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                )}
+            <div className="flex items-center gap-3 pt-4 border-t border-neutral-100">
+              <BtnSecondary type="button" onClick={() => navigate('/admin/users')} disabled={submitting} className="flex-1">Hủy</BtnSecondary>
+              <BtnPrimary type="submit" disabled={submitting} className="flex-1">
                 {submitting ? (isEdit ? 'Đang cập nhật...' : 'Đang tạo...') : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-              </button>
+              </BtnPrimary>
             </div>
           </form>
         </div>

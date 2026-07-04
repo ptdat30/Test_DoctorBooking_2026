@@ -1,28 +1,36 @@
 import { useState } from 'react';
+import {
+  Modal,
+  BtnSecondary,
+  BtnDanger,
+  AlertError,
+  FormField,
+  Textarea,
+} from '../shell/DashboardPrimitives';
+
+const PREDEFINED_REASONS = [
+  'Bận công việc đột xuất',
+  'Lý do sức khỏe',
+  'Thay đổi lịch trình',
+  'Khác',
+];
 
 const CancelAppointmentModal = ({ appointment, onClose, onConfirm, isAdmin = false }) => {
-  const [cancellationReason, setCancellationReason] = useState('');
+  const [selectedReason, setSelectedReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const predefinedReasons = [
-    'Bận công việc đột xuất',
-    'Lý do sức khỏe',
-    'Thay đổi lịch trình',
-    'Khác'
-  ];
+  const cancellationReason = selectedReason === 'Khác' ? customReason.trim() : selectedReason;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!cancellationReason.trim()) {
+    if (!cancellationReason) {
       setError('Vui lòng nhập lý do hủy');
       return;
     }
-
     setSubmitting(true);
     setError('');
-
     try {
       await onConfirm(cancellationReason);
       onClose();
@@ -34,156 +42,71 @@ const CancelAppointmentModal = ({ appointment, onClose, onConfirm, isAdmin = fal
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 99999,
-      padding: '20px',
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '25px',
-        borderRadius: '8px',
-        width: '90%',
-        maxWidth: '550px',
-        maxHeight: '80vh',
-        overflowY: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ color: '#1a1a1a', fontWeight: '600', margin: 0 }}>Hủy Lịch Hẹn</h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#666',
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {appointment && (
-          <div style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#fff3cd', borderRadius: '4px', border: '1px solid #ffc107', color: '#1a1a1a' }}>
-            <div><strong>Bệnh nhân:</strong> {appointment.patientName}</div>
-            <div><strong>Ngày:</strong> {appointment.appointmentDate}</div>
-            <div><strong>Giờ:</strong> {appointment.appointmentTime}</div>
+    <Modal
+      open={!!appointment}
+      onClose={onClose}
+      title="Hủy lịch hẹn"
+      footer={
+        <>
+          <BtnSecondary onClick={onClose} disabled={submitting}>Đóng</BtnSecondary>
+          <BtnDanger type="submit" form="cancel-appointment-form" disabled={submitting || !cancellationReason}>
+            {submitting ? 'Đang hủy...' : 'Xác nhận hủy'}
+          </BtnDanger>
+        </>
+      }
+    >
+      {appointment && (
+        <form id="cancel-appointment-form" onSubmit={handleSubmit} className="space-y-4">
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-900 space-y-1">
+            <p><span className="text-amber-700">Bệnh nhân:</span> <strong>{appointment.patientName}</strong></p>
+            <p><span className="text-amber-700">Ngày:</span> {appointment.appointmentDate}</p>
+            <p><span className="text-amber-700">Giờ:</span> {appointment.appointmentTime}</p>
             {!isAdmin && (
-              <div style={{ marginTop: '10px', color: '#856404', fontSize: '0.9rem' }}>
-                 Lưu ý: Bạn chỉ có thể hủy lịch hẹn trước thời gian khám tối thiểu 24 giờ.
-              </div>
+              <p className="text-xs text-amber-800 pt-2 border-t border-amber-200/60 mt-2">
+                Lưu ý: Chỉ hủy được trước giờ khám tối thiểu 24 giờ.
+              </p>
             )}
           </div>
-        )}
 
-        {error && (
-          <div style={{ padding: '12px', backgroundColor: '#fee', border: '1px solid #fcc', borderRadius: '4px', color: '#c33', marginBottom: '15px' }}>
-            {error}
-          </div>
-        )}
+          {error && <AlertError message={error} />}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#1a1a1a' }}>
-              Chọn lý do hủy <span style={{ color: 'red' }}>*</span>
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {predefinedReasons.map((reason) => (
-                <label key={reason} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#1a1a1a' }}>
+          <FormField label="Chọn lý do hủy" required>
+            <div className="space-y-2">
+              {PREDEFINED_REASONS.map((reason) => (
+                <label
+                  key={reason}
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                    selectedReason === reason ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200 hover:border-neutral-300'
+                  }`}
+                >
                   <input
                     type="radio"
                     name="reason"
                     value={reason}
-                    checked={cancellationReason === reason}
-                    onChange={(e) => setCancellationReason(e.target.value)}
-                    style={{ marginRight: '8px' }}
+                    checked={selectedReason === reason}
+                    onChange={(e) => setSelectedReason(e.target.value)}
+                    className="accent-neutral-900"
                   />
-                  {reason}
+                  <span className="text-sm text-neutral-800">{reason}</span>
                 </label>
               ))}
             </div>
-          </div>
+          </FormField>
 
-          {cancellationReason === 'Khác' && (
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#1a1a1a' }}>
-                Nhập lý do cụ thể
-              </label>
-              <textarea
-                value={cancellationReason === 'Khác' ? '' : cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                rows="3"
+          {selectedReason === 'Khác' && (
+            <FormField label="Lý do cụ thể" required>
+              <Textarea
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                rows={3}
                 placeholder="Nhập lý do hủy lịch hẹn..."
-                style={{ 
-                  width: '100%', 
-                  padding: '10px', 
-                  border: '1px solid #ddd', 
-                  borderRadius: '4px', 
-                  fontFamily: 'inherit', 
-                  color: '#1a1a1a',
-                  resize: 'vertical'
-                }}
                 required
               />
-            </div>
+            </FormField>
           )}
-
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '20px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              style={{
-                padding: '0.75rem 1.5rem',
-                height: '49.6px',
-                background: 'white',
-                border: '1px solid #333',
-                color: '#333',
-                borderRadius: '8px',
-                cursor: submitting ? 'not-allowed' : 'pointer',
-                fontWeight: '500',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              Đóng
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !cancellationReason.trim()}
-              style={{
-                padding: '0.75rem 1.5rem',
-                height: '49.6px',
-                margin: 0,
-                background: submitting || !cancellationReason.trim() ? '#ccc' : '#dc3545',
-                color: 'white',
-                border: '1px solid transparent',
-                borderRadius: '8px',
-                cursor: submitting || !cancellationReason.trim() ? 'not-allowed' : 'pointer',
-                fontWeight: '500',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {submitting ? 'Đang hủy...' : 'Xác nhận hủy'}
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 };
 

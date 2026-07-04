@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PatientLayout from '../../components/patient/PatientLayout';
-import './AppointmentPaymentResult.css';
+import ShellIcon from '../../components/shell/ShellIcon';
+import { AppPage, BtnPrimary, BtnSecondary } from '../../components/shell/DashboardPrimitives';
 
 const AppointmentPaymentResult = () => {
   const navigate = useNavigate();
@@ -18,26 +19,17 @@ const AppointmentPaymentResult = () => {
   const isSuccess = code === '00';
 
   useEffect(() => {
-    // Initialize Feather Icons
-    if (window.feather) {
-      window.feather.replace();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isSuccess) {
-      const timer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            navigate('/patient/history');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
+    if (!isSuccess) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          navigate('/patient/history');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
   }, [isSuccess, navigate]);
 
   const formatPayDate = (dateStr) => {
@@ -76,153 +68,76 @@ const AppointmentPaymentResult = () => {
 
   return (
     <PatientLayout>
-      <div className="appointment-payment-result">
-        <div className="result-container">
-          
-          {/* Result Icon */}
-          <div className={`result-icon-wrapper ${isSuccess ? 'success' : 'error'}`}>
-            <div className="result-icon">
-              {isSuccess ? (
-                <i data-feather="check-circle"></i>
-              ) : (
-                <i data-feather="x-circle"></i>
-              )}
-            </div>
+      <AppPage className="max-w-lg mx-auto">
+        <div className="app-card p-6 sm:p-8 text-center space-y-6">
+          <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${isSuccess ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+            <ShellIcon name={isSuccess ? 'check-circle' : 'x-circle'} className="w-8 h-8" />
           </div>
 
-          {/* Result Message */}
-          <h1 className={`result-title ${isSuccess ? 'success' : 'error'}`}>
-            {getMessage()}
-          </h1>
-
-          {isSuccess ? (
-            <p className="result-subtitle success">
-              Lịch hẹn của bạn đã thanh toán thành công và đang chờ được xác nhận .
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900">{getMessage()}</h1>
+            <p className="text-sm text-neutral-500 mt-2">
+              {isSuccess
+                ? 'Lịch hẹn đã thanh toán và đang chờ xác nhận.'
+                : 'Lịch hẹn đã hủy do thanh toán không thành công.'}
             </p>
-          ) : (
-            <p className="result-subtitle error">
-              Lịch hẹn đã bị hủy do thanh toán không thành công. Vui lòng thử lại.
-            </p>
-          )}
+          </div>
 
-          {/* Transaction Details */}
-          <div className="transaction-details-card">
-            <h3>Chi tiết giao dịch</h3>
-            <div className="details-grid">
-              
-              {appointmentId && (
-                <div className="detail-row">
-                  <span className="detail-label">
-                    <i data-feather="calendar"></i>
-                    Mã lịch hẹn
-                  </span>
-                  <span className="detail-value">#{appointmentId}</span>
-                </div>
-              )}
-
-              {vnpAmount && (
-                <div className="detail-row">
-                  <span className="detail-label">
-                    <i data-feather="dollar-sign"></i>
-                    Số tiền
-                  </span>
-                  <span className="detail-value amount">
-                    {(parseInt(vnpAmount) / 100).toLocaleString('vi-VN')} VNĐ
-                  </span>
-                </div>
-              )}
-
-              {vnpTransactionNo && (
-                <div className="detail-row">
-                  <span className="detail-label">
-                    <i data-feather="hash"></i>
-                    Mã GD VNPAY
-                  </span>
-                  <span className="detail-value">{vnpTransactionNo}</span>
-                </div>
-              )}
-
-              {vnpBankCode && (
-                <div className="detail-row">
-                  <span className="detail-label">
-                    <i data-feather="credit-card"></i>
-                    Ngân hàng
-                  </span>
-                  <span className="detail-value">{vnpBankCode}</span>
-                </div>
-              )}
-
-              {vnpPayDate && (
-                <div className="detail-row">
-                  <span className="detail-label">
-                    <i data-feather="clock"></i>
-                    Thời gian
-                  </span>
-                  <span className="detail-value">{formatPayDate(vnpPayDate)}</span>
-                </div>
-              )}
-
-              <div className="detail-row">
-                <span className="detail-label">
-                  <i data-feather="check-square"></i>
-                  Trạng thái thanh toán
-                </span>
-                <span className={`payment-status-badge ${isSuccess ? 'paid' : 'failed'}`}>
-                  {isSuccess ? 'PAID' : 'UNPAID'}
-                </span>
+          <div className="text-left rounded-xl border border-neutral-100 bg-neutral-50 p-4 space-y-3 text-sm">
+            <h3 className="font-semibold text-neutral-900">Chi tiết giao dịch</h3>
+            {appointmentId && (
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Mã lịch hẹn</span>
+                <span className="font-medium">#{appointmentId}</span>
               </div>
-
-              {!isSuccess && (
-                <div className="detail-row">
-                  <span className="detail-label">
-                    <i data-feather="info"></i>
-                    Trạng thái lịch hẹn
-                  </span>
-                  <span className="status-badge cancelled">
-                    CANCELLED
-                  </span>
-                </div>
-              )}
-            </div>
+            )}
+            {vnpAmount && (
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Số tiền</span>
+                <span className="font-medium">{(parseInt(vnpAmount, 10) / 100).toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+            )}
+            {vnpTransactionNo && (
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Mã VNPAY</span>
+                <span className="font-medium">{vnpTransactionNo}</span>
+              </div>
+            )}
+            {vnpBankCode && (
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Ngân hàng</span>
+                <span className="font-medium">{vnpBankCode}</span>
+              </div>
+            )}
+            {vnpPayDate && (
+              <div className="flex justify-between gap-4">
+                <span className="text-neutral-500">Thời gian</span>
+                <span className="font-medium">{formatPayDate(vnpPayDate)}</span>
+              </div>
+            )}
           </div>
 
-          {/* Actions */}
-          <div className="result-actions">
+          <div className="flex flex-col gap-3">
+            {isSuccess && (
+              <p className="text-xs text-neutral-500">Chuyển về lịch sử sau {countdown}s...</p>
+            )}
             {isSuccess ? (
-              <>
-                <p className="countdown-text">
-                  <i data-feather="rotate-cw"></i>
-                  Tự động chuyển về lịch sử sau {countdown} giây...
-                </p>
-                <button 
-                  className="btn-primary"
-                  onClick={() => navigate('/patient/history')}
-                >
-                  <i data-feather="list"></i>
-                  Xem lịch sử đặt lịch
-                </button>
-              </>
+              <BtnPrimary className="w-full" onClick={() => navigate('/patient/history')}>
+                Xem lịch sử đặt lịch
+              </BtnPrimary>
             ) : (
               <>
-                <button 
-                  className="btn-primary"
-                  onClick={() => navigate('/patient/booking')}
-                >
-                  <i data-feather="refresh-cw"></i>
+                <BtnPrimary className="w-full" onClick={() => navigate('/patient/booking')}>
                   Đặt lịch lại
-                </button>
-                <button 
-                  className="btn-secondary"
-                  onClick={() => navigate('/patient/history')}
-                >
-                  <i data-feather="list"></i>
+                </BtnPrimary>
+                <BtnSecondary className="w-full" onClick={() => navigate('/patient/history')}>
                   Xem lịch sử
-                </button>
+                </BtnSecondary>
               </>
             )}
           </div>
         </div>
-      </div>
+      </AppPage>
     </PatientLayout>
   );
 };

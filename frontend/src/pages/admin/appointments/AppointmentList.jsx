@@ -10,7 +10,7 @@ import { formatDate } from '../../../utils/formatDate';
 import { formatTime } from '../../../utils/formatTime';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
 
 const AppointmentList = () => {
   const navigate = useNavigate();
@@ -32,8 +32,6 @@ const AppointmentList = () => {
   }, []);
 
   // Initialize Feather Icons
-  useFeatherIcons([appointments, currentPage]);
-
   const filteredAppointments = useMemo(() => {
     let filtered = allAppointments;
 
@@ -122,7 +120,7 @@ const AppointmentList = () => {
           onClick={() => handlePageChange(i)}
           className={`px-3 py-2 border rounded-lg ${
             currentPage === i
-              ? 'bg-indigo-600 text-white border-indigo-600'
+              ? 'bg-neutral-900 text-white border-neutral-900'
               : 'border-gray-300 hover:bg-gray-50'
           }`}
         >
@@ -240,7 +238,7 @@ const AppointmentList = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -248,27 +246,27 @@ const AppointmentList = () => {
             <p className="text-gray-600 mt-1">Tổng số {appointments.length} lịch hẹn</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 flex">
+            <div className="app-card-sm border border-gray-200 p-1 flex">
               <button
                 onClick={() => setViewMode('list')}
                 className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
                   viewMode === 'list'
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-neutral-900 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <i data-feather="list" className="w-4 h-4"></i>
+                <ShellIcon name="list" className="w-4 h-4" />
                 Danh sách
               </button>
               <button
                 onClick={() => setViewMode('calendar')}
                 className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
                   viewMode === 'calendar'
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-neutral-900 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <i data-feather="calendar" className="w-4 h-4"></i>
+                <ShellIcon name="calendar" className="w-4 h-4" />
                 Lịch
               </button>
             </div>
@@ -284,17 +282,17 @@ const AppointmentList = () => {
         )}
 
         {/* Search and Filter Section */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="app-card p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search Input */}
             <div className="relative">
-              <i data-feather="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+              <ShellIcon name="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Tìm kiếm theo bệnh nhân, bác sĩ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
               />
             </div>
 
@@ -304,7 +302,7 @@ const AppointmentList = () => {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
               />
             </div>
 
@@ -313,7 +311,7 @@ const AppointmentList = () => {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent appearance-none bg-white"
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="PENDING">Đang chờ</option>
@@ -321,7 +319,7 @@ const AppointmentList = () => {
                 <option value="COMPLETED">Hoàn thành</option>
                 <option value="CANCELLED">Đã hủy</option>
               </select>
-              <i data-feather="chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none"></i>
+              <ShellIcon name="chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             </div>
           </div>
 
@@ -359,7 +357,7 @@ const AppointmentList = () => {
         ) : (
           <>
             {/* Appointments Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="app-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -410,14 +408,14 @@ const AppointmentList = () => {
                             className="text-green-600 hover:text-green-800 transition-colors"
                             title="Xem chi tiết"
                           >
-                            <i data-feather="eye" className="w-4 h-4"></i>
+                            <ShellIcon name="eye" className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(appointment)}
                             className="text-blue-600 hover:text-blue-800 transition-colors"
                             title="Chỉnh sửa"
                           >
-                            <i data-feather="edit-2" className="w-4 h-4"></i>
+                            <ShellIcon name="edit-2" className="w-4 h-4" />
                           </button>
                           {(appointment.status === 'PENDING' || appointment.status === 'CONFIRMED') && (
                             <button
@@ -425,7 +423,7 @@ const AppointmentList = () => {
                               className="text-red-600 hover:text-red-800 transition-colors"
                               title="Hủy lịch hẹn"
                             >
-                              <i data-feather="x-circle" className="w-4 h-4"></i>
+                              <ShellIcon name="x-circle" className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -442,7 +440,7 @@ const AppointmentList = () => {
 
         {/* Pagination - Only show in list view */}
         {viewMode === 'list' && totalPages > 1 && (
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="app-card p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700">
                 Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, appointments.length)} của {appointments.length} lịch hẹn

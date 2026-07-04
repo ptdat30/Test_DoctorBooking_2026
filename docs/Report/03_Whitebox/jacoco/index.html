@@ -1,1 +1,224 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="jacoco-resources/report.gif" type="image/gif"/><title>backend</title><script type="text/javascript" src="jacoco-resources/sort.js"></script></head><body onload="initialSort(['breadcrumb', 'coveragetable'])"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="jacoco-sessions.html" class="el_session">Sessions</a></span><span class="el_report">backend</span></div><h1>backend</h1><table class="coverage" cellspacing="0" id="coveragetable"><thead><tr><td class="sortable" id="a" onclick="toggleSort(this)">Element</td><td class="down sortable bar" id="b" onclick="toggleSort(this)">Missed Instructions</td><td class="sortable ctr2" id="c" onclick="toggleSort(this)">Cov.</td><td class="sortable bar" id="d" onclick="toggleSort(this)">Missed Branches</td><td class="sortable ctr2" id="e" onclick="toggleSort(this)">Cov.</td><td class="sortable ctr1" id="f" onclick="toggleSort(this)">Missed</td><td class="sortable ctr2" id="g" onclick="toggleSort(this)">Cxty</td><td class="sortable ctr1" id="h" onclick="toggleSort(this)">Missed</td><td class="sortable ctr2" id="i" onclick="toggleSort(this)">Lines</td><td class="sortable ctr1" id="j" onclick="toggleSort(this)">Missed</td><td class="sortable ctr2" id="k" onclick="toggleSort(this)">Methods</td><td class="sortable ctr1" id="l" onclick="toggleSort(this)">Missed</td><td class="sortable ctr2" id="m" onclick="toggleSort(this)">Classes</td></tr></thead><tfoot><tr><td>Total</td><td class="bar">962 of 9,641</td><td class="ctr2">90%</td><td class="bar">200 of 686</td><td class="ctr2">70%</td><td class="ctr1">231</td><td class="ctr2">678</td><td class="ctr1">194</td><td class="ctr2">2,216</td><td class="ctr1">46</td><td class="ctr2">332</td><td class="ctr1">0</td><td class="ctr2">22</td></tr></tfoot><tbody><tr><td id="a1"><a href="com.doctorbooking.backend.service/index.html" class="el_package">com.doctorbooking.backend.service</a></td><td class="bar" id="b0"><img src="jacoco-resources/redbar.gif" width="14" height="10" title="814" alt="814"/><img src="jacoco-resources/greenbar.gif" width="105" height="10" title="5,993" alt="5,993"/></td><td class="ctr2" id="c1">88%</td><td class="bar" id="d0"><img src="jacoco-resources/redbar.gif" width="37" height="10" title="182" alt="182"/><img src="jacoco-resources/greenbar.gif" width="82" height="10" title="408" alt="408"/></td><td class="ctr2" id="e1">69%</td><td class="ctr1" id="f0">208</td><td class="ctr2" id="g0">507</td><td class="ctr1" id="h0">155</td><td class="ctr2" id="i0">1,500</td><td class="ctr1" id="j0">41</td><td class="ctr2" id="k0">209</td><td class="ctr1" id="l0">0</td><td class="ctr2" id="m0">13</td></tr><tr><td id="a0"><a href="com.doctorbooking.backend.controller/index.html" class="el_package">com.doctorbooking.backend.controller</a></td><td class="bar" id="b1"><img src="jacoco-resources/redbar.gif" width="2" height="10" title="148" alt="148"/><img src="jacoco-resources/greenbar.gif" width="47" height="10" title="2,686" alt="2,686"/></td><td class="ctr2" id="c0">94%</td><td class="bar" id="d1"><img src="jacoco-resources/redbar.gif" width="3" height="10" title="18" alt="18"/><img src="jacoco-resources/greenbar.gif" width="15" height="10" title="78" alt="78"/></td><td class="ctr2" id="e0">81%</td><td class="ctr1" id="f1">23</td><td class="ctr2" id="g1">171</td><td class="ctr1" id="h1">39</td><td class="ctr2" id="i1">716</td><td class="ctr1" id="j1">5</td><td class="ctr2" id="k1">123</td><td class="ctr1" id="l1">0</td><td class="ctr2" id="m1">9</td></tr></tbody></table><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>backend — JaCoCo Coverage Report</title>
+<style>
+  :root {
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --border: #e5e5e5;
+    --text: #171717;
+    --muted: #6b7280;
+    --green: #22a06b;
+    --green-bg: #d6f2e4;
+    --red: #e5534b;
+    --red-bg: #fbe2e0;
+    --amber: #d99e00;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+  .crumb { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  h1 { font-size: 28px; margin: 0 0 4px; font-weight: 700; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+  }
+  .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+  .stat .value small { font-size: 13px; font-weight: 500; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 13.5px; }
+  thead th { text-align: left; background: #fafafa; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  thead th.num, td.num { text-align: right; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; }
+  tbody tr:last-child td { border-bottom: none; }
+  tr.pkg td { background: #fbfbfc; font-weight: 600; }
+  tr.total td { background: #f3f4f6; font-weight: 700; border-top: 2px solid var(--border); }
+  td.el { display: flex; align-items: center; gap: 8px; }
+  .cls-name { color: var(--text); }
+  .pkg-name { color: #111; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .bar { display: inline-block; width: 120px; height: 10px; border-radius: 5px; background: var(--red-bg); overflow: hidden; vertical-align: middle; }
+  .bar > span { display: block; height: 100%; background: var(--green); }
+  .pctcell { display: flex; align-items: center; gap: 10px; }
+  .pct { font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; font-weight: 600; }
+  .pct.hi { color: var(--green); }
+  .pct.mid { color: var(--amber); }
+  .pct.lo { color: var(--red); }
+  .note { margin-top: 20px; font-size: 12.5px; color: var(--muted); line-height: 1.6; background: #fffdf5; border: 1px solid #f0e6c8; border-radius: 10px; padding: 12px 14px; }
+  .note code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .foot { margin-top: 24px; font-size: 12px; color: var(--muted); }
+  .indent { padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">Whitebox Report · Test Coverage</div>
+  <h1>backend</h1>
+  <div class="sub">JaCoCo 0.8.12 · báo cáo độ phủ kiểm thử (unit test) cho module backend</div>
+
+  <div class="cards" id="cards"></div>
+
+  <table id="cov">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th style="width:220px">Instructions</th>
+        <th class="num">Branches</th>
+        <th class="num">Cxty</th>
+        <th class="num">Lines</th>
+        <th class="num">Methods</th>
+        <th class="num">Classes</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="note">
+    <strong>Ghi chú:</strong> Đây là bản báo cáo tĩnh, khép kín (self-contained) được dựng lại từ <code>jacoco.csv</code>
+    vì bản HTML gốc thiếu thư mục <code>jacoco-resources/</code> và các trang drill-down. Để tạo lại báo cáo JaCoCo
+    tương tác đầy đủ, chạy <code>mvn clean test</code> trong <code>backend/</code> rồi mở
+    <code>backend/target/site/jacoco/index.html</code>.
+  </div>
+
+  <div class="foot">Created with JaCoCo 0.8.12 · rebuilt static view</div>
+</div>
+
+<script>
+// [package, class, instrMissed, instrCovered, branchMissed, branchCovered, lineMissed, lineCovered, cxtyMissed, cxtyCovered, methodMissed, methodCovered]
+var DATA = [
+  ["com.doctorbooking.backend.controller","AuthController",0,54,0,0,0,15,0,3,0,3],
+  ["com.doctorbooking.backend.controller","PublicController",0,20,0,0,0,5,0,2,0,2],
+  ["com.doctorbooking.backend.controller","FamilyMemberController",45,158,0,0,9,36,3,8,3,8],
+  ["com.doctorbooking.backend.controller","DoctorController",6,496,0,10,0,143,1,31,1,26],
+  ["com.doctorbooking.backend.controller","NotificationController",0,177,1,3,0,45,1,9,0,8],
+  ["com.doctorbooking.backend.controller","UserController",0,171,1,7,0,41,1,10,0,7],
+  ["com.doctorbooking.backend.controller","PatientController",0,548,3,19,0,142,3,29,0,21],
+  ["com.doctorbooking.backend.controller","PaymentController",97,758,12,36,30,169,13,34,1,22],
+  ["com.doctorbooking.backend.controller","AdminController",0,304,1,3,0,81,1,22,0,21],
+  ["com.doctorbooking.backend.service","AppointmentService",200,1578,56,130,44,358,55,79,4,37],
+  ["com.doctorbooking.backend.service","DoctorService",19,469,21,35,0,108,24,21,3,14],
+  ["com.doctorbooking.backend.service","FeedbackService",197,417,13,33,34,94,26,29,18,14],
+  ["com.doctorbooking.backend.service","UserService",160,408,17,27,27,91,25,24,10,16],
+  ["com.doctorbooking.backend.service","MedicationService",0,23,0,6,0,4,0,4,0,1],
+  ["com.doctorbooking.backend.service","AuthService",73,353,10,16,17,94,9,10,1,3],
+  ["com.doctorbooking.backend.service","FamilyMemberService",8,314,4,36,2,70,4,23,0,7],
+  ["com.doctorbooking.backend.service","WalletService",40,628,10,26,6,126,13,16,3,8],
+  ["com.doctorbooking.backend.service","VNPayService",49,643,19,31,13,139,18,18,0,11],
+  ["com.doctorbooking.backend.service","NotificationService",0,179,0,6,0,37,0,13,0,10],
+  ["com.doctorbooking.backend.service","AdminService",0,318,1,13,0,69,1,29,0,23],
+  ["com.doctorbooking.backend.service","TreatmentService",64,458,25,35,11,107,27,19,2,14],
+  ["com.doctorbooking.backend.service","PatientService",4,205,6,14,1,48,6,14,0,10]
+];
+
+var IM=2, IC=3, BM=4, BC=5, LM=6, LC=7, CM=8, CC=9, MM=10, MC=11;
+
+function pct(covered, missed) {
+  var t = covered + missed;
+  return t === 0 ? 100 : Math.floor(covered * 100 / t);
+}
+function cls(p) { return p >= 80 ? "hi" : (p >= 50 ? "mid" : "lo"); }
+function nf(n) { return n.toLocaleString("en-US"); }
+
+function bar(covered, missed) {
+  var p = pct(covered, missed);
+  return '<div class="pctcell"><span class="bar"><span style="width:' + p + '%"></span></span>'
+    + '<span class="pct ' + cls(p) + '">' + p + '%</span></div>';
+}
+function pctText(covered, missed) {
+  var p = pct(covered, missed);
+  return '<span class="pct ' + cls(p) + '">' + p + '%</span>';
+}
+function ratio(covered, total) {
+  return nf(covered) + ' <small style="color:var(--muted)">/ ' + nf(total) + '</small>';
+}
+
+function sum(rows, idx) {
+  return rows.reduce(function (a, r) { return a + r[idx]; }, 0);
+}
+
+function rowHtml(name, rows, opts) {
+  opts = opts || {};
+  var im = sum(rows, IM), ic = sum(rows, IC);
+  var bm = sum(rows, BM), bc = sum(rows, BC);
+  var cm = sum(rows, CM), cc = sum(rows, CC);
+  var lm = sum(rows, LM), lc = sum(rows, LC);
+  var mm = sum(rows, MM), mc = sum(rows, MC);
+  var classCount = rows.length;
+
+  var dot = '';
+  if (opts.type === 'class') {
+    var p = pct(ic, im);
+    dot = '<span class="dot" style="background:' + (p >= 80 ? 'var(--green)' : (p >= 50 ? 'var(--amber)' : 'var(--red)')) + '"></span>';
+  }
+
+  var nameCell = opts.type === 'class'
+    ? '<span class="indent cls-name">' + dot + name + '</span>'
+    : '<span class="' + (opts.type === 'total' ? '' : 'pkg-name') + '">' + name + '</span>';
+
+  return '<tr class="' + (opts.rowClass || '') + '">'
+    + '<td class="el">' + nameCell + '</td>'
+    + '<td>' + bar(ic, im) + '</td>'
+    + '<td class="num">' + (bm + bc === 0 ? '<span class="pct" style="color:var(--muted)">n/a</span>' : pctText(bc, bm)) + '</td>'
+    + '<td class="num">' + ratio(cc, cc + cm) + '</td>'
+    + '<td class="num">' + ratio(lc, lc + lm) + '</td>'
+    + '<td class="num">' + ratio(mc, mc + mm) + '</td>'
+    + '<td class="num">' + (opts.type === 'class' ? '1' : ratio(classCount, classCount)) + '</td>'
+    + '</tr>';
+}
+
+(function render() {
+  // Summary cards
+  var im = sum(DATA, IM), ic = sum(DATA, IC);
+  var bm = sum(DATA, BM), bc = sum(DATA, BC);
+  var cm = sum(DATA, CM), cc = sum(DATA, CC);
+  var lm = sum(DATA, LM), lc = sum(DATA, LC);
+  var mm = sum(DATA, MM), mc = sum(DATA, MC);
+
+  var cards = [
+    ["Instructions", pct(ic, im), ic, ic + im],
+    ["Branches", pct(bc, bm), bc, bc + bm],
+    ["Lines", pct(lc, lm), lc, lc + lm],
+    ["Methods", pct(mc, mm), mc, mc + mm],
+    ["Complexity", pct(cc, cm), cc, cc + cm],
+    ["Classes", 100, DATA.length, DATA.length]
+  ];
+  document.getElementById("cards").innerHTML = cards.map(function (c) {
+    return '<div class="stat"><div class="label">' + c[0] + '</div>'
+      + '<div class="value ' + '"><span class="' + cls(c[1]) + '" style="color:inherit">' + c[1] + '%</span> '
+      + '<small>' + nf(c[2]) + '/' + nf(c[3]) + '</small></div></div>';
+  }).join("");
+
+  // Grouped table
+  var packages = {};
+  var order = [];
+  DATA.forEach(function (r) {
+    if (!packages[r[0]]) { packages[r[0]] = []; order.push(r[0]); }
+    packages[r[0]].push(r);
+  });
+  // Sort packages by missed instructions desc (like JaCoCo default)
+  order.sort(function (a, b) { return sum(packages[b], IM) - sum(packages[a], IM); });
+
+  var html = "";
+  html += rowHtml("Total", DATA, { type: "total", rowClass: "total" });
+  order.forEach(function (pkg) {
+    var rows = packages[pkg].slice().sort(function (a, b) { return b[IM] - a[IM]; });
+    html += rowHtml(pkg, rows, { type: "pkg", rowClass: "pkg" });
+    rows.forEach(function (r) {
+      html += rowHtml(r[1], [r], { type: "class" });
+    });
+  });
+  document.getElementById("rows").innerHTML = html;
+})();
+</script>
+</body>
+</html>
