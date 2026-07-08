@@ -6,7 +6,7 @@ Release này tổng hợp toàn bộ kết quả kiểm thử tự động, phâ
 
 ## 📄 Chi tiết báo cáo
 
-- **Báo cáo vấn đáp (tổng hợp tài liệu + link code):** [09_Oral_Defense_Report/README.md](https://github.com/ptdat30/Test_DoctorBooking_2026/blob/main/docs/Report/09_Oral_Defense_Report/README.md)
+- **Báo cáo vấn đáp (tổng hợp tài liệu + link code):** [09_Oral_Defense_Report/README.md](https://github.com/ptdat30/Test_DoctorBooking_2026/blob/fix/main-ci-appointment-tests/docs/Report/09_Oral_Defense_Report/README.md)
 - **Báo cáo kiểm thử tổng hợp:** [docs/Report/README.md](https://github.com/ptdat30/Test_DoctorBooking_2026/blob/main/docs/Report/README.md)
 - **Tổng hợp test cases:** [docs/testing/TOTAL_TEST_CASES.md](https://github.com/ptdat30/Test_DoctorBooking_2026/blob/main/docs/testing/TOTAL_TEST_CASES.md)
 - **Hướng dẫn tái lập:** [docs/Report/08_How_To_Reproduce.md](https://github.com/ptdat30/Test_DoctorBooking_2026/blob/main/docs/Report/08_How_To_Reproduce.md)
