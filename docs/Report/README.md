@@ -18,6 +18,7 @@
 | [`06_CI/`](./06_CI/) | Tóm tắt CI pipeline GitHub Actions | Giảng viên (chứng cứ tự động) |
 | [`07_Traceability/`](./07_Traceability/) | Ma trận Jira ticket ↔ test ↔ commit | Giảng viên (traceability) |
 | [`08_How_To_Reproduce.md`](./08_How_To_Reproduce.md) | Lệnh chạy lại toàn bộ test | Giảng viên / TA |
+| [`09_Oral_Defense_Report/`](./09_Oral_Defense_Report/) | Báo cáo vấn đáp tổng hợp tài liệu + link code | Giảng viên (vấn đáp) |
 
 ---
 
