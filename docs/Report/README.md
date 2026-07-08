@@ -3,6 +3,8 @@
 > **Phương pháp:** Hybrid (Excel tổng hợp + Repository chứng cứ kỹ thuật)
 >
 > **Mục đích:** Gói tài liệu chính thức nộp giảng viên. Mọi test tự động vẫn nằm trong source code; folder này chỉ **lọc và tổ chức** phần cần trình bày.
+>
+> **GitHub Release (tải file ZIP/Excel):** [Doctor Booking - QA & Test (v1.0.0-qa)](https://github.com/ptdat30/Test_DoctorBooking_2026/releases/tag/v1.0.0-qa)
 
 ---
 
@@ -18,6 +20,7 @@
 | [`06_CI/`](./06_CI/) | Tóm tắt CI pipeline GitHub Actions | Giảng viên (chứng cứ tự động) |
 | [`07_Traceability/`](./07_Traceability/) | Ma trận Jira ticket ↔ test ↔ commit | Giảng viên (traceability) |
 | [`08_How_To_Reproduce.md`](./08_How_To_Reproduce.md) | Lệnh chạy lại toàn bộ test | Giảng viên / TA |
+| [`09_Oral_Defense_Report/`](./09_Oral_Defense_Report/) | Báo cáo vấn đáp tổng hợp tài liệu + link code | Giảng viên (vấn đáp) |
 
 ---
 
