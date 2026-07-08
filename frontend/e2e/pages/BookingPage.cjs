@@ -23,8 +23,8 @@ module.exports = {
   form: {
     notesInput:    'textarea[name="notes"]',
     submitBtn:     'button[type="submit"]',
-    confirmModal:  '//h2[contains(text(), "Review Booking Details")]',
-    confirmBtn:    '//div[contains(@class, "fixed")]//button[contains(text(), "Confirm booking")]',
+    confirmModal:  '//h2[contains(text(), "Xem lại thông tin")]',
+    confirmBtn:    '//div[contains(@class, "fixed")]//button[contains(text(), "Xác nhận đặt lịch")]',
   },
 
   feedback: {

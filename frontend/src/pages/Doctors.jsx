@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { mockDoctors, mockSpecialties } from '../data/mockData';
 import RequireAuth from '../components/common/RequireAuth';
 import Navbar from '../components/common/Navbar';
+import ShellIcon from '../components/shell/ShellIcon';
 import './Doctors.css';
 
 const Doctors = () => {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { mockSpecialties, searchDoctors } from '../data/mockData';
 import Navbar from '../components/common/Navbar';
+import ShellIcon from '../components/shell/ShellIcon';
 import './Specialties.css';
 
 const Specialties = () => {

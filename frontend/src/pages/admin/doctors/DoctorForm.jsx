@@ -6,6 +6,7 @@ import ErrorMessage from '../../../components/common/ErrorMessage';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BtnPrimary, BtnSecondary } from '../../../components/shell/DashboardPrimitives';
+import ShellIcon from '../../../components/shell/ShellIcon';
 
 const DoctorForm = () => {
   const navigate = useNavigate();

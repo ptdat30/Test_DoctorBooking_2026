@@ -5,7 +5,7 @@
 const { I } = inject();
 
 module.exports = {
-  pageTitle:    '//h1[contains(text(), "Danh sách Bệnh nhân")]',
+  pageTitle:    '//h1[contains(text(), "Tìm bệnh nhân")]',
   searchInput:  'input[placeholder="Tìm kiếm theo tên, ID, email..."]',
   patientTable: 'table',
 

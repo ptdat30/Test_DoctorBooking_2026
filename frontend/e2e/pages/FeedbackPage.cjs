@@ -20,8 +20,8 @@ module.exports = {
   },
 
   doctor: {
-    filterSelect:      '//select[preceding-sibling::label[contains(., "Lọc theo đánh giá")]]',
-    replyModalTextArea:'//textarea[@placeholder="Nhập phản hồi của bạn cho bệnh nhân..."]',
+    filterSelect:      '//select[preceding-sibling::label[contains(., "Lọc theo sao")]]',
+    replyModalTextArea:'//textarea[@placeholder="Nhập phản hồi cho bệnh nhân..."]',
     replyModalSubmit:  '//button[contains(., "Gửi phản hồi") or contains(., "Cập nhật")]',
   },
 

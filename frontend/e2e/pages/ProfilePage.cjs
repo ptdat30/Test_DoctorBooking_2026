@@ -8,9 +8,9 @@ const { I } = inject();
 module.exports = {
   // ── Locators ──────────────────────────────────────────────────────────────
   buttons: {
-    editProfile:      '//button[contains(@class, "action-btn")][contains(., "Edit Profile")]',
-    changePassword:   '//button[contains(@class, "action-btn")][contains(., "Change Password")]',
-    sosEmergency:     '//button[contains(@class, "action-btn")][contains(., "SOS Emergency")]',
+    editProfile:      '//button[contains(., "Chỉnh sửa hồ sơ")]',
+    changePassword:   '//button[contains(., "Đổi mật khẩu")]',
+    sosEmergency:     '//button[contains(., "Liên hệ khẩn cấp")]',
   },
 
   editModal: {
@@ -19,26 +19,26 @@ module.exports = {
     gender:           'select[name="gender"]',
     phone:            'input[name="phone"]',
     address:          'input[name="address"]',
-    saveBtn:          '//button[contains(@class, "btn-primary")][contains(., "Save Changes")]',
-    cancelBtn:        '//button[contains(@class, "btn-secondary")][contains(., "Cancel")]',
+    saveBtn:          '//button[contains(., "Lưu thay đổi")]',
+    cancelBtn:        '//button[contains(., "Hủy")]',
   },
 
   passwordModal: {
-    currentPassword:  '//div[label[contains(text(), "Current Password")]]/input',
-    newPassword:      '//div[label[contains(text(), "New Password")]]/input',
-    confirmPassword:  '//div[label[contains(text(), "Confirm New Password")]]/input',
-    saveBtn:          '//button[contains(@class, "btn-primary")][contains(., "Update Password")]',
+    currentPassword:  '//form[@id="password-form"]//input[@type="password"][1]',
+    newPassword:      '//form[@id="password-form"]//input[@type="password"][2]',
+    confirmPassword:  '//form[@id="password-form"]//input[@type="password"][3]',
+    saveBtn:          '//button[contains(., "Cập nhật")]',
   },
 
   sosModal: {
-    emergencyName:    '//div[label[contains(text(), "Emergency Contact Name")]]/input',
-    emergencyPhone:   '//div[label[contains(text(), "Emergency Phone")]]/input',
-    saveBtn:          '//button[contains(@class, "btn-danger")][contains(., "Save Emergency Contact")]',
+    emergencyName:    '//form[@id="sos-form"]//input[@type="text"]',
+    emergencyPhone:   '//form[@id="sos-form"]//input[@type="tel"]',
+    saveBtn:          '//form[@id="sos-form"]/ancestor::div[contains(@class, "app-card")]//button[contains(., "Lưu")]',
   },
 
   alerts: {
-    success:          '.alert-success',
-    error:            '.alert-error',
+    success:          '.border-emerald-200',
+    error:            '.border-rose-200',
   },
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -46,12 +46,11 @@ module.exports = {
   navigateTo() {
     I.amOnPage('/patient/profile');
     I.waitInUrl('/patient/profile', 10);
-    I.waitForElement('.passport-card', 15);
+    I.waitForText('Hồ sơ cá nhân', 15);
   },
 
   openEditProfile() {
     I.waitForVisible(this.buttons.editProfile, 10);
-    // forceClick: nút dùng framer-motion (whileHover/whileTap scale) nên không "stable" với click thường
     I.forceClick(this.buttons.editProfile);
     I.waitForVisible(this.editModal.fullName, 10);
   },
@@ -62,7 +61,6 @@ module.exports = {
       I.fillField(this.editModal.fullName, data.fullName);
     }
     if (data.dateOfBirth !== undefined) {
-      // Set date of birth via JavaScript to avoid browser date picker issues
       I.executeScript((dateVal) => {
         const input = document.querySelector('input[name="dateOfBirth"]');
         if (input) {
@@ -85,7 +83,7 @@ module.exports = {
       I.fillField(this.editModal.address, data.address);
     }
     I.forceClick(this.editModal.saveBtn);
-    I.waitForInvisible(this.editModal.saveBtn, 10);
+    I.waitForInvisible(this.editModal.fullName, 10);
   },
 
   openChangePassword() {
@@ -113,12 +111,9 @@ module.exports = {
     I.clearField(this.sosModal.emergencyPhone);
     I.fillField(this.sosModal.emergencyPhone, phone);
     I.forceClick(this.sosModal.saveBtn);
-    // Modal đóng = handleUpdateSOS thành công (API trả về OK)
-    I.waitForInvisible(this.sosModal.saveBtn, 10);
+    I.waitForInvisible(this.sosModal.emergencyName, 10);
   },
 
-  // Xác minh SOS đã lưu thật sự: mở lại modal và kiểm tra giá trị được điền sẵn.
-  // (Robust hơn việc bắt toast .alert-success vốn tự ẩn sau 3s và dễ bị race.)
   verifySOSPersisted(name, phone) {
     I.dontSeeElement(this.alerts.error);
     this.openSOS();
@@ -127,27 +122,22 @@ module.exports = {
   },
 
   seeSuccessMessage(text) {
-    I.waitForElement(this.alerts.success, 10);
-    I.see(text, this.alerts.success);
+    I.waitForText(text, 10);
   },
 
   seeErrorMessage(text) {
-    I.waitForElement(this.alerts.error, 10);
-    I.see(text, this.alerts.error);
+    I.waitForText(text, 10);
   },
 
-  // Xác minh mật khẩu mới bị HTML5 minLength=6 chặn: field invalid (tooShort) và modal vẫn mở
   async seeNewPasswordTooShort() {
     const tooShort = await I.executeScript(() => {
-      const inputs = Array.from(document.querySelectorAll('.modal-content input[type="password"]'));
-      // input[1] = New Password (input[0] = Current Password)
+      const inputs = Array.from(document.querySelectorAll('#password-form input[type="password"]'));
       const newPass = inputs[1];
       return newPass ? (newPass.validity.valid === false && newPass.validity.tooShort) : false;
     });
     if (!tooShort) {
       throw new Error('Expected New Password to be blocked by HTML5 minLength (tooShort)');
     }
-    // Modal vẫn mở (chưa submit thành công)
     I.seeElement(this.passwordModal.saveBtn);
   }
 };
