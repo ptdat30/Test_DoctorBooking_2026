@@ -191,7 +191,7 @@ const AISymptomChecker = () => {
             onClick={handleSend}
             disabled={!inputValue.trim() || isTyping}
           >
-            <i data-feather="send"></i>
+            <ShellIcon name="send" />
           </button>
         </div>
       </div>

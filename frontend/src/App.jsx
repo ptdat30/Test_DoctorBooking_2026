@@ -39,7 +39,6 @@ import PatientSearch from './pages/doctor/PatientSearch';
 import DoctorFeedbacks from './pages/doctor/DoctorFeedbacks';
 
 // Import Patient pages
-import PatientPortal from './pages/patient/PatientPortal';
 import PatientDashboard from './pages/patient/PatientDashboard';
 import PatientProfile from './pages/patient/PatientProfile';
 import NewBooking from './pages/patient/NewBooking';
@@ -133,11 +132,7 @@ function App() {
           
           <Route
             path="/patient"
-            element={
-              <ProtectedRoute requiredRole="PATIENT">
-                <PatientPortal />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/patient/dashboard" replace />}
           />
           <Route
             path="/patient/*"

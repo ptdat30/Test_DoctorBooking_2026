@@ -8,7 +8,7 @@ import { formatDate } from '../../../utils/formatDate';
 import { formatTime } from '../../../utils/formatTime';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import feather from 'feather-icons';
+import ShellIcon from '../../../components/shell/ShellIcon';
 
 const AppointmentDetail = () => {
   const navigate = useNavigate();
@@ -21,10 +21,6 @@ const AppointmentDetail = () => {
   useEffect(() => {
     loadAppointment();
   }, [id]);
-
-  useEffect(() => {
-    feather.replace();
-  }, [appointment, showDeleteModal]);
 
   const loadAppointment = async () => {
     try {
@@ -104,9 +100,9 @@ const AppointmentDetail = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between app-card p-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Chi Tiết Lịch Hẹn</h1>
             <p className="text-gray-600 mt-1">Mã lịch hẹn: #{appointment.id}</p>
@@ -115,7 +111,7 @@ const AppointmentDetail = () => {
             onClick={() => navigate('/admin/appointments')} 
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <i data-feather="arrow-left" className="w-5 h-5"></i>
+            <ShellIcon name="arrow-left" className="w-5 h-5" />
             Quay lại danh sách
           </button>
         </div>
@@ -129,12 +125,12 @@ const AppointmentDetail = () => {
         )}
 
         {/* Appointment Details */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="app-card p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Patient Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i data-feather="user" className="w-5 h-5 text-indigo-600"></i>
+                <ShellIcon name="user" className="w-5 h-5 text-neutral-900" />
                 Thông tin bệnh nhân
               </h3>
               <div className="space-y-3">
@@ -152,7 +148,7 @@ const AppointmentDetail = () => {
             {/* Doctor Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i data-feather="briefcase" className="w-5 h-5 text-indigo-600"></i>
+                <ShellIcon name="briefcase" className="w-5 h-5 text-neutral-900" />
                 Thông tin bác sĩ
               </h3>
               <div className="space-y-3">
@@ -170,7 +166,7 @@ const AppointmentDetail = () => {
             {/* Appointment Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i data-feather="calendar" className="w-5 h-5 text-indigo-600"></i>
+                <ShellIcon name="calendar" className="w-5 h-5 text-neutral-900" />
                 Thông tin lịch hẹn
               </h3>
               <div className="space-y-3">
@@ -194,7 +190,7 @@ const AppointmentDetail = () => {
             {/* Notes */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i data-feather="file-text" className="w-5 h-5 text-indigo-600"></i>
+                <ShellIcon name="file-text" className="w-5 h-5 text-neutral-900" />
                 Ghi chú
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -207,16 +203,16 @@ const AppointmentDetail = () => {
           <div className="mt-6 pt-6 border-t flex items-center gap-3">
             <button
               onClick={handleEdit}
-              className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors font-medium flex items-center justify-center gap-2"
             >
-              <i data-feather="edit-2" className="w-5 h-5"></i>
+              <ShellIcon name="edit-2" className="w-5 h-5" />
               Chỉnh sửa
             </button>
             <button
               onClick={handleDeleteClick}
               className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center gap-2"
             >
-              <i data-feather="trash-2" className="w-5 h-5"></i>
+              <ShellIcon name="trash-2" className="w-5 h-5" />
               Xóa lịch hẹn
             </button>
           </div>
@@ -226,7 +222,7 @@ const AppointmentDetail = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+          <div className="app-card-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-900 mb-3 text-center">Xác nhận xóa</h2>
             
             <p className="text-gray-600 text-sm mb-4 text-center">

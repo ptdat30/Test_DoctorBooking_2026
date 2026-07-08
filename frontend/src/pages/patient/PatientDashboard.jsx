@@ -1,10 +1,17 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Calendar, Clock, Star, Search, Activity, Inbox } from 'lucide-react';
 import PatientLayout from '../../components/patient/PatientLayout';
 import { patientService } from '../../services/patientService';
 import Loading from '../../components/common/Loading';
 import StatCard from '../../components/common/StatCard';
 import SimpleChart from '../../components/common/SimpleChart';
-import './PatientDashboard.css';
+import {
+  PageHeader,
+  AlertError,
+  StatusBadge,
+  EmptyState,
+  QuickActionLink,
+} from '../../components/shell/DashboardPrimitives';
 
 const PatientDashboard = () => {
   const [stats, setStats] = useState({
@@ -24,11 +31,6 @@ const PatientDashboard = () => {
   useEffect(() => {
     loadStats();
     loadRecentActivity();
-    
-    // Initialize Feather Icons
-    if (window.feather) {
-      window.feather.replace();
-    }
   }, []);
 
   const loadStats = async () => {
@@ -166,35 +168,12 @@ const PatientDashboard = () => {
     },
   ], [stats, combined7DaysData]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return '#10B981';
-      case 'PENDING':
-        return '#F59E0B';
-      case 'COMPLETED':
-        return '#3B82F6';
-      case 'CANCELLED':
-        return '#EF4444';
-      default:
-        return '#6B7280';
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'Đã xác nhận';
-      case 'PENDING':
-        return 'Đang chờ';
-      case 'COMPLETED':
-        return 'Hoàn thành';
-      case 'CANCELLED':
-        return 'Đã hủy';
-      default:
-        return status;
-    }
-  };
+  const dateSubtitle = new Date().toLocaleDateString('vi-VN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   if (loading) {
     return (
@@ -206,141 +185,58 @@ const PatientDashboard = () => {
 
   return (
     <PatientLayout>
-      <div className="futuristic-dashboard text-slate-800">
-        {/* Header Section */}
-        <div className="dashboard-header" style={{ display: 'block', padding: '36px 40px' }}>
-          {/* Injected keyframes for gradient-flow */}
-          <style>{`
-            @keyframes gradient-flow {
-              0%   { background-position: 0% center; }
-              100% { background-position: 300% center; }
-            }
-          `}</style>
+      <div className="app-page space-y-8">
+        <PageHeader
+          badge="Hệ thống hoạt động"
+          title="Bảng điều khiển"
+          subtitle={`Tổng quan sức khỏe và lịch hẹn · ${dateSubtitle}`}
+        />
 
-          {/* Live indicator badge */}
-          <div className="dashboard-header-badge" style={{ marginBottom: '14px' }}>
-            <span className="dashboard-header-badge-dot"></span>
-            Hệ thống hoạt động
-          </div>
+        {error && <AlertError message={error} />}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
-            <div className="header-left">
-              <h1 
-                className="dashboard-title"
-                style={{
-                  background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #10b981, #3b82f6, #8b5cf6)',
-                  backgroundSize: '300% auto',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  color: 'transparent',
-                  animation: 'gradient-flow 5s linear infinite',
-                  fontSize: '3rem',
-                  fontWeight: 900,
-                  letterSpacing: '-0.04em',
-                  lineHeight: 1.1
-                }}
-              >
-                Patient Dashboard
-              </h1>
-              <p className="dashboard-subtitle">
-                Phân tích & Thông tin Sức khỏe của bạn
-                <span className="dashboard-subtitle-date" style={{ marginLeft: '10px' }}>
-                  📅&nbsp;
-                  {new Date().toLocaleDateString('vi-VN', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </span>
-              </p>
-            </div>
-            <div className="header-right">
-              <div className="search-container">
-                <i data-feather="search" className="search-icon"></i>
-                <input 
-                  type="text" 
-                  placeholder="Tìm lịch hẹn, bác sĩ..." 
-                  className="global-search"
-                />
-              </div>
-              <div className="notification-bell">
-                <i data-feather="bell"></i>
-                <span className="notification-dot"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="alert-error">
-            <i data-feather="alert-circle"></i>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Stats Cards - same as Doctor Dashboard */}
-        <div className="stats-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {statCards.map((card, index) => (
             <StatCard key={index} {...card} />
           ))}
         </div>
 
-        {/* Main Content Grid */}
-        <div className="dashboard-grid">
-          {/* Line Chart Section */}
-          <div className="chart-card">
-            <div className="card-header">
-              <div>
-                <h3 className="card-title">Xu hướng hoạt động</h3>
-                <p className="card-subtitle">7 ngày qua</p>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="app-card">
+            <div className="app-card-header">
+              <h2 className="font-semibold text-neutral-900">Xu hướng hoạt động</h2>
+              <p className="text-xs text-neutral-500 mt-0.5">7 ngày qua</p>
             </div>
-            <div className="chart-container" style={{ height: '260px' }}>
+            <div className="app-card-body">
               <SimpleChart
                 data={combined7DaysData}
                 type="area"
                 series={[
-                  { key: 'appointments', name: 'Lịch hẹn', color: '#3b82f6' },
-                  { key: 'treatments', name: 'Điều trị', color: '#8b5cf6' }
+                  { key: 'appointments', name: 'Lịch hẹn', color: '#0ea5e9' },
+                  { key: 'treatments', name: 'Điều trị', color: '#10b981' },
                 ]}
                 height={260}
               />
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="activity-card">
-            <div className="card-header">
-              <div>
-                <h3 className="card-title">Hoạt động gần đây</h3>
-                <p className="card-subtitle">Lịch hẹn mới nhất</p>
-              </div>
+          <div className="app-card">
+            <div className="app-card-header">
+              <h2 className="font-semibold text-neutral-900">Hoạt động gần đây</h2>
+              <p className="text-xs text-neutral-500 mt-0.5">Lịch hẹn mới nhất</p>
             </div>
-            <div className="activity-list">
+            <div className="divide-y divide-neutral-100">
               {recentActivity.length === 0 ? (
-                <div className="empty-state">
-                  <i data-feather="inbox"></i>
-                  <p>No recent activity</p>
-                </div>
+                <EmptyState icon={Inbox} title="Chưa có hoạt động" description="Đặt lịch khám để bắt đầu" />
               ) : (
                 recentActivity.map((activity, index) => (
-                  <div key={index} className="activity-item">
-                    <div className="activity-indicator" style={{ background: getStatusColor(activity.status) }}></div>
-                    <div className="activity-content">
-                      <div className="activity-title">{activity.doctorName}</div>
-                      <div className="activity-meta">
-                        {new Date(activity.appointmentDate).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        })} • {activity.appointmentTime}
-                      </div>
+                  <div key={index} className="flex items-center gap-4 px-5 py-4 sm:px-6">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-neutral-900 truncate">{activity.doctorName}</p>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        {new Date(activity.appointmentDate).toLocaleDateString('vi-VN')} · {activity.appointmentTime}
+                      </p>
                     </div>
-                    <div className="activity-status" style={{ color: getStatusColor(activity.status) }}>
-                      {getStatusLabel(activity.status)}
-                    </div>
+                    <StatusBadge status={activity.status} />
                   </div>
                 ))
               )}
@@ -348,82 +244,41 @@ const PatientDashboard = () => {
           </div>
         </div>
 
-        {/* Data Table */}
-        <div className="table-card">
-          <div className="card-header">
-            <div>
-              <h3 className="card-title">Appointment History</h3>
-              <p className="card-subtitle">Complete appointment records</p>
-            </div>
-            <div className="card-actions">
-              <button className="icon-btn">
-                <i data-feather="download"></i>
-              </button>
-              <button className="icon-btn">
-                <i data-feather="filter"></i>
-              </button>
-            </div>
+        <div className="app-card overflow-hidden">
+          <div className="app-card-header">
+            <h2 className="font-semibold text-neutral-900">Lịch sử đặt lịch</h2>
+            <p className="text-xs text-neutral-500 mt-0.5">Các lịch hẹn gần đây</p>
           </div>
-          <div className="data-table-container">
-            <table className="data-table">
+          <div className="overflow-x-auto">
+            <table className="app-table">
               <thead>
                 <tr>
-                  <th>Doctor</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th>Specialization</th>
+                  <th>Bác sĩ</th>
+                  <th>Ngày</th>
+                  <th>Giờ</th>
+                  <th>Trạng thái</th>
+                  <th>Chuyên khoa</th>
                 </tr>
               </thead>
               <tbody>
                 {recentActivity.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="empty-table">
-                      <i data-feather="inbox"></i>
-                      <span>No appointments found</span>
+                    <td colSpan={5} className="text-center py-10 text-neutral-400">
+                      Chưa có lịch hẹn
                     </td>
                   </tr>
                 ) : (
                   recentActivity.map((appointment, index) => (
-                    <tr key={index} className="table-row">
+                    <tr key={index}>
+                      <td className="font-medium text-neutral-900">{appointment.doctorName}</td>
                       <td>
-                        <div className="table-cell-content">
-                          <div className="table-primary">{appointment.doctorName}</div>
-                        </div>
+                        {new Date(appointment.appointmentDate).toLocaleDateString('vi-VN')}
                       </td>
+                      <td className="font-mono text-xs">{appointment.appointmentTime}</td>
                       <td>
-                        <div className="table-cell-content">
-                          {new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </div>
+                        <StatusBadge status={appointment.status} />
                       </td>
-                      <td>
-                        <div className="table-cell-content">
-                          <span className="monospace">{appointment.appointmentTime}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="table-cell-content">
-                          <span 
-                            className="status-badge" 
-                            style={{ 
-                              background: `${getStatusColor(appointment.status)}20`,
-                              color: getStatusColor(appointment.status),
-                              borderColor: getStatusColor(appointment.status)
-                            }}
-                          >
-                            {appointment.status}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="table-cell-content">
-                          {appointment.doctorSpecialization || 'N/A'}
-                        </div>
-                      </td>
+                      <td>{appointment.doctorSpecialization || '—'}</td>
                     </tr>
                   ))
                 )}
@@ -432,58 +287,47 @@ const PatientDashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="actions-grid">
-          <a href="/patient/booking" className="action-card">
-            <div className="action-icon" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' }}>
-              <i data-feather="calendar"></i>
-            </div>
-            <div className="action-content">
-              <div className="action-title">Book Appointment</div>
-              <div className="action-subtitle">Schedule a new visit</div>
-            </div>
-            <i data-feather="chevron-right" className="action-arrow"></i>
-          </a>
-          <a href="/patient/history" className="action-card">
-            <div className="action-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
-              <i data-feather="clock"></i>
-            </div>
-            <div className="action-content">
-              <div className="action-title">View History</div>
-              <div className="action-subtitle">Past appointments</div>
-            </div>
-            <i data-feather="chevron-right" className="action-arrow"></i>
-          </a>
-          <a href="/patient/feedbacks" className="action-card">
-            <div className="action-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' }}>
-              <i data-feather="star"></i>
-            </div>
-            <div className="action-content">
-              <div className="action-title">Đánh giá của tôi</div>
-              <div className="action-subtitle">Xem & chỉnh sửa phản hồi</div>
-            </div>
-            <i data-feather="chevron-right" className="action-arrow"></i>
-          </a>
-          <a href="/patient/doctors" className="action-card">
-            <div className="action-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' }}>
-              <i data-feather="search"></i>
-            </div>
-            <div className="action-content">
-              <div className="action-title">Find Doctors</div>
-              <div className="action-subtitle">Browse specialists</div>
-            </div>
-            <i data-feather="chevron-right" className="action-arrow"></i>
-          </a>
-          <a href="/patient/treatments" className="action-card">
-            <div className="action-icon" style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
-              <i data-feather="activity"></i>
-            </div>
-            <div className="action-content">
-              <div className="action-title">My Treatments</div>
-              <div className="action-subtitle">Treatment records</div>
-            </div>
-            <i data-feather="chevron-right" className="action-arrow"></i>
-          </a>
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 mb-4">
+            Thao tác nhanh
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <QuickActionLink
+              to="/patient/booking"
+              icon={Calendar}
+              title="Đặt lịch khám"
+              description="Chọn bác sĩ và thời gian"
+              accent="blue"
+            />
+            <QuickActionLink
+              to="/patient/history"
+              icon={Clock}
+              title="Lịch sử đặt lịch"
+              description="Xem các lịch đã đặt"
+              accent="green"
+            />
+            <QuickActionLink
+              to="/patient/feedbacks"
+              icon={Star}
+              title="Đánh giá của tôi"
+              description="Xem và chỉnh sửa phản hồi"
+              accent="amber"
+            />
+            <QuickActionLink
+              to="/patient/doctors"
+              icon={Search}
+              title="Tìm bác sĩ"
+              description="Duyệt danh sách chuyên gia"
+              accent="violet"
+            />
+            <QuickActionLink
+              to="/patient/treatments"
+              icon={Activity}
+              title="Điều trị của tôi"
+              description="Hồ sơ điều trị"
+              accent="neutral"
+            />
+          </div>
         </div>
       </div>
     </PatientLayout>

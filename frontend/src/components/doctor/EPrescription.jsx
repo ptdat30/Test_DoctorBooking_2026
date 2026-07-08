@@ -104,7 +104,7 @@ const EPrescription = () => {
                 setSelectedMedications([]);
               }}
             >
-              <i data-feather="arrow-left"></i> Quay lại
+              <ShellIcon name="arrow-left" /> Quay lại
             </button>
             {selectedTemplate && (
               <h3>Mẫu: {selectedTemplate.name}</h3>
@@ -115,7 +115,7 @@ const EPrescription = () => {
             <div className="medications-header">
               <h3>Danh sách thuốc</h3>
               <button className="add-med-btn" onClick={handleAddMedication}>
-                <i data-feather="plus"></i> Thêm thuốc
+                <ShellIcon name="plus" /> Thêm thuốc
               </button>
             </div>
 
@@ -184,7 +184,7 @@ const EPrescription = () => {
                   className="remove-med-btn"
                   onClick={() => handleRemoveMedication(index)}
                 >
-                  <i data-feather="trash-2"></i>
+                  <ShellIcon name="trash-2" />
                 </button>
               </div>
             ))}
@@ -195,7 +195,7 @@ const EPrescription = () => {
               Hủy
             </button>
             <button className="btn-primary" onClick={generatePrescription}>
-              <i data-feather="check"></i> Tạo đơn thuốc
+              <ShellIcon name="check" /> Tạo đơn thuốc
             </button>
           </div>
         </div>
@@ -206,7 +206,7 @@ const EPrescription = () => {
           <div className="result-header">
             <h3>Đơn thuốc đã tạo</h3>
             <button className="close-btn" onClick={() => setCurrentPrescription(null)}>
-              <i data-feather="x"></i>
+              <ShellIcon name="x" />
             </button>
           </div>
           <div className="prescription-content">

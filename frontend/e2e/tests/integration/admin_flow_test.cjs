@@ -4,6 +4,7 @@
 'use strict';
 
 const factory = require('../../data/factory.cjs');
+const { resolveDoctor1Id } = require('../../helpers/doctorResolver.cjs');
 
 Feature('Tích hợp Quyền Admin: Khóa tài khoản Bác sĩ (Admin Toggle Doctor Status)');
 
@@ -23,6 +24,8 @@ After(async ({ I }) => {
 // ─────────────────────────────────────────────────────────────────────────
 
 Scenario('TC-INT-05: Admin khóa tài khoản Doctor -> Doctor không thể login -> Doctor biến mất khỏi danh sách đặt lịch của Patient', async ({ I, LoginPage, AdminPage, BookingPage }) => {
+  await I.acceptBrowserDialogs();
+
   // Step 1: Admin đăng nhập và khóa tài khoản doctor1
   await LoginPage.login('admin', 'admin123');
   LoginPage.seeSuccessRedirect('admin');
@@ -51,9 +54,7 @@ Scenario('TC-INT-05: Admin khóa tài khoản Doctor -> Doctor không thể logi
   // Kiểm tra doctor1 không xuất hiện trong dropdown bác sĩ
   I.waitForElement('select[name="doctorId"]', 10);
   
-  const doctors = await I.getDoctors();
-  const targetDoctor = doctors.find(d => d.username === 'doctor1');
-  const doctorId = targetDoctor ? targetDoctor.id : 36;
+  const doctorId = await resolveDoctor1Id(I);
 
   I.dontSeeElement('select[name="doctorId"] option[value="' + doctorId + '"]');
 

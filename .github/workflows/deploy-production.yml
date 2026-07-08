@@ -35,28 +35,34 @@ jobs:
           HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X POST "${{ secrets.RENDER_PROD_FRONTEND_HOOK }}")
           echo "  Render frontend hook response: HTTP $HTTP_CODE"
 
-      - name: Wait for Deployment (120s)
+      - name: Wait for Deployment (180s)
         run: |
-          echo "Waiting 120 seconds for Render to build and deploy..."
-          sleep 120
+          echo "Waiting 180 seconds for Render to build and deploy (free tier)..."
+          sleep 180
 
       - name: Health Check — Production Backend
         run: |
           PROD_URL="${{ secrets.PRODUCTION_URL }}"
-          # Fallback to known production URL if secret not set
-          PROD_URL="${PROD_URL:-https://doctor-booking-backend-yjpf.onrender.com}"
+          if [ -z "$PROD_URL" ]; then
+            echo "❌ PRODUCTION_URL secret is not set. Set it to your live Render backend URL (e.g. https://doctor-booking-backend.onrender.com)."
+            exit 1
+          fi
+          HEALTH_URL="${PROD_URL%/}/api/public/health"
 
-          echo "Checking production health at: ${PROD_URL}/api/public/health"
-          for i in $(seq 1 30); do
-            RESP=$(curl -sf "${PROD_URL}/api/public/health" 2>/dev/null || echo "")
-            if echo "$RESP" | grep -q "UP"; then
-              echo "✅ Production backend is healthy (attempt $i)"
+          echo "Checking production health at: ${HEALTH_URL}"
+          for i in $(seq 1 45); do
+            HTTP_CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "${HEALTH_URL}" || echo "000")
+            RESP=$(cat /tmp/health.json 2>/dev/null || echo "")
+            echo "  Attempt $i: HTTP ${HTTP_CODE}"
+            if [ "$HTTP_CODE" = "200" ] && echo "$RESP" | grep -qiE '"status"[[:space:]]*:[[:space:]]*"UP"|"UP"'; then
+              echo "✅ Production backend is healthy"
+              cat /tmp/health.json
               exit 0
             fi
-            echo "  Attempt $i: waiting..."
             sleep 10
           done
-          echo "❌ Production health check failed after 5 minutes"
+          echo "❌ Production health check failed after ~7.5 minutes"
+          cat /tmp/health.json 2>/dev/null || true
           exit 1
 
       - name: Health Check — Production Frontend

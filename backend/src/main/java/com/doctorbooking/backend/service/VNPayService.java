@@ -1,5 +1,6 @@
 package com.doctorbooking.backend.service;
 
+import com.doctorbooking.backend.validator.PaymentValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,6 +116,10 @@ public class VNPayService {
         return createPaymentUrl(amount, orderInfo, orderId, appointmentReturnUrl);
     }
 
+    public boolean isValidVNPayAmount(long amount) {
+        return PaymentValidator.isValidVNPayAmount(amount);
+    }
+
     /**
      * Tạo payment URL cho VNPAY (internal method)
      */
@@ -124,6 +129,10 @@ public class VNPayService {
             String vnp_HashSecret = hashSecret;
             String vnp_Url = vnpUrl;
             String vnp_ReturnUrl = customReturnUrl;
+
+            if (!isValidVNPayAmount(amount)) {
+                throw new IllegalArgumentException("Invalid VNPAY amount: " + amount);
+            }
 
             // ✅ Normalize orderInfo để tránh lỗi encoding với ký tự tiếng Việt
             String normalizedOrderInfo = removeVietnameseAccents(orderInfo);

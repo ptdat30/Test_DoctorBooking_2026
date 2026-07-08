@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { Search } from 'lucide-react';
 import { doctorService } from '../../services/doctorService';
-import './MedicationSearch.css';
 
 const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,25 +8,16 @@ const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const searchRef = useRef(null);
-  const suggestionsRef = useRef(null);
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target) &&
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target)
-      ) {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchMedications = async (value) => {
@@ -36,7 +27,7 @@ const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
       setSuggestions(meds || []);
       setShowSuggestions(true);
     } catch (err) {
-      console.error('Failed to search medications:', err);
+      console.error('Không thể tìm thuốc:', err);
       setSuggestions([]);
     } finally {
       setLoading(false);
@@ -45,13 +36,9 @@ const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
 
   const handleSearch = (value) => {
     setSearchTerm(value);
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    if (value && value.trim().length > 0) {
-      debounceRef.current = setTimeout(() => {
-        fetchMedications(value.trim());
-      }, 250);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (value?.trim()) {
+      debounceRef.current = setTimeout(() => fetchMedications(value.trim()), 250);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -59,119 +46,87 @@ const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
   };
 
   const handleSelect = (medication) => {
-    // Check if medication is already selected
     const isAlreadySelected = selectedMedications.some(
-      med => med.id === medication.id || med.name === medication.name
+      (med) => med.id === medication.id || med.name === medication.name
     );
+    if (isAlreadySelected) return;
 
-    if (!isAlreadySelected) {
-      // Parse commonDosages and commonFrequencies from JSON string or array
-      let dosages = [];
-      let frequencies = [];
-      
-      try {
-        if (typeof medication.commonDosages === 'string') {
-          dosages = JSON.parse(medication.commonDosages || '[]');
-        } else if (Array.isArray(medication.commonDosages)) {
-          dosages = medication.commonDosages;
-        }
-      } catch (e) {
-        // If parsing fails, treat as single string
-        dosages = medication.commonDosages ? [medication.commonDosages] : [];
-      }
-      
-      try {
-        if (typeof medication.commonFrequencies === 'string') {
-          frequencies = JSON.parse(medication.commonFrequencies || '[]');
-        } else if (Array.isArray(medication.commonFrequencies)) {
-          frequencies = medication.commonFrequencies;
-        }
-      } catch (e) {
-        // If parsing fails, treat as single string
-        frequencies = medication.commonFrequencies ? [medication.commonFrequencies] : [];
-      }
+    let dosages = [];
+    let frequencies = [];
+    try {
+      dosages = typeof medication.commonDosages === 'string'
+        ? JSON.parse(medication.commonDosages || '[]')
+        : medication.commonDosages || [];
+    } catch { dosages = medication.commonDosages ? [medication.commonDosages] : []; }
+    try {
+      frequencies = typeof medication.commonFrequencies === 'string'
+        ? JSON.parse(medication.commonFrequencies || '[]')
+        : medication.commonFrequencies || [];
+    } catch { frequencies = medication.commonFrequencies ? [medication.commonFrequencies] : []; }
 
-      const newMedication = {
-        id: medication.id,
-        medicationId: medication.id,
-        name: medication.name,
-        medicationName: medication.name,
-        genericName: medication.genericName,
-        category: medication.category,
-        dosage: dosages.length > 0 ? dosages[0] : '',
-        frequency: frequencies.length > 0 ? frequencies[0] : '',
-        commonDosages: dosages, // Store array for dropdown
-        commonFrequencies: frequencies, // Store array for dropdown
-        quantity: 0,
-        instructions: '',
-        unit: medication.unit || (medication.name?.toLowerCase().includes('gói') ? 'gói' : 'viên')
-      };
-      onSelectMedication(newMedication);
-    }
+    onSelectMedication({
+      id: medication.id,
+      medicationId: medication.id,
+      name: medication.name,
+      medicationName: medication.name,
+      genericName: medication.genericName,
+      category: medication.category,
+      dosage: dosages[0] || '',
+      frequency: frequencies[0] || '',
+      commonDosages: dosages,
+      commonFrequencies: frequencies,
+      quantity: 0,
+      instructions: '',
+      unit: medication.unit || (medication.name?.toLowerCase().includes('gói') ? 'gói' : 'viên'),
+    });
     setSearchTerm('');
     setShowSuggestions(false);
   };
 
   return (
-    <div className="medication-search-container">
-      <div className="medication-search-wrapper" ref={searchRef}>
+    <div className="relative" ref={searchRef}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <input
           type="text"
-          className="medication-search-input"
-          placeholder="Tìm kiếm thuốc (VD: Pana..., Paracetamol...)"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400"
+          placeholder="Tìm thuốc (VD: Paracetamol, Panadol...)"
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => {
-            if (suggestions.length > 0) {
-              setShowSuggestions(true);
-            }
-          }}
+          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
         />
-        <span className="medication-search-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="searchGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3b82f6"/>
-                <stop offset="100%" stopColor="#8b5cf6"/>
-              </linearGradient>
-            </defs>
-            <circle cx="11" cy="11" r="7" stroke="url(#searchGradient)" strokeWidth="2"/>
-            <path d="m20 20-4-4" stroke="url(#searchGradient)" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </span>
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="medication-suggestions" ref={suggestionsRef}>
-          {suggestions.map((medication) => {
-            const isSelected = selectedMedications.some(
-              med => med.id === medication.id || med.name === medication.name
-            );
-            return (
-              <div
-                key={medication.id}
-                className={`medication-suggestion-item ${isSelected ? 'selected' : ''}`}
-                onClick={() => !isSelected && handleSelect(medication)}
-              >
-                <div className="suggestion-name">{medication.name}</div>
-                <div className="suggestion-details">
-                  <span className="suggestion-generic">{medication.genericName}</span>
-                  <span className="suggestion-category">{medication.category}</span>
-                </div>
-                {isSelected && (
-                  <span className="suggestion-checkmark"> Đã thêm</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {showSuggestions && suggestions.length === 0 && searchTerm.length > 0 && (
-        <div className="medication-suggestions">
-          <div className="medication-suggestion-item no-results">
-            {loading ? 'Đang tìm...' : 'Không tìm thấy thuốc nào'}
-          </div>
+      {showSuggestions && (
+        <div className="absolute z-20 w-full mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+          {suggestions.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-neutral-400">
+              {loading ? 'Đang tìm...' : 'Không tìm thấy thuốc'}
+            </p>
+          ) : (
+            suggestions.map((medication) => {
+              const isSelected = selectedMedications.some(
+                (med) => med.id === medication.id || med.name === medication.name
+              );
+              return (
+                <button
+                  key={medication.id}
+                  type="button"
+                  disabled={isSelected}
+                  onClick={() => handleSelect(medication)}
+                  className={`w-full text-left px-4 py-3 border-b border-neutral-100 last:border-0 transition-colors ${
+                    isSelected ? 'bg-neutral-50 opacity-60 cursor-not-allowed' : 'hover:bg-neutral-50'
+                  }`}
+                >
+                  <p className="text-sm font-medium text-neutral-900">{medication.name}</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    {medication.genericName} · {medication.category}
+                    {isSelected && ' · Đã thêm'}
+                  </p>
+                </button>
+              );
+            })
+          )}
         </div>
       )}
     </div>
@@ -179,4 +134,3 @@ const MedicationSearch = ({ onSelectMedication, selectedMedications = [] }) => {
 };
 
 export default MedicationSearch;
-

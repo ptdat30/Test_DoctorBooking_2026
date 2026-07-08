@@ -61,7 +61,7 @@ const Doctors = () => {
         {/* Filters */}
         <div className="doctors-filters">
           <div className="search-box">
-            <i data-feather="search"></i>
+            <ShellIcon name="search" />
             <input
               type="text"
               placeholder="Tìm kiếm bác sĩ, bệnh viện..."
@@ -112,12 +112,12 @@ const Doctors = () => {
                 <p className="doctor-hospital">{doctor.hospital}</p>
                 <div className="doctor-stats">
                   <div className="stat-item">
-                    <i data-feather="star"></i>
+                    <ShellIcon name="star" />
                     <span>{doctor.rating}</span>
                     <span className="stat-label">({doctor.reviews} đánh giá)</span>
                   </div>
                   <div className="stat-item">
-                    <i data-feather="briefcase"></i>
+                    <ShellIcon name="briefcase" />
                     <span>{doctor.experience} năm</span>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ const Doctors = () => {
                     to={`/doctors/${doctor.id}/book`}
                     className="doctor-book-btn"
                   >
-                    <i data-feather="calendar"></i>
+                    <ShellIcon name="calendar" />
                     Đặt lịch ngay
                   </Link>
                 </RequireAuth>
@@ -148,7 +148,7 @@ const Doctors = () => {
 
         {doctors.length === 0 && (
           <div className="no-results">
-            <i data-feather="search"></i>
+            <ShellIcon name="search" />
             <p>Không tìm thấy bác sĩ phù hợp. Vui lòng thử lại với bộ lọc khác.</p>
           </div>
         )}

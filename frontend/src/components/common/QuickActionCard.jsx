@@ -1,39 +1,24 @@
-import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import './QuickActionCard.css';
+import { ChevronRight } from 'lucide-react';
+import ShellIcon from '../shell/ShellIcon';
 
-const QuickActionCard = ({ to, icon, title, description, color, gradient }) => {
-  const iconRef = useRef(null);
-
-  useEffect(() => {
-    // Initialize Feather Icons
-    if (window.feather && iconRef.current) {
-      window.feather.replace();
-    }
-  }, [icon]);
-
-  const cardStyle = {
-    background: gradient || `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`,
-    borderColor: `${color}40`,
-  };
-
-  const iconStyle = {
-    background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`,
-  };
-
-  return (
-    <Link to={to} className="quick-action-card glass-card" style={cardStyle}>
-      <div className="quick-action-icon" style={iconStyle} ref={iconRef}>
-        <i data-feather={icon} style={{ width: '24px', height: '24px', color: 'white' }}></i>
-      </div>
-      <div className="quick-action-content">
-        <h3 className="quick-action-title">{title}</h3>
-        <p className="quick-action-description">{description}</p>
-      </div>
-      <div className="quick-action-arrow">→</div>
-    </Link>
-  );
-};
+const QuickActionCard = ({ to, icon, title, description, color }) => (
+  <Link
+    to={to}
+    className="app-card flex items-center gap-4 p-4 hover:shadow-md transition-shadow group"
+  >
+    <div
+      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
+      style={{ backgroundColor: color }}
+    >
+      <ShellIcon name={icon} className="w-5 h-5" />
+    </div>
+    <div className="min-w-0 flex-1">
+      <h3 className="font-semibold text-neutral-900">{title}</h3>
+      <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+    </div>
+    <ChevronRight className="w-4 h-4 text-neutral-300 group-hover:text-neutral-500 shrink-0" />
+  </Link>
+);
 
 export default QuickActionCard;
-

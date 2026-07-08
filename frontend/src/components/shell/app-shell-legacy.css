@@ -1,0 +1,103 @@
+/* Legacy page normalization inside app shell */
+
+.app-shell {
+  color: #171717;
+}
+
+/* Remove dark full-page backgrounds */
+.app-shell .bg-\[\#111827\],
+.app-shell .patient-doctors-page.dark,
+.app-shell .min-h-screen.bg-\[\#111827\] {
+  background: transparent !important;
+  min-height: auto !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.app-shell .bg-transparent.min-h-screen {
+  min-height: auto !important;
+}
+
+/* Admin indigo → neutral editorial */
+.app-shell .bg-indigo-600 { background-color: #171717 !important; }
+.app-shell .hover\:bg-indigo-700:hover { background-color: #262626 !important; }
+.app-shell .border-indigo-600 { border-color: #171717 !important; }
+.app-shell .text-indigo-600 { color: #171717 !important; }
+.app-shell .hover\:text-indigo-700:hover { color: #404040 !important; }
+.app-shell .focus\:ring-indigo-500:focus { --tw-ring-color: rgb(23 23 23 / 0.2) !important; }
+
+/* Legacy patient / doctor page roots */
+.app-shell .new-booking-page,
+.app-shell .booking-history-page,
+.app-shell .family-profile-page,
+.app-shell .health-wallet-page,
+.app-shell .payment-result-page,
+.app-shell .appointment-payment-result,
+.app-shell .doctor-appointments,
+.app-shell .doctor-profile-page,
+.app-shell .patient-health-dashboard,
+.app-shell .admin-main {
+  background: transparent !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+
+.app-shell .admin-main .main-content,
+.app-shell .doctor-appointments,
+.app-shell .booking-form-card,
+.app-shell .family-profile-page .stat-card,
+.app-shell .payment-result-container,
+.app-shell .result-container {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 1rem !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Forms & inputs in legacy pages */
+.app-shell input:not([type='checkbox']):not([type='radio']),
+.app-shell select,
+.app-shell textarea {
+  border-radius: 0.75rem;
+}
+
+.app-shell .booking-form-card input,
+.app-shell .booking-form-card select,
+.app-shell .booking-form-card textarea {
+  border: 1px solid #e5e5e5 !important;
+  background: #fff !important;
+}
+
+/* Gradient titles off */
+.app-shell .dashboard-title,
+.app-shell h1[style*='gradient'] {
+  background: none !important;
+  -webkit-text-fill-color: #171717 !important;
+  color: #171717 !important;
+  animation: none !important;
+}
+
+/* Video backgrounds hidden */
+.app-shell video.patient-background-video,
+.app-shell video.doctor-background-video,
+.app-shell video.admin-background-video {
+  display: none !important;
+}
+
+/* Health AI full page */
+.app-shell .ai-chat-container,
+.app-shell .family-stats .stat-card {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 1rem !important;
+  box-shadow: none !important;
+}
+
+.app-shell .family-member-card,
+.app-shell .member-card {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 1rem !important;
+}

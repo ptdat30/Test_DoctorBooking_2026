@@ -1,6 +1,31 @@
 import { useNavigate } from 'react-router-dom';
-import { User, Stethoscope, Award, Clock, Phone, MapPin, FileText, CheckCircle, XCircle, Calendar, X } from 'lucide-react';
-import './DoctorDetail.css';
+import {
+  User,
+  Stethoscope,
+  Award,
+  Clock,
+  Phone,
+  MapPin,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Calendar,
+} from 'lucide-react';
+import {
+  Modal,
+  BtnPrimary,
+  BtnSecondary,
+} from '../shell/DashboardPrimitives';
+
+const InfoField = ({ icon: Icon, label, children }) => (
+  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5 mb-2">
+      <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
+      {label}
+    </p>
+    <div className="text-sm font-medium text-neutral-900">{children}</div>
+  </div>
+);
 
 const DoctorDetail = ({ doctor, onClose }) => {
   const navigate = useNavigate();
@@ -10,136 +35,81 @@ const DoctorDetail = ({ doctor, onClose }) => {
     navigate('/patient/booking', { state: { doctorId: doctor.id } });
   };
 
+  const isActive = doctor.status === 'ACTIVE';
+
   return (
-    <div className="doctor-detail-overlay" onClick={onClose}>
-      <div className="doctor-detail-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="doctor-detail-header">
-          <h2>
-            <User />
-            Doctor Profile
-          </h2>
-          <button className="close-button" onClick={onClose}>
-            <X />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="doctor-detail-body">
-          <div className="doctor-info-grid">
-            {/* Name */}
-            <div className="info-item">
-              <div className="info-label">
-                <User />
-                Full Name
-              </div>
-              <div className="info-value">Dr. {doctor.fullName}</div>
-            </div>
-
-            {/* Specialization */}
-            <div className="info-item">
-              <div className="info-label">
-                <Stethoscope />
-                Specialization
-              </div>
-              <div className="info-value">{doctor.specialization}</div>
-            </div>
-
-            {/* Qualification */}
-            {doctor.qualification && (
-              <div className="info-item">
-                <div className="info-label">
-                  <Award />
-                  Qualification
-                </div>
-                <div className="info-value">{doctor.qualification}</div>
-              </div>
-            )}
-
-            {/* Experience */}
-            {doctor.experience > 0 && (
-              <div className="info-item">
-                <div className="info-label">
-                  <Clock />
-                  Experience
-                </div>
-                <div className="info-value">
-                  <span className="experience-badge">
-                    <Clock />
-                    {doctor.experience} {doctor.experience === 1 ? 'year' : 'years'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Phone */}
-            {doctor.phone && (
-              <div className="info-item">
-                <div className="info-label">
-                  <Phone />
-                  Contact Number
-                </div>
-                <div className="info-value">{doctor.phone}</div>
-              </div>
-            )}
-
-            {/* Address */}
-            {doctor.address && (
-              <div className="info-item">
-                <div className="info-label">
-                  <MapPin />
-                  Clinic Address
-                </div>
-                <div className="info-value">{doctor.address}</div>
-              </div>
-            )}
-
-            {/* Bio */}
-            {doctor.bio && (
-              <div className="info-item">
-                <div className="info-label">
-                  <FileText />
-                  About Doctor
-                </div>
-                <div className="bio-section">
-                  <div className="bio-text">{doctor.bio}</div>
-                </div>
-              </div>
-            )}
-
-            {/* Status */}
-            <div className="info-item">
-              <div className="info-label">
-                {doctor.status === 'ACTIVE' ? <CheckCircle /> : <XCircle />}
-                Current Status
-              </div>
-              <div className="info-value">
-                <span className={`status-badge ${doctor.status === 'ACTIVE' ? 'active' : 'inactive'}`}>
-                  {doctor.status === 'ACTIVE' ? <CheckCircle /> : <XCircle />}
-                  {doctor.status}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="doctor-detail-footer">
-          <button className="modal-button button-secondary" onClick={onClose}>
-            <X />
-            Đóng
-          </button>
-          {doctor.status === 'ACTIVE' && (
-            <button className="modal-button button-primary" onClick={handleBookAppointment}>
-              <Calendar />
-              Đặt Lịch
-            </button>
+    <Modal
+      open
+      onClose={onClose}
+      title="Hồ sơ bác sĩ"
+      footer={
+        <>
+          <BtnSecondary onClick={onClose}>Đóng</BtnSecondary>
+          {isActive && (
+            <BtnPrimary onClick={handleBookAppointment}>
+              <Calendar className="w-4 h-4" />
+              Đặt lịch
+            </BtnPrimary>
           )}
-        </div>
+        </>
+      }
+    >
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <InfoField icon={User} label="Họ và tên">
+          BS. {doctor.fullName}
+        </InfoField>
+
+        <InfoField icon={Stethoscope} label="Chuyên khoa">
+          {doctor.specialization}
+        </InfoField>
+
+        {doctor.qualification && (
+          <InfoField icon={Award} label="Trình độ">
+            {doctor.qualification}
+          </InfoField>
+        )}
+
+        {doctor.experience > 0 && (
+          <InfoField icon={Clock} label="Kinh nghiệm">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-100 text-xs font-semibold">
+              <Clock className="w-3.5 h-3.5" />
+              {doctor.experience} năm
+            </span>
+          </InfoField>
+        )}
+
+        {doctor.phone && (
+          <InfoField icon={Phone} label="Số điện thoại">
+            {doctor.phone}
+          </InfoField>
+        )}
+
+        {doctor.address && (
+          <InfoField icon={MapPin} label="Địa chỉ phòng khám">
+            {doctor.address}
+          </InfoField>
+        )}
+
+        {doctor.bio && (
+          <InfoField icon={FileText} label="Giới thiệu">
+            <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">{doctor.bio}</p>
+          </InfoField>
+        )}
+
+        <InfoField icon={isActive ? CheckCircle : XCircle} label="Trạng thái">
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
+              isActive
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                : 'bg-neutral-100 text-neutral-500 border-neutral-200'
+            }`}
+          >
+            {isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+          </span>
+        </InfoField>
       </div>
-    </div>
+    </Modal>
   );
 };
 
 export default DoctorDetail;
-

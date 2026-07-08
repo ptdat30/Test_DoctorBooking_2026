@@ -3,7 +3,10 @@ import { Search, Mail, Phone, Calendar, Clock, FileText, User, X, CheckSquare, S
 import DoctorLayout from '../../components/doctor/DoctorLayout';
 import { doctorService } from '../../services/doctorService';
 import { formatDate } from '../../utils/formatDate';
-import '../../pages/admin/AdminPages.css'; // Reuse admin table styles
+import {
+  AppPage,
+  PageHeader,
+} from '../../components/shell/DashboardPrimitives'; // Reuse admin table styles
 
 const conditionToCategory = {
   'diabetes': 'Chronic Care',
@@ -154,20 +157,22 @@ const PatientSearch = () => {
 
   return (
     <DoctorLayout>
-      <div className="admin-main">
-        <div className="main-content">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Danh sách Bệnh nhân</h1>
-            
-            {compareList.length > 0 && (
-              <button 
+      <AppPage>
+        <PageHeader
+          title="Tìm bệnh nhân"
+          subtitle="Tra cứu hồ sơ và so sánh bệnh nhân"
+          actions={
+            compareList.length > 0 ? (
+              <button
+                type="button"
                 onClick={() => setShowCompareModal(true)}
-                className="btn-primary flex items-center gap-2 px-4 py-2"
+                className="rounded-xl bg-neutral-900 text-white px-4 py-2 text-sm font-semibold hover:bg-neutral-800"
               >
-                <span>So sánh ({compareList.length})</span>
+                So sánh ({compareList.length})
               </button>
-            )}
-          </div>
+            ) : null
+          }
+        />
 
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
@@ -370,9 +375,6 @@ const PatientSearch = () => {
             </div>
           )}
 
-        </div>
-      </div>
-
       {/* Comparison Modal */}
       {showCompareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
@@ -537,6 +539,7 @@ const PatientSearch = () => {
           </div>
         </div>
       )}
+      </AppPage>
     </DoctorLayout>
   );
 };

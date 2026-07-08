@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AnimatedLogoutButton from './AnimatedLogoutButton';
+import ShellIcon from '../shell/ShellIcon';
 import './UserInfo.css';
 
 const UserInfo = () => {
@@ -9,12 +11,6 @@ const UserInfo = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    if (window.feather) {
-      window.feather.replace();
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -86,7 +82,7 @@ const UserInfo = () => {
           <span className="user-name">{user.fullName || user.username}</span>
           <span className="user-role">{getRoleLabel(user.role)}</span>
         </div>
-        <i data-feather="chevron-down" className={`chevron-icon ${isOpen ? 'open' : ''}`}></i>
+        <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -112,7 +108,7 @@ const UserInfo = () => {
                 setIsOpen(false);
               }}
             >
-              <i data-feather="layout"></i>
+              <ShellIcon name="layout" />
               <span>Bảng điều khiển</span>
             </button>
             <button
@@ -122,7 +118,7 @@ const UserInfo = () => {
                 setIsOpen(false);
               }}
             >
-              <i data-feather="calendar"></i>
+              <ShellIcon name="calendar" />
               <span>Lịch hẹn của tôi</span>
             </button>
             <button
@@ -132,7 +128,7 @@ const UserInfo = () => {
                 setIsOpen(false);
               }}
             >
-              <i data-feather="user"></i>
+              <ShellIcon name="user" />
               <span>Thông tin cá nhân</span>
             </button>
           </div>

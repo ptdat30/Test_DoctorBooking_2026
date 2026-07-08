@@ -5,6 +5,7 @@
 
 const assert = require('assert');
 const factory = require('../../data/factory.cjs');
+const { walletPaymentResultUrl } = require('../../helpers/testEnv.cjs');
 
 Feature('Ví sức khỏe (Health Wallet)');
 
@@ -83,7 +84,9 @@ Scenario('TC-WALLET-01: Bệnh nhân nạp tiền vào ví -> chuyển hướng 
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          paymentUrl: 'http://localhost:5173/patient/wallet/payment/result?vnp_ResponseCode=00&vnp_Amount=50000000&vnp_TransactionNo=12345678&vnp_TxnRef=TX-MOCK-999&vnp_OrderInfo=Nap+tien+vao+vi&vnp_BankCode=NCB&vnp_PayDate=20260626213000'
+          paymentUrl: walletPaymentResultUrl(
+            'vnp_ResponseCode=00&vnp_Amount=50000000&vnp_TransactionNo=12345678&vnp_TxnRef=TX-MOCK-999&vnp_OrderInfo=Nap+tien+vao+vi&vnp_BankCode=NCB&vnp_PayDate=20260626213000'
+          )
         })
       });
     });
@@ -156,7 +159,9 @@ Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùn
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          paymentUrl: 'http://localhost:5173/patient/wallet/payment/result?vnp_ResponseCode=24&vnp_Amount=50000000&vnp_TransactionNo=12345678&vnp_TxnRef=TX-MOCK-CANCEL-123&vnp_OrderInfo=Nap+tien+vao+vi&vnp_BankCode=NCB&vnp_PayDate=20260626213000'
+          paymentUrl: walletPaymentResultUrl(
+            'vnp_ResponseCode=24&vnp_Amount=50000000&vnp_TransactionNo=12345678&vnp_TxnRef=TX-MOCK-CANCEL-123&vnp_OrderInfo=Nap+tien+vao+vi&vnp_BankCode=NCB&vnp_PayDate=20260626213000'
+          )
         })
       });
     });

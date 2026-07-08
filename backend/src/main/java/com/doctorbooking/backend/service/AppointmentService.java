@@ -168,8 +168,8 @@ public class AppointmentService {
             logger.info("Flushed entity manager after deleting old appointments");
         }
 
-        // Check if date is not in the past
-        if (request.getAppointmentDate().isBefore(LocalDate.now())) {
+        // Check if date is not at or before today
+        if (!request.getAppointmentDate().isAfter(LocalDate.now())) {
             throw new RuntimeException("Cannot book appointment in the past");
         }
 
@@ -584,7 +584,7 @@ public class AppointmentService {
                 appointment.getAppointmentDate(),
                 appointment.getAppointmentTime(),
                 appointment.getId().toString(),
-                appointment.getPaymentMethod() != null ? appointment.getPaymentMethod().toString() : "Chưa xác định",
+                appointment.getPaymentMethod() != null ? appointment.getPaymentMethod() : "Chưa xác định",
                 appointment.getPaymentStatus() != null ? appointment.getPaymentStatus().toString() : "Chưa thanh toán",
                 appointment.getPrice() != null ? appointment.getPrice().toString() : "0",
                 appointment.getNotes() != null ? appointment.getNotes() : "",

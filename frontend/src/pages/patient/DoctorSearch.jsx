@@ -3,7 +3,10 @@ import { Search, Eye, Calendar, User, Clock } from 'lucide-react';
 import PatientLayout from '../../components/patient/PatientLayout';
 import { patientService } from '../../services/patientService';
 import DoctorDetail from '../../components/patient/DoctorDetail';
-import '../../pages/admin/AdminPages.css'; // Reuse admin table styles
+import {
+  AppPage,
+  PageHeader,
+} from '../../components/shell/DashboardPrimitives';
 
 // Symptom to specialty mapping
 const symptomToSpecialty = {
@@ -140,11 +143,8 @@ const DoctorSearch = () => {
 
   return (
     <PatientLayout>
-      <div className="admin-main">
-        <div className="main-content">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Danh sách Bác sĩ</h1>
-          </div>
+      <AppPage>
+        <PageHeader title="Tìm bác sĩ" subtitle="Tìm theo tên, chuyên khoa hoặc triệu chứng" />
 
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
@@ -341,16 +341,13 @@ const DoctorSearch = () => {
             </div>
           )}
 
-        </div>
-      </div>
-
-      {/* Doctor Detail Modal */}
       {selectedDoctor && (
         <DoctorDetail
           doctor={selectedDoctor}
           onClose={() => setSelectedDoctor(null)}
         />
       )}
+      </AppPage>
     </PatientLayout>
   );
 };

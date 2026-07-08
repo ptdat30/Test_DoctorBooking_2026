@@ -6,7 +6,7 @@ import Loading from '../../../components/common/Loading';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
 
 const PatientList = () => {
   const navigate = useNavigate();
@@ -21,9 +21,6 @@ const PatientList = () => {
   useEffect(() => {
     loadAllPatients();
   }, []);
-
-  // Initialize Feather Icons safely using custom hook
-  useFeatherIcons([patients, currentPage]);
 
   const loadAllPatients = async () => {
     try {
@@ -123,7 +120,7 @@ const PatientList = () => {
           onClick={() => handlePageChange(i)}
           className={`px-3 py-2 border rounded-lg ${
             currentPage === i
-              ? 'bg-indigo-600 text-white border-indigo-600'
+              ? 'bg-neutral-900 text-white border-neutral-900'
               : 'border-gray-300 hover:bg-gray-50'
           }`}
         >
@@ -171,7 +168,7 @@ const PatientList = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -180,9 +177,9 @@ const PatientList = () => {
           </div>
           <button 
             onClick={handleCreate} 
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors flex items-center gap-2"
           >
-            <i data-feather="user-plus" className="w-5 h-5"></i>
+            <ShellIcon name="user-plus" className="w-5 h-5" />
             Thêm Bệnh Nhân Mới
           </button>
         </div>
@@ -196,17 +193,17 @@ const PatientList = () => {
         )}
 
         {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="app-card p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Search Input */}
             <div className="relative">
-              <i data-feather="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+              <ShellIcon name="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
               />
             </div>
 
@@ -215,14 +212,14 @@ const PatientList = () => {
               <select
                 value={filterGender}
                 onChange={(e) => setFilterGender(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent appearance-none bg-white"
               >
                 <option value="ALL">Tất cả giới tính</option>
                 <option value="MALE">Nam</option>
                 <option value="FEMALE">Nữ</option>
                 <option value="OTHER">Khác</option>
               </select>
-              <i data-feather="chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none"></i>
+              <ShellIcon name="chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             </div>
           </div>
 
@@ -234,7 +231,7 @@ const PatientList = () => {
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
                   Tìm kiếm: "{searchTerm}"
                   <button onClick={() => setSearchTerm('')} className="hover:text-blue-900">
-                    <i data-feather="x" className="w-3 h-3"></i>
+                    <ShellIcon name="x" className="w-3 h-3" />
                   </button>
                 </span>
               )}
@@ -242,7 +239,7 @@ const PatientList = () => {
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">
                   Giới tính: {filterGender === 'MALE' ? 'Nam' : filterGender === 'FEMALE' ? 'Nữ' : 'Khác'}
                   <button onClick={() => setFilterGender('ALL')} className="hover:text-purple-900">
-                    <i data-feather="x" className="w-3 h-3"></i>
+                    <ShellIcon name="x" className="w-3 h-3" />
                   </button>
                 </span>
               )}
@@ -260,7 +257,7 @@ const PatientList = () => {
         </div>
 
         {/* Patients Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="app-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -307,14 +304,14 @@ const PatientList = () => {
                             className="text-green-600 hover:text-green-800 transition-colors"
                             title="Xem chi tiết"
                           >
-                            <i data-feather="eye" className="w-4 h-4"></i>
+                            <ShellIcon name="eye" className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(patient)}
                             className="text-blue-600 hover:text-blue-800 transition-colors"
                             title="Chỉnh sửa"
                           >
-                            <i data-feather="edit-2" className="w-4 h-4"></i>
+                            <ShellIcon name="edit-2" className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -328,7 +325,7 @@ const PatientList = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="app-card p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700">
                 Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredPatients.length)} của {filteredPatients.length} bệnh nhân

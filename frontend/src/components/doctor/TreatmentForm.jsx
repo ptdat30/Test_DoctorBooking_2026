@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import { doctorService } from '../../services/doctorService';
-import ErrorMessage from '../common/ErrorMessage';
 import MedicationSearch from './MedicationSearch';
 import PrescriptionTemplate from './PrescriptionTemplate';
 import { formatDate } from '../../utils/formatDate';
 import { formatTime } from '../../utils/formatTime';
-import './TreatmentForm.css';
+import {
+  Modal,
+  BtnPrimary,
+  BtnSecondary,
+  FormField,
+  Input,
+  Select,
+  Textarea,
+  AlertError,
+} from '../shell/DashboardPrimitives';
 
 const TreatmentForm = ({ treatment, appointment, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -212,291 +220,142 @@ const TreatmentForm = ({ treatment, appointment, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="treatment-form-overlay">
-      <div className="treatment-form-container">
-        <div className="treatment-form-header">
-          <h2>{treatment ? 'Chỉnh Sửa Điều Trị' : 'Thêm Điều Trị Mới'}</h2>
-          <button onClick={onClose} className="close-button">×</button>
-        </div>
+    <Modal
+      open
+      wide
+      onClose={onClose}
+      title={treatment ? 'Chỉnh sửa điều trị' : 'Thêm điều trị mới'}
+      footer={
+        <>
+          <BtnSecondary type="button" onClick={onClose}>Hủy</BtnSecondary>
+          <BtnPrimary type="submit" form="treatment-form" disabled={loading}>
+            {loading ? 'Đang lưu...' : 'Lưu điều trị'}
+          </BtnPrimary>
+        </>
+      }
+    >
+      {error && <AlertError message={error} />}
 
-        <ErrorMessage message={error} onClose={() => setError('')} />
-
-        <form onSubmit={handleSubmit} className="treatment-form">
-          {appointment && (
-            <div className="appointment-info-card">
-              <div><strong>Bệnh nhân:</strong> {appointment.patientName}</div>
-              <div><strong>Ngày:</strong> {formatDate(appointment.appointmentDate)}</div>
-              <div><strong>Giờ:</strong> {formatTime(appointment.appointmentTime)}</div>
-            </div>
-          )}
-
-          {!treatment && !appointment && (
-            <div className="form-group">
-              <label>
-                Bệnh nhân <span className="required">*</span>
-              </label>
-              <select
-                name="patientId"
-                value={formData.patientId || ''}
-                onChange={handleChange}
-                required
-                className="form-input"
-              >
-                <option value="">Chọn bệnh nhân</option>
-                {patients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.fullName} ({patient.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Diagnosis */}
-          <div className="form-section">
-            <h3 className="section-title">Chẩn đoán</h3>
-            <div className="form-group">
-              <label>Mã chẩn đoán</label>
-              <input
-                type="text"
-                name="diagnosisCode"
-                value={formData.diagnosisCode}
-                onChange={handleChange}
-                placeholder="VD: J02"
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <label>Chẩn đoán</label>
-              <textarea
-                name="diagnosis"
-                value={formData.diagnosis}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Nhập chẩn đoán..."
-                className="form-textarea"
-              />
-            </div>
+      <form id="treatment-form" onSubmit={handleSubmit} className="space-y-6">
+        {appointment && (
+          <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 text-sm space-y-1">
+            <p><span className="text-neutral-500">Bệnh nhân:</span> <strong>{appointment.patientName}</strong></p>
+            <p><span className="text-neutral-500">Ngày:</span> {formatDate(appointment.appointmentDate)}</p>
+            <p><span className="text-neutral-500">Giờ:</span> {formatTime(appointment.appointmentTime)}</p>
           </div>
+        )}
 
-          {/* Medication Prescription */}
-          <div className="form-section prescription-section">
-            <h3 className="section-title">Kê đơn thuốc</h3>
-            
-            <MedicationSearch 
-              onSelectMedication={handleAddMedication}
-              selectedMedications={medications}
-            />
+        {!treatment && !appointment && (
+          <FormField label="Bệnh nhân" required>
+            <Select name="patientId" value={formData.patientId || ''} onChange={handleChange} required>
+              <option value="">Chọn bệnh nhân</option>
+              {patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>{patient.fullName} ({patient.email})</option>
+              ))}
+            </Select>
+          </FormField>
+        )}
 
-            {medications.length > 0 && (
-              <div className="medications-list">
-                {medications.map((med, index) => (
-                  <div key={index} className="medication-card">
-                    <div className="medication-header">
-                      <span className="med-number">{index + 1}/</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMedication(index)}
-                        className="remove-med-button"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="medication-fields">
-                      <div className="form-group">
-                        <label>Tên thuốc <span className="required">*</span></label>
-                        <input
-                          type="text"
-                          value={med.medicationName || med.name || ''}
-                          onChange={(e) => {
-                            handleMedicationChange(index, 'medicationName', e.target.value);
-                            handleMedicationChange(index, 'name', e.target.value);
-                          }}
-                          placeholder="VD: Panadol 500mg"
-                          className="form-input"
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Liều dùng <span className="required">*</span></label>
-                        <div className="selectable-input-group">
-                          {med.commonDosages && Array.isArray(med.commonDosages) && med.commonDosages.length > 0 && (
-                            <select
-                              value=""
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  handleMedicationChange(index, 'dosage', e.target.value);
-                                }
-                              }}
-                              className="form-select"
-                            >
-                              <option value="">Chọn liều dùng...</option>
-                              {med.commonDosages.map((dose, idx) => (
-                                <option key={idx} value={dose}>
-                                  {dose}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                          <input
-                            type="text"
-                            value={med.dosage || ''}
-                            onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
-                            placeholder="VD: 500mg hoặc sáng 1 gói - chiều 1 gói"
-                            className="form-input"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label>Tần suất</label>
-                        <div className="selectable-input-group">
-                          {med.commonFrequencies && Array.isArray(med.commonFrequencies) && med.commonFrequencies.length > 0 && (
-                            <select
-                              value=""
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  handleMedicationChange(index, 'frequency', e.target.value);
-                                }
-                              }}
-                              className="form-select"
-                            >
-                              <option value="">Chọn tần suất...</option>
-                              {med.commonFrequencies.map((freq, idx) => (
-                                <option key={idx} value={freq}>
-                                  {freq}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                          <input
-                            type="text"
-                            value={med.frequency || ''}
-                            onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
-                            placeholder="VD: 2 lần/ngày"
-                            className="form-input"
-                          />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label>Số lượng</label>
-                        <div className="quantity-input-group">
-                          <input
-                            type="number"
-                            value={med.quantity}
-                            onChange={(e) => handleMedicationChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                            placeholder="0"
-                            className="form-input"
-                            min="0"
-                          />
-                          <select
-                            value={med.unit || 'viên'}
-                            onChange={(e) => handleMedicationChange(index, 'unit', e.target.value)}
-                            className="form-input unit-select"
-                          >
-                            <option value="viên">Viên</option>
-                            <option value="gói">Gói</option>
-                            <option value="chai">Chai</option>
-                            <option value="tuýp">Tuýp</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
+        <section className="space-y-4">
+          <h3 className="text-sm font-semibold text-neutral-900">Chẩn đoán</h3>
+          <FormField label="Mã chẩn đoán">
+            <Input name="diagnosisCode" value={formData.diagnosisCode} onChange={handleChange} placeholder="VD: J02" />
+          </FormField>
+          <FormField label="Chẩn đoán">
+            <Textarea name="diagnosis" value={formData.diagnosis} onChange={handleChange} rows={3} placeholder="Nhập chẩn đoán..." />
+          </FormField>
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-sm font-semibold text-neutral-900">Kê đơn thuốc</h3>
+          <MedicationSearch onSelectMedication={handleAddMedication} selectedMedications={medications} />
+          {medications.length > 0 && (
+            <div className="space-y-3">
+              {medications.map((med, index) => (
+                <div key={index} className="p-4 rounded-xl border border-neutral-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-neutral-400">Thuốc {index + 1}</span>
+                    <button type="button" onClick={() => handleRemoveMedication(index)} className="text-xs text-rose-600 hover:text-rose-700 font-medium">Xóa</button>
                   </div>
-                ))}
+                  <FormField label="Tên thuốc" required>
+                    <Input
+                      value={med.medicationName || med.name || ''}
+                      onChange={(e) => {
+                        handleMedicationChange(index, 'medicationName', e.target.value);
+                        handleMedicationChange(index, 'name', e.target.value);
+                      }}
+                      required
+                    />
+                  </FormField>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField label="Liều dùng" required>
+                      {med.commonDosages?.length > 0 && (
+                        <Select value="" onChange={(e) => e.target.value && handleMedicationChange(index, 'dosage', e.target.value)} className="mb-2">
+                          <option value="">Chọn liều dùng...</option>
+                          {med.commonDosages.map((dose, idx) => <option key={idx} value={dose}>{dose}</option>)}
+                        </Select>
+                      )}
+                      <Input value={med.dosage || ''} onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)} required />
+                    </FormField>
+                    <FormField label="Tần suất">
+                      {med.commonFrequencies?.length > 0 && (
+                        <Select value="" onChange={(e) => e.target.value && handleMedicationChange(index, 'frequency', e.target.value)} className="mb-2">
+                          <option value="">Chọn tần suất...</option>
+                          {med.commonFrequencies.map((freq, idx) => <option key={idx} value={freq}>{freq}</option>)}
+                        </Select>
+                      )}
+                      <Input value={med.frequency || ''} onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)} />
+                    </FormField>
+                  </div>
+                  <FormField label="Số lượng">
+                    <div className="flex gap-2">
+                      <Input type="number" value={med.quantity} onChange={(e) => handleMedicationChange(index, 'quantity', parseInt(e.target.value) || 0)} min={0} className="flex-1" />
+                      <Select value={med.unit || 'viên'} onChange={(e) => handleMedicationChange(index, 'unit', e.target.value)} className="w-28">
+                        <option value="viên">Viên</option>
+                        <option value="gói">Gói</option>
+                        <option value="chai">Chai</option>
+                        <option value="tuýp">Tuýp</option>
+                      </Select>
+                    </div>
+                  </FormField>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-sm font-semibold text-neutral-900">Ghi chú điều trị</h3>
+          <Textarea name="treatmentNotes" value={formData.treatmentNotes} onChange={handleChange} rows={4} placeholder="Nhập ghi chú..." />
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField label="Ngày tái khám">
+            <Input type="date" name="followUpDate" value={formData.followUpDate} onChange={handleChange} />
+          </FormField>
+          <FormField label="Lời dặn">
+            <Textarea name="advice" value={formData.advice} onChange={handleChange} rows={2} placeholder="VD: Ăn nóng, uống sôi" />
+          </FormField>
+        </section>
+
+        {medications.length > 0 && (
+          <>
+            <BtnSecondary type="button" onClick={() => setShowPrescriptionPreview(!showPrescriptionPreview)} className="w-full sm:w-auto">
+              {showPrescriptionPreview ? 'Ẩn' : 'Xem'} mẫu đơn thuốc
+            </BtnSecondary>
+            {showPrescriptionPreview && (
+              <div className="rounded-xl border border-neutral-200 p-4 overflow-x-auto">
+                <PrescriptionTemplate
+                  prescriptionData={{ ...formData, medications, date: new Date().toISOString(), prescriptionNumber: `BN${Date.now()}` }}
+                  patientData={patientInfo || appointment}
+                  doctorData={doctorInfo}
+                />
               </div>
             )}
-          </div>
-
-          {/* Treatment Notes */}
-          <div className="form-section">
-            <h3 className="section-title">Ghi chú điều trị</h3>
-            <div className="form-group">
-              <textarea
-                name="treatmentNotes"
-                value={formData.treatmentNotes}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Nhập ghi chú điều trị..."
-                className="form-textarea"
-              />
-            </div>
-          </div>
-
-          {/* Follow-up and Advice */}
-          <div className="form-section">
-            <div className="form-group">
-              <label>Ngày tái khám</label>
-              <input
-                type="date"
-                name="followUpDate"
-                value={formData.followUpDate}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <label>Lời dặn</label>
-              <textarea
-                name="advice"
-                value={formData.advice}
-                onChange={handleChange}
-                rows="2"
-                placeholder="VD: Ăn nóng uống sôi"
-                className="form-textarea"
-              />
-            </div>
-          </div>
-
-          {/* Prescription Preview Toggle */}
-          {medications.length > 0 && (
-            <div className="form-section">
-              <button
-                type="button"
-                onClick={() => setShowPrescriptionPreview(!showPrescriptionPreview)}
-                className="preview-toggle-button"
-              >
-                {showPrescriptionPreview ? 'Ẩn' : 'Xem'} mẫu đơn thuốc
-              </button>
-            </div>
-          )}
-
-          {/* Prescription Preview */}
-          {showPrescriptionPreview && medications.length > 0 && (
-            <div className="prescription-preview-section">
-              <PrescriptionTemplate
-                prescriptionData={{
-                  ...formData,
-                  medications,
-                  date: new Date().toISOString(),
-                  prescriptionNumber: `BN${Date.now()}`
-                }}
-                patientData={patientInfo || appointment}
-                doctorData={doctorInfo}
-              />
-            </div>
-          )}
-
-          {/* Form Actions */}
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="button-cancel"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="button-submit"
-            >
-              {loading ? 'Đang lưu...' : 'Lưu & Gửi E-Prescription'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </>
+        )}
+      </form>
+    </Modal>
   );
 };
 
