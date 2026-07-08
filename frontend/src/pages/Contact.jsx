@@ -53,7 +53,7 @@ const Contact = () => {
           <div className="contact-info">
             <div className="info-card">
               <div className="info-icon">
-                <i data-feather="map-pin"></i>
+                <ShellIcon name="map-pin" />
               </div>
               <h3>Địa chỉ</h3>
               <p>123 Đường ABC, Quận XYZ<br />Thành phố Hà Nội, Việt Nam</p>
@@ -61,7 +61,7 @@ const Contact = () => {
 
             <div className="info-card">
               <div className="info-icon">
-                <i data-feather="phone"></i>
+                <ShellIcon name="phone" />
               </div>
               <h3>Điện thoại</h3>
               <p>Hotline: 1900 1234<br />Hỗ trợ 24/7</p>
@@ -69,7 +69,7 @@ const Contact = () => {
 
             <div className="info-card">
               <div className="info-icon">
-                <i data-feather="mail"></i>
+                <ShellIcon name="mail" />
               </div>
               <h3>Email</h3>
               <p>support@doctorbooking.vn<br />info@doctorbooking.vn</p>
@@ -77,7 +77,7 @@ const Contact = () => {
 
             <div className="info-card">
               <div className="info-icon">
-                <i data-feather="clock"></i>
+                <ShellIcon name="clock" />
               </div>
               <h3>Giờ làm việc</h3>
               <p>Thứ 2 - Chủ nhật<br />24/7</p>
@@ -155,7 +155,7 @@ const Contact = () => {
             </div>
 
             <button type="submit" className="submit-btn">
-              <i data-feather="send"></i>
+              <ShellIcon name="send" />
               Gửi tin nhắn
             </button>
           </form>

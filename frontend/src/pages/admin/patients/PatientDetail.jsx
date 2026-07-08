@@ -5,7 +5,7 @@ import { adminService } from '../../../services/adminService';
 import Loading from '../../../components/common/Loading';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
 
 const PatientDetail = () => {
   const navigate = useNavigate();
@@ -18,8 +18,6 @@ const PatientDetail = () => {
   }, [id]);
 
   // Initialize Feather Icons safely using custom hook
-  useFeatherIcons([patient]);
-
   const loadPatient = async () => {
     try {
       const data = await adminService.getPatientById(id);
@@ -55,19 +53,19 @@ const PatientDetail = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="app-page space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Chi Tiết Bệnh Nhân</h1>
           <button 
             onClick={() => navigate('/admin/patients')} 
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <i data-feather="arrow-left" className="w-5 h-5"></i>
+            <ShellIcon name="arrow-left" className="w-5 h-5" />
             Quay lại danh sách
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="app-card p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">ID</label>
@@ -118,7 +116,7 @@ const PatientDetail = () => {
               onClick={handleEdit}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-              <i data-feather="edit-2" className="w-4 h-4"></i>
+              <ShellIcon name="edit-2" className="w-4 h-4" />
               Chỉnh sửa
             </button>
           </div>

@@ -8,8 +8,9 @@ services:
     plan: free
     healthCheckPath: /api/public/health
     envVars:
-      - key: PORT
-        value: 8080
+      # Do NOT set PORT — Render injects it automatically; hardcoding breaks routing
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
       - key: DB_URL
         sync: false
       - key: DB_USERNAME
@@ -34,14 +35,28 @@ services:
         sync: false
       - key: VNPAY_APPOINTMENT_RETURN_URL
         sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
       - key: SMTP_USERNAME
         sync: false
       - key: SMTP_PASSWORD
         sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: MANAGEMENT_HEALTH_MAIL_ENABLED
+        value: "false"
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        fromService:
+          type: web
+          name: doctor-booking-frontend
+          envVarKey: RENDER_EXTERNAL_URL
       - key: FRONTEND_URL
-        sync: false
+        fromService:
+          type: web
+          name: doctor-booking-frontend
+          envVarKey: RENDER_EXTERNAL_URL
 
   # Frontend Service
   - type: web
@@ -51,8 +66,13 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     plan: free
     envVars:
+      # Baked at build time — browser calls same-origin /api; nginx proxies to backend
       - key: VITE_API_BASE_URL
-        value: https://doctor-booking-backend-yjpf.onrender.com/api
+        value: /api
+      # Runtime nginx proxy target (envsubst on container start)
       - key: VITE_API_TARGET
-        value: https://doctor-booking-backend-yjpf.onrender.com
-        
+        fromService:
+          type: web
+          name: doctor-booking-backend
+          envVarKey: RENDER_EXTERNAL_URL
+

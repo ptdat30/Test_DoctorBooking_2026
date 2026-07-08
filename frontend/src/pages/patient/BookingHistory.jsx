@@ -5,652 +5,435 @@ import { patientService } from '../../services/patientService';
 import Loading from '../../components/common/Loading';
 import { formatDate } from '../../utils/formatDate';
 import { formatTime } from '../../utils/formatTime';
-import '../patient/patientPages.css';
-import './BookingHistory.css';
+import {
+  AppPage,
+  PageHeader,
+  AlertError,
+  AlertSuccess,
+  StatusBadge,
+  EmptyState,
+  BtnPrimary,
+  BtnSecondary,
+  BtnDanger,
+  Modal,
+  FormField,
+  Textarea,
+  StarRating,
+} from '../../components/shell/DashboardPrimitives';
+import ShellIcon from '../../components/shell/ShellIcon';
+import { Calendar } from 'lucide-react';
+
+const PAYMENT_LABELS = {
+  CASH: 'Tiền mặt',
+  VNPAY: 'VNPAY',
+  WALLET: 'Ví sức khỏe',
+};
+
+const PAYMENT_STATUS_LABELS = {
+  PAID: 'Đã thanh toán',
+  PENDING: 'Chờ thanh toán',
+  FAILED: 'Thất bại',
+  REFUNDED: 'Đã hoàn tiền',
+};
+
+const InfoRow = ({ icon, label, value }) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+      <ShellIcon name={icon} className="w-3.5 h-3.5" />
+      {label}
+    </span>
+    <span className="text-sm font-semibold text-neutral-900">{value}</span>
+  </div>
+);
 
 const BookingHistory = () => {
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [selectedAppointment, setSelectedAppointment] = useState(null);
-    const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-    const [treatment, setTreatment] = useState(null);
-    const [loadingTreatment, setLoadingTreatment] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [treatment, setTreatment] = useState(null);
+  const [loadingTreatment, setLoadingTreatment] = useState(false);
 
-    useEffect(() => {
-        loadAppointments();
-        // Initialize Feather Icons
-        if (window.feather) {
-            window.feather.replace();
-        }
-    }, []);
+  useEffect(() => {
+    loadAppointments();
+  }, []);
 
-    useEffect(() => {
-        // Replace icons when appointments change
-        if (window.feather) {
-            setTimeout(() => window.feather.replace(), 100);
-        }
-    }, [appointments]);
-
-    const loadAppointments = async () => {
-        try {
-            setLoading(true);
-            const data = await patientService.getAppointments();
-            setAppointments(data);
-            setError('');
-        } catch (err) {
-            setError('Không thể tải lịch hẹn');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCancel = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) {
-            return;
-        }
-
-        try {
-            await patientService.cancelAppointment(id);
-            setSuccess('Hủy lịch hẹn thành công');
-            setTimeout(() => setSuccess(''), 3000);
-            loadAppointments();
-        } catch (err) {
-            setError(err.response?.data?.message || 'Không thể hủy lịch hẹn');
-        }
-    };
-
-    const handleViewDetails = async (appointment) => {
-        setSelectedAppointment(appointment);
-        setShowDetailsModal(true);
-        setLoadingTreatment(true);
-        setTreatment(null);
-
-        // Load treatment if appointment is completed
-        if (appointment.status === 'COMPLETED') {
-            try {
-                const treatmentData = await patientService.getTreatmentByAppointmentId(appointment.id);
-                setTreatment(treatmentData);
-            } catch (err) {
-                // Treatment might not exist yet
-                console.log('No treatment found for this appointment');
-            } finally {
-                setLoadingTreatment(false);
-            }
-        } else {
-            setLoadingTreatment(false);
-        }
-    };
-
-    const handleSendFeedback = (appointment) => {
-        setSelectedAppointment(appointment);
-        setShowFeedbackModal(true);
-        setError(''); // Clear any existing errors
-    };
-
-    const handleFeedbackSuccess = () => {
-        setShowFeedbackModal(false);
-        setSelectedAppointment(null);
-        setSuccess('Feedback submitted successfully!');
-        setTimeout(() => setSuccess(''), 3000);
-        loadAppointments();
-    };
-
-    const canCancel = (appointment) => {
-        return appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED';
-    };
-
-    if (loading) {
-        return (
-            <PatientLayout>
-                <Loading />
-            </PatientLayout>
-        );
+  const loadAppointments = async () => {
+    try {
+      setLoading(true);
+      const data = await patientService.getAppointments();
+      setAppointments(data);
+      setError('');
+    } catch (err) {
+      setError('Không thể tải lịch hẹn');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const getPaymentMethodIcon = (method) => {
-        switch (method) {
-            case 'CASH': return '💵';
-            case 'VNPAY': return '🏦';
-            case 'WALLET': return '';
-            default: return '';
-        }
-    };
+  const handleCancel = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) return;
+    try {
+      await patientService.cancelAppointment(id);
+      setSuccess('Hủy lịch hẹn thành công');
+      setTimeout(() => setSuccess(''), 3000);
+      loadAppointments();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể hủy lịch hẹn');
+    }
+  };
 
-    const getPaymentMethodName = (method) => {
-        switch (method) {
-            case 'CASH': return 'Tiền mặt';
-            case 'VNPAY': return 'VNPAY';
-            case 'WALLET': return 'Ví Sức khỏe';
-            default: return method || 'Chưa xác định';
-        }
-    };
+  const handleViewDetails = async (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
+    setLoadingTreatment(true);
+    setTreatment(null);
 
+    if (appointment.status === 'COMPLETED') {
+      try {
+        const treatmentData = await patientService.getTreatmentByAppointmentId(appointment.id);
+        setTreatment(treatmentData);
+      } catch {
+        console.log('No treatment found for this appointment');
+      } finally {
+        setLoadingTreatment(false);
+      }
+    } else {
+      setLoadingTreatment(false);
+    }
+  };
+
+  const handleSendFeedback = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowFeedbackModal(true);
+    setError('');
+  };
+
+  const handleFeedbackSuccess = () => {
+    setShowFeedbackModal(false);
+    setSelectedAppointment(null);
+    setSuccess('Gửi đánh giá thành công!');
+    setTimeout(() => setSuccess(''), 3000);
+    loadAppointments();
+  };
+
+  const canCancel = (appointment) =>
+    appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED';
+
+  if (loading) {
     return (
-        <PatientLayout>
-            <div className="booking-history-page">
-                <div className="history-header">
-                    <h1>Lịch Sử Đặt Lịch</h1>
+      <PatientLayout>
+        <Loading />
+      </PatientLayout>
+    );
+  }
+
+  return (
+    <PatientLayout>
+      <AppPage>
+        <PageHeader title="Lịch sử đặt lịch" subtitle="Quản lý và theo dõi các lịch hẹn của bạn" />
+
+        {error && <AlertError message={error} />}
+        {success && <AlertSuccess message={success} />}
+
+        {appointments.length === 0 ? (
+          <div className="app-card p-10">
+            <EmptyState
+              icon={Calendar}
+              title="Chưa có lịch hẹn nào"
+              description="Bắt đầu đặt lịch khám bệnh với bác sĩ ngay bây giờ"
+            />
+            <div className="flex justify-center mt-6">
+              <Link to="/patient/booking">
+                <BtnPrimary>
+                  <ShellIcon name="calendar" className="w-4 h-4" />
+                  Đặt lịch mới
+                </BtnPrimary>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {appointments.map((appointment) => (
+              <article key={appointment.id} className="app-card overflow-hidden">
+                <div className="p-5 sm:p-6 border-b border-neutral-100">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                        <ShellIcon name="user" className="w-4 h-4 text-neutral-400 shrink-0" />
+                        BS. {appointment.doctorName}
+                      </h3>
+                      <p className="text-sm text-neutral-500 mt-1 flex items-center gap-1.5">
+                        <ShellIcon name="heart" className="w-3.5 h-3.5" />
+                        {appointment.doctorSpecialization}
+                      </p>
+                    </div>
+                    <StatusBadge status={appointment.status} />
+                  </div>
                 </div>
 
-                {error && <div className="alert alert-error">{error}</div>}
-                {success && <div className="alert alert-success">{success}</div>}
+                <div className="p-5 sm:p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <InfoRow icon="calendar" label="Ngày khám" value={formatDate(appointment.appointmentDate)} />
+                  <InfoRow icon="clock" label="Giờ khám" value={formatTime(appointment.appointmentTime)} />
+                  {appointment.price > 0 && (
+                    <>
+                      <InfoRow
+                        icon="credit-card"
+                        label="Phí khám"
+                        value={`${Number(appointment.price).toLocaleString('vi-VN')} VNĐ`}
+                      />
+                      <InfoRow
+                        icon="credit-card"
+                        label="Thanh toán"
+                        value={PAYMENT_LABELS[appointment.paymentMethod] || appointment.paymentMethod || '—'}
+                      />
+                    </>
+                  )}
+                </div>
 
-                {appointments.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-state-icon"></div>
-                        <h3>Chưa có lịch hẹn nào</h3>
-                        <p>Bắt đầu đặt lịch khám bệnh với bác sĩ ngay bây giờ</p>
-                        <Link to="/patient/booking" className="empty-state-btn">
-                            <i data-feather="calendar"></i>
-                            Đặt lịch mới
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="appointments-list">
-                        {appointments.map(appointment => (
-                            <div
-                                key={appointment.id}
-                                className={`appointment-card status-${appointment.status.toLowerCase()}`}
-                            >
-                                {/* Header */}
-                                <div className="appointment-card-header">
-                                    <div className="appointment-doctor">
-                                        <div className="doctor-name" style={{ color: '#ffffff' }}>
-                                            <i data-feather="user"></i>
-                                            Dr. {appointment.doctorName}
-                                        </div>
-                                        <div className="doctor-specialty">
-                                            <i data-feather="heart"></i>
-                                            {appointment.doctorSpecialization}
-                                        </div>
-                                    </div>
-                                    <span className={`status-badge ${appointment.status.toLowerCase()}`}>
-                                        {appointment.status}
-                                    </span>
-                                </div>
-
-                                {/* Info Grid */}
-                                <div className="appointment-info-grid">
-                                    <div className="info-item">
-                                        <div className="info-label">
-                                            <i data-feather="calendar"></i>
-                                            Ngày khám
-                                        </div>
-                                        <div className="info-value">{formatDate(appointment.appointmentDate)}</div>
-                                    </div>
-
-                                    <div className="info-item">
-                                        <div className="info-label">
-                                            <i data-feather="clock"></i>
-                                            Giờ khám
-                                        </div>
-                                        <div className="info-value">{formatTime(appointment.appointmentTime)}</div>
-                                    </div>
-                                </div>
-
-                                {/* Payment Info */}
-                                {appointment.price > 0 && (
-                                    <div className="payment-info">
-                                        <div className="payment-amount">
-                                            {Number(appointment.price).toLocaleString('vi-VN')} VNĐ
-                                        </div>
-                                        <div className="payment-details">
-                                            <span className={`payment-method-badge ${appointment.paymentMethod?.toLowerCase() || ''}`}>
-                                                <span>{getPaymentMethodIcon(appointment.paymentMethod)}</span>
-                                                {getPaymentMethodName(appointment.paymentMethod)}
-                                            </span>
-                                            <span className={`payment-status-badge ${appointment.paymentStatus?.toLowerCase() || 'pending'}`}>
-                                                <i data-feather={appointment.paymentStatus === 'PAID' ? 'check-circle' : 'clock'}></i>
-                                                {appointment.paymentStatus || 'PENDING'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Notes */}
-                                {appointment.notes && (
-                                    <div className="appointment-notes">
-                                        <i data-feather="message-circle"></i> {appointment.notes}
-                                    </div>
-                                )}
-
-                                {/* Actions */}
-                                <div className="appointment-actions">
-                                    {canCancel(appointment) && (
-                                        <button
-                                            onClick={() => handleCancel(appointment.id)}
-                                            className="action-btn cancel"
-                                        >
-                                            <i data-feather="x-circle"></i>
-                                            Hủy lịch hẹn
-                                        </button>
-                                    )}
-
-                                    {appointment.status === 'COMPLETED' && (
-                                        <>
-                                            <button
-                                                onClick={() => handleViewDetails(appointment)}
-                                                className="action-btn view"
-                                            >
-                                                <i data-feather="file-text"></i>
-                                                Xem kết quả khám
-                                            </button>
-                                            {!appointment.hasFeedback && (
-                                                <button
-                                                    onClick={() => handleSendFeedback(appointment)}
-                                                    className="action-btn feedback"
-                                                >
-                                                    <i data-feather="star"></i>
-                                                    Gửi đánh giá
-                                                </button>
-                                            )}
-                                            {appointment.hasFeedback && (
-                                                <button
-                                                    className="action-btn feedback disabled"
-                                                    disabled
-                                                    style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                                                >
-                                                    <i data-feather="check-circle"></i>
-                                                    Đã đánh giá
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {appointment.price > 0 && appointment.paymentStatus && (
+                  <div className="px-5 sm:px-6 pb-4">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-neutral-100 text-neutral-600">
+                      <ShellIcon
+                        name={appointment.paymentStatus === 'PAID' ? 'check-circle' : 'clock'}
+                        className="w-3.5 h-3.5"
+                      />
+                      {PAYMENT_STATUS_LABELS[appointment.paymentStatus] || appointment.paymentStatus}
+                    </span>
+                  </div>
                 )}
 
-
-                {/* Appointment Details Modal */}
-                {showDetailsModal && selectedAppointment && (
-                    <AppointmentDetailsModal
-                        appointment={selectedAppointment}
-                        treatment={treatment}
-                        loadingTreatment={loadingTreatment}
-                        onClose={() => {
-                            setShowDetailsModal(false);
-                            setSelectedAppointment(null);
-                            setTreatment(null);
-                        }}
-                    />
+                {appointment.notes && (
+                  <div className="mx-5 sm:mx-6 mb-4 p-3 rounded-xl bg-neutral-50 text-sm text-neutral-600 flex gap-2">
+                    <ShellIcon name="message-circle" className="w-4 h-4 shrink-0 mt-0.5 text-neutral-400" />
+                    {appointment.notes}
+                  </div>
                 )}
 
-                {/* Feedback Modal */}
-                {showFeedbackModal && selectedAppointment && (
-                    <FeedbackModal
-                        appointment={selectedAppointment}
-                        onClose={() => {
-                            setShowFeedbackModal(false);
-                            setSelectedAppointment(null);
-                        }}
-                        onSuccess={handleFeedbackSuccess}
-                    />
-                )}
-            </div>
-        </PatientLayout>
-    );
+                <div className="px-5 sm:px-6 pb-5 sm:pb-6 flex flex-wrap gap-2">
+                  {canCancel(appointment) && (
+                    <BtnDanger onClick={() => handleCancel(appointment.id)}>
+                      <ShellIcon name="x-circle" className="w-4 h-4" />
+                      Hủy lịch hẹn
+                    </BtnDanger>
+                  )}
+                  {appointment.status === 'COMPLETED' && (
+                    <>
+                      <BtnSecondary onClick={() => handleViewDetails(appointment)}>
+                        <ShellIcon name="file-text" className="w-4 h-4" />
+                        Xem kết quả khám
+                      </BtnSecondary>
+                      {!appointment.hasFeedback ? (
+                        <BtnPrimary onClick={() => handleSendFeedback(appointment)}>
+                          <ShellIcon name="star" className="w-4 h-4" />
+                          Gửi đánh giá
+                        </BtnPrimary>
+                      ) : (
+                        <BtnSecondary disabled className="opacity-50">
+                          <ShellIcon name="check-circle" className="w-4 h-4" />
+                          Đã đánh giá
+                        </BtnSecondary>
+                      )}
+                    </>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        <AppointmentDetailsModal
+          open={showDetailsModal}
+          appointment={selectedAppointment}
+          treatment={treatment}
+          loadingTreatment={loadingTreatment}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedAppointment(null);
+            setTreatment(null);
+          }}
+        />
+
+        <FeedbackModal
+          open={showFeedbackModal}
+          appointment={selectedAppointment}
+          onClose={() => {
+            setShowFeedbackModal(false);
+            setSelectedAppointment(null);
+          }}
+          onSuccess={handleFeedbackSuccess}
+        />
+      </AppPage>
+    </PatientLayout>
+  );
 };
 
-// Appointment Details Modal Component
-const AppointmentDetailsModal = ({ appointment, treatment, loadingTreatment, onClose }) => {
-    return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-        }}>
-            <div style={{
-                backgroundColor: 'rgba(20, 20, 20, 0.98)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '2rem',
-                borderRadius: '16px',
-                width: '90%',
-                maxWidth: '700px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                color: '#e0e0e0',
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, color: '#e0e0e0', fontSize: '1.5rem' }}>Chi Tiết Lịch Hẹn</h2>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            fontSize: '24px',
-                            cursor: 'pointer',
-                            color: '#e0e0e0',
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.15)'}
-                        onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                    >
-                        ×
-                    </button>
-                </div>
+const AppointmentDetailsModal = ({ open, appointment, treatment, loadingTreatment, onClose }) => {
+  if (!open || !appointment) return null;
 
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
-                    {/* Appointment Info */}
-                    <div style={{ padding: '1.25rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                        <h3 style={{ marginBottom: '1rem', color: '#e0e0e0', fontSize: '1.1rem' }}>Thông tin lịch hẹn</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', color: '#aaa' }}>
-                            <div><strong style={{ color: '#e0e0e0' }}>Bác sĩ:</strong> {appointment.doctorName}</div>
-                            <div><strong style={{ color: '#e0e0e0' }}>Chuyên khoa:</strong> {appointment.doctorSpecialization}</div>
-                            <div><strong style={{ color: '#e0e0e0' }}>Ngày:</strong> {formatDate(appointment.appointmentDate)}</div>
-                            <div><strong style={{ color: '#e0e0e0' }}>Giờ:</strong> {formatTime(appointment.appointmentTime)}</div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <strong style={{ color: '#e0e0e0' }}>Trạng thái:</strong>
-                                <span className={`status-badge ${appointment.status.toLowerCase()}`} style={{ marginLeft: '0.75rem' }}>
-                                    {appointment.status}
-                                </span>
-                            </div>
-                            {appointment.notes && (
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <strong style={{ color: '#e0e0e0' }}>Ghi chú:</strong> {appointment.notes}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Treatment Info */}
-                    {loadingTreatment ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
-                            <div className="loading-spinner-medium" style={{ margin: '0 auto 1rem' }}></div>
-                            Đang tải thông tin điều trị...
-                        </div>
-                    ) : treatment ? (
-                        <div style={{ padding: '1.25rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                            <h3 style={{ marginBottom: '1rem', color: '#10b981', fontSize: '1.1rem' }}>Thông tin điều trị</h3>
-                            <div style={{ display: 'grid', gap: '1rem', color: '#aaa' }}>
-                                {treatment.diagnosis && (
-                                    <div>
-                                        <strong style={{ color: '#e0e0e0' }}>Chẩn đoán:</strong>
-                                        <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', color: '#e0e0e0' }}>
-                                            {treatment.diagnosis}
-                                        </div>
-                                    </div>
-                                )}
-                                {treatment.prescription && (
-                                    <div>
-                                        <strong style={{ color: '#e0e0e0' }}>Đơn thuốc:</strong>
-                                        <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', color: '#e0e0e0' }}>
-                                            {treatment.prescription}
-                                        </div>
-                                    </div>
-                                )}
-                                {treatment.treatmentNotes && (
-                                    <div>
-                                        <strong style={{ color: '#e0e0e0' }}>Ghi chú điều trị:</strong>
-                                        <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', color: '#e0e0e0' }}>
-                                            {treatment.treatmentNotes}
-                                        </div>
-                                    </div>
-                                )}
-                                {treatment.followUpDate && (
-                                    <div>
-                                        <strong style={{ color: '#e0e0e0' }}>Ngày tái khám:</strong> {formatDate(treatment.followUpDate)}
-                                    </div>
-                                )}
-                                <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
-                                    Tạo lúc: {new Date(treatment.createdAt).toLocaleString('vi-VN', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div style={{ padding: '1.25rem', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>
-                            Chưa có thông tin điều trị cho lịch hẹn này.
-                        </div>
-                    )}
-                </div>
-
-                <button
-                    onClick={onClose}
-                    style={{
-                        marginTop: '1.5rem',
-                        padding: '0.75rem 1.5rem',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        color: '#e0e0e0',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        width: '100%',
-                        fontWeight: '500',
-                        transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.15)'}
-                    onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                >
-                    Đóng
-                </button>
-            </div>
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Kết quả khám bệnh"
+      footer={
+        <BtnSecondary onClick={onClose} className="w-full sm:w-auto">
+          Đóng
+        </BtnSecondary>
+      }
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-neutral-50 text-sm">
+          <div>
+            <span className="text-neutral-500">Bác sĩ</span>
+            <p className="font-semibold text-neutral-900">BS. {appointment.doctorName}</p>
+          </div>
+          <div>
+            <span className="text-neutral-500">Chuyên khoa</span>
+            <p className="font-semibold text-neutral-900">{appointment.doctorSpecialization}</p>
+          </div>
+          <div>
+            <span className="text-neutral-500">Ngày khám</span>
+            <p className="font-semibold text-neutral-900">{formatDate(appointment.appointmentDate)}</p>
+          </div>
+          <div>
+            <span className="text-neutral-500">Giờ khám</span>
+            <p className="font-semibold text-neutral-900">{formatTime(appointment.appointmentTime)}</p>
+          </div>
         </div>
-    );
+
+        {loadingTreatment ? (
+          <div className="flex items-center justify-center py-8 text-neutral-400 text-sm">Đang tải kết quả...</div>
+        ) : treatment ? (
+          <div className="space-y-4">
+            {treatment.diagnosis && (
+              <div className="p-4 rounded-xl border border-neutral-200">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">Chẩn đoán</p>
+                <p className="text-sm text-neutral-800">{treatment.diagnosis}</p>
+              </div>
+            )}
+            {treatment.prescription && (
+              <div className="p-4 rounded-xl border border-neutral-200">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">Đơn thuốc</p>
+                <p className="text-sm text-neutral-800 whitespace-pre-wrap">{treatment.prescription}</p>
+              </div>
+            )}
+            {treatment.notes && (
+              <div className="p-4 rounded-xl border border-neutral-200">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">Ghi chú</p>
+                <p className="text-sm text-neutral-800 whitespace-pre-wrap">{treatment.notes}</p>
+              </div>
+            )}
+            {treatment.createdAt && (
+              <p className="text-xs text-neutral-400">
+                Tạo lúc:{' '}
+                {new Date(treatment.createdAt).toLocaleString('vi-VN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
+            Chưa có thông tin điều trị cho lịch hẹn này.
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
 };
 
-// Feedback Modal Component
-const FeedbackModal = ({ appointment, onClose, onSuccess }) => {
-    const [formData, setFormData] = useState({
-        rating: 5,
-        comment: '',
-    });
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState('');
+const FeedbackModal = ({ open, appointment, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({ rating: 5, comment: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
-    };
+  useEffect(() => {
+    if (open) {
+      setFormData({ rating: 5, comment: '' });
+      setError('');
+    }
+  }, [open]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      await patientService.createFeedback({
+        appointmentId: appointment.id,
+        rating: formData.rating,
+        comment: formData.comment,
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-        try {
-            await patientService.createFeedback({
-                appointmentId: appointment.id,
-                rating: parseInt(formData.rating),
-                comment: formData.comment,
-            });
-            onSuccess();
-        } catch (err) {
-            setError(err.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+  if (!open || !appointment) return null;
 
-    return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-        }}>
-            <div style={{
-                backgroundColor: 'rgba(20, 20, 20, 0.98)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '2rem',
-                borderRadius: '16px',
-                width: '90%',
-                maxWidth: '600px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                color: '#e0e0e0',
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Gửi Đánh Giá</h2>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            fontSize: '24px',
-                            cursor: 'pointer',
-                            color: '#e0e0e0',
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.15)'}
-                        onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                    >
-                        ×
-                    </button>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                    <div style={{ marginBottom: '0.5rem' }}><strong>Bác sĩ:</strong> {appointment.doctorName}</div>
-                    <div style={{ marginBottom: '0.5rem' }}><strong>Ngày:</strong> {formatDate(appointment.appointmentDate)}</div>
-                    <div><strong>Giờ:</strong> {formatTime(appointment.appointmentTime)}</div>
-                </div>
-
-
-                {error && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
-
-                <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500', color: '#e0e0e0' }}>
-                            Đánh giá *
-                        </label>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, rating: star })}
-                                    style={{
-                                        fontSize: '2rem',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        color: star <= formData.rating ? '#f59e0b' : '#444',
-                                        transition: 'all 0.2s',
-                                        transform: star <= formData.rating ? 'scale(1.1)' : 'scale(1)',
-                                    }}
-                                >
-                                    ★
-                                </button>
-                            ))}
-                            <span style={{ marginLeft: '1rem', color: '#888' }}>({formData.rating}/5)</span>
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500', color: '#e0e0e0' }}>
-                            Nhận xét (Tùy chọn)
-                        </label>
-                        <textarea
-                            name="comment"
-                            value={formData.comment}
-                            onChange={handleChange}
-                            rows="6"
-                            placeholder="Chia sẻ trải nghiệm của bạn..."
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '8px',
-                                fontFamily: 'inherit',
-                                fontSize: '0.95rem',
-                                color: '#e0e0e0',
-                                resize: 'vertical',
-                            }}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            style={{
-                                padding: '0.75rem 1.5rem',
-                                height: '49.6px',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                color: '#e0e0e0',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                fontWeight: '500',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.05)'}
-                        >
-                            Hủy
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            style={{
-                                padding: '0.75rem 1.5rem',
-                                height: '49.6px',
-                                margin: 0,
-                                background: submitting ? 'rgba(16, 185, 129, 0.5)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: 'white',
-                                border: '1px solid transparent',
-                                borderRadius: '8px',
-                                cursor: submitting ? 'not-allowed' : 'pointer',
-                                fontWeight: '500',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                            onMouseEnter={(e) => !submitting && (e.target.style.transform = 'translateY(-2px)')}
-                            onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-                        >
-                            {submitting ? 'Đang gửi...' : 'Gửi đánh giá'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Gửi đánh giá"
+      footer={
+        <>
+          <BtnSecondary onClick={onClose} disabled={submitting}>
+            Hủy
+          </BtnSecondary>
+          <BtnPrimary type="submit" form="feedback-form" disabled={submitting}>
+            {submitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+          </BtnPrimary>
+        </>
+      }
+    >
+      <form id="feedback-form" onSubmit={handleSubmit} className="space-y-5">
+        <div className="p-4 rounded-xl bg-neutral-50 text-sm space-y-1">
+          <p>
+            <span className="text-neutral-500">Bác sĩ:</span>{' '}
+            <span className="font-semibold">BS. {appointment.doctorName}</span>
+          </p>
+          <p>
+            <span className="text-neutral-500">Ngày:</span>{' '}
+            <span className="font-semibold">{formatDate(appointment.appointmentDate)}</span>
+          </p>
+          <p>
+            <span className="text-neutral-500">Giờ:</span>{' '}
+            <span className="font-semibold">{formatTime(appointment.appointmentTime)}</span>
+          </p>
         </div>
-    );
+
+        {error && <AlertError message={error} />}
+
+        <FormField label="Đánh giá" required>
+          <StarRating value={formData.rating} onChange={(rating) => setFormData({ ...formData, rating })} />
+          <p className="text-xs text-neutral-400 mt-2">{formData.rating}/5 sao</p>
+        </FormField>
+
+        <FormField label="Nhận xét (tùy chọn)">
+          <Textarea
+            name="comment"
+            value={formData.comment}
+            onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+            rows={4}
+            placeholder="Chia sẻ trải nghiệm của bạn..."
+          />
+        </FormField>
+      </form>
+    </Modal>
+  );
 };
 
 export default BookingHistory;

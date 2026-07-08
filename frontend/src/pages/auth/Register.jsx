@@ -5,6 +5,7 @@ import ErrorMessage from '../../components/common/ErrorMessage';
 import Loading from '../../components/common/Loading';
 import videoBg from '../../assets/625148e1956a6a29189fca52d43d74f576029421.mp4';
 import '../Auth.css';
+import ShellIcon from '../../components/shell/ShellIcon';
 
 const Register = () => {
   const location = useLocation();
@@ -118,7 +119,7 @@ const Register = () => {
           {/* Role Header */}
           <div className="auth-role-header" style={{ '--role-color': info.color }}>
             <div className="role-icon-wrapper">
-              <i data-feather={info.icon}></i>
+              <ShellIcon name={info.icon} className="w-8 h-8" />
             </div>
             <h2 className="auth-title">{info.title}</h2>
             <p className="auth-subtitle">{info.subtitle}</p>

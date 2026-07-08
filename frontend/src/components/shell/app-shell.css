@@ -1,0 +1,79 @@
+.app-shell {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.app-shell-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+/* Nội dung trang con — card & bảng editorial */
+.app-page {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.app-card {
+  @apply rounded-2xl border border-neutral-200 bg-white;
+}
+
+.app-card-header {
+  @apply px-5 py-4 sm:px-6 border-b border-neutral-100;
+}
+
+.app-card-body {
+  @apply p-5 sm:p-6;
+}
+
+.app-badge {
+  @apply inline-flex items-center rounded-lg px-2 py-0.5 text-xs font-semibold;
+}
+
+.app-table {
+  @apply w-full text-sm text-left;
+}
+
+.app-table thead {
+  @apply text-xs uppercase tracking-wider text-neutral-500 border-b border-neutral-100;
+}
+
+.app-table th {
+  @apply px-4 py-3 font-semibold;
+}
+
+.app-table td {
+  @apply px-4 py-3 border-b border-neutral-50 text-neutral-700;
+}
+
+.app-table tbody tr:hover {
+  @apply bg-neutral-50/80;
+}
+
+/* Ghi đè glass morphism cũ trong shell mới */
+.app-shell .stat-card,
+.app-shell .chart-card,
+.app-shell .activity-card,
+.app-shell .table-card,
+.app-shell .action-card,
+.app-shell .patient-card,
+.app-shell .admin-card,
+.app-shell .dashboard-card,
+.app-shell .appointment-card,
+.app-shell .glass-card {
+  background: #fff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgb(229 229 229) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.app-shell .stat-card:hover,
+.app-shell .chart-card:hover,
+.app-shell .activity-card:hover,
+.app-shell .table-card:hover,
+.app-shell .action-card:hover {
+  transform: none !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05) !important;
+}

@@ -1,60 +1,48 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Edit, Lock, AlertTriangle, Heart, Activity, 
-  Pill, Calendar, CreditCard, Users, Plus,
-  X, Save, Eye
-} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, Tooltip, Area
-} from 'recharts';
+import {
+  Edit,
+  Lock,
+  AlertTriangle,
+  Heart,
+  Activity,
+  Pill,
+  Eye,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import PatientLayout from '../../components/patient/PatientLayout';
 import { patientService } from '../../services/patientService';
 import { formatDate } from '../../utils/formatDate';
-import './PatientProfile.css';
+import Loading from '../../components/common/Loading';
+import {
+  AppPage,
+  PageHeader,
+  AlertError,
+  AlertSuccess,
+  BtnPrimary,
+  BtnSecondary,
+  BtnDanger,
+  Modal,
+  FormField,
+  Input,
+  Select,
+} from '../../components/shell/DashboardPrimitives';
+import { StatTile } from '../../components/shell/PatientPageUI';
 
-// Mock data for demonstration
 const mockVitalStats = {
   bmi: 22.5,
   heartRate: 72,
   weight: 65,
   bloodType: 'O+',
-  allergies: ['Penicillin', 'Dust']
+  allergies: ['Penicillin', 'Bụi'],
 };
 
 const mockMedicines = [
-  { id: 1, name: 'Paracetamol 500mg', daysRemaining: 5, totalDays: 7, schedule: 'Morning & Evening' },
-  { id: 2, name: 'Amoxicillin 250mg', daysRemaining: 2, totalDays: 5, schedule: '3 times daily' },
-  { id: 3, name: 'Vitamin D3', daysRemaining: 15, totalDays: 30, schedule: 'Once daily' },
-];
-
-const mockTimeline = [
-  { id: 1, date: '2024-11-15', doctor: 'Dr. Nguyen Van A', diagnosis: 'Common Cold', prescription: 'Paracetamol, Vitamin C' },
-  { id: 2, date: '2024-10-20', doctor: 'Dr. Tran Thi B', diagnosis: 'Hypertension Check', prescription: 'Blood pressure monitoring' },
-  { id: 3, date: '2024-09-10', doctor: 'Dr. Le Van C', diagnosis: 'Annual Checkup', prescription: 'General health assessment' },
-];
-
-const mockSpendingData = [
-  { month: 'Jan', amount: 500000 },
-  { month: 'Feb', amount: 750000 },
-  { month: 'Mar', amount: 300000 },
-  { month: 'Apr', amount: 900000 },
-  { month: 'May', amount: 600000 },
-  { month: 'Jun', amount: 450000 },
-  { month: 'Jul', amount: 800000 },
-  { month: 'Aug', amount: 550000 },
-  { month: 'Sep', amount: 700000 },
-  { month: 'Oct', amount: 650000 },
-  { month: 'Nov', amount: 500000 },
-  { month: 'Dec', amount: 400000 },
-];
-
-const mockFamilyMembers = [
-  { id: 1, name: 'Nguyen Van A', relation: 'Son', avatar: 'A' },
-  { id: 2, name: 'Nguyen Thi B', relation: 'Daughter', avatar: 'B' },
-  { id: 3, name: 'Nguyen Van C', relation: 'Father', avatar: 'C' },
+  { id: 1, name: 'Paracetamol 500mg', daysRemaining: 5, totalDays: 7, schedule: 'Sáng & Tối' },
+  { id: 2, name: 'Amoxicillin 250mg', daysRemaining: 2, totalDays: 5, schedule: '3 lần/ngày' },
+  { id: 3, name: 'Vitamin D3', daysRemaining: 15, totalDays: 30, schedule: '1 lần/ngày' },
 ];
 
 const PatientProfile = () => {
@@ -77,7 +65,6 @@ const PatientProfile = () => {
     emergencyContact: '',
     emergencyPhone: '',
   });
-  const [insuranceFlipped, setInsuranceFlipped] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -86,15 +73,14 @@ const PatientProfile = () => {
   const loadAllData = async () => {
     try {
       setLoading(true);
-      
       const [profileData, treatmentsData] = await Promise.all([
         patientService.getProfile().catch(() => null),
         patientService.getTreatments().catch(() => []),
       ]);
-      
+
       setProfile(profileData);
       setTreatments(treatmentsData);
-      
+
       if (profileData) {
         setFormData({
           fullName: profileData.fullName,
@@ -105,16 +91,14 @@ const PatientProfile = () => {
           emergencyContact: profileData.emergencyContact || '',
           emergencyPhone: profileData.emergencyPhone || '',
         });
-        
         setSosData({
           emergencyContact: profileData.emergencyContact || '',
           emergencyPhone: profileData.emergencyPhone || '',
         });
       }
-      
       setError('');
     } catch (err) {
-      setError('Failed to load profile data');
+      setError('Không thể tải hồ sơ');
       console.error(err);
     } finally {
       setLoading(false);
@@ -130,15 +114,14 @@ const PatientProfile = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    
     try {
       const updated = await patientService.updateProfile(formData);
       setProfile(updated);
       setEditMode(false);
-      setSuccess('Profile updated successfully');
+      setSuccess('Cập nhật hồ sơ thành công');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      setError(err.response?.data?.message || 'Không thể cập nhật hồ sơ');
     }
   };
 
@@ -146,25 +129,22 @@ const PatientProfile = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
+      setError('Mật khẩu mới không khớp');
       return;
     }
-
     if (passwordData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
-
     try {
       await patientService.changePassword(passwordData.currentPassword, passwordData.newPassword);
       setShowPasswordForm(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setSuccess('Password changed successfully');
+      setSuccess('Đổi mật khẩu thành công');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to change password');
+      setError(err.response?.data?.message || 'Không thể đổi mật khẩu');
     }
   };
 
@@ -172,7 +152,6 @@ const PatientProfile = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
     try {
       const updated = await patientService.updateProfile({
         ...formData,
@@ -181,855 +160,333 @@ const PatientProfile = () => {
       });
       setProfile(updated);
       setShowSOSForm(false);
-      setSuccess('Emergency contact updated successfully');
+      setSuccess('Cập nhật liên hệ khẩn cấp thành công');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update emergency contact');
+      setError(err.response?.data?.message || 'Không thể cập nhật liên hệ khẩn cấp');
     }
   };
 
   const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return 'N/A';
+    if (!dateOfBirth) return '—';
     const today = new Date();
     const birth = new Date(dateOfBirth);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
     return age;
   };
 
   const getQRCodeData = () => {
     if (!profile) return '';
-    return JSON.stringify({
-      patientId: profile.id,
-      name: profile.fullName,
-      timestamp: Date.now(),
-    });
+    return JSON.stringify({ patientId: profile.id, name: profile.fullName, timestamp: Date.now() });
   };
 
-  const profileCompleteness = profile ? 85 : 0; // Calculate based on filled fields
-
-  // BMI Gauge Data
-  const bmiData = [
-    { name: 'BMI', value: mockVitalStats.bmi },
-    { name: 'Remaining', value: 40 - mockVitalStats.bmi }
-  ];
-  const COLORS = ['#10b981', '#e5e7eb'];
+  const timelineItems =
+    treatments.length > 0
+      ? treatments.map((t) => ({
+          id: t.id,
+          date: t.createdAt || t.appointmentDate,
+          doctor: t.doctorName || 'Bác sĩ',
+          diagnosis: t.diagnosis || '—',
+          prescription: t.prescription || t.notes || '—',
+        }))
+      : [];
 
   if (loading) {
     return (
       <PatientLayout>
-        <SkeletonLoader />
+        <Loading message="Đang tải hồ sơ..." />
       </PatientLayout>
     );
   }
 
   return (
     <PatientLayout>
-      <div className="patient-health-dashboard">
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="alert alert-error"
-          >
-            {error}
-          </motion.div>
-        )}
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="alert alert-success"
-          >
-            {success}
-          </motion.div>
-        )}
+      <AppPage>
+        <PageHeader title="Hồ sơ cá nhân" subtitle="Thông tin sức khỏe và lịch sử khám bệnh" />
 
-        <div className="dashboard-grid">
-          {/* LEFT COLUMN: Medical Passport */}
-          <motion.aside
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="medical-passport"
-          >
-            <MedicalPassportCard
-              profile={profile}
-              qrData={getQRCodeData()}
-              profileCompleteness={profileCompleteness}
-              age={calculateAge(profile?.dateOfBirth)}
-              onEditProfile={() => setEditMode(true)}
-              onChangePassword={() => setShowPasswordForm(true)}
-              onSOS={() => setShowSOSForm(true)}
-            />
-          </motion.aside>
+        {error && <AlertError message={error} />}
+        {success && <AlertSuccess message={success} />}
 
-          {/* RIGHT COLUMN: Bento Grid Dashboard */}
-          <motion.main
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bento-dashboard"
-          >
-            <motion.div
-              className="bento-grid"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                visible: {
-                  transition: {
-                    staggerChildren: 0.1
-                  }
-                }
-              }}
-            >
-              {/* Block 1: Vital Signs */}
-              <VitalSignsBlock vitalStats={mockVitalStats} bmiData={bmiData} COLORS={COLORS} />
-
-              {/* Block 2: Medicine Cabinet */}
-              <MedicineCabinetBlock medicines={mockMedicines} />
-
-              {/* Block 3: Medical Timeline */}
-              <MedicalTimelineBlock 
-                timeline={mockTimeline} 
-                onViewDetails={setSelectedTreatment}
-              />
-
-              {/* Block 4: Insurance & Wallet */}
-              <InsuranceWalletBlock
-                insuranceNumber="BH123456789"
-                insuranceExpiry="2025-12-31"
-                spendingData={mockSpendingData}
-                isFlipped={insuranceFlipped}
-                onFlip={() => setInsuranceFlipped(!insuranceFlipped)}
-              />
-
-              {/* Block 5: Family Connections */}
-              <FamilyConnectionsBlock familyMembers={mockFamilyMembers} />
-            </motion.div>
-          </motion.main>
-        </div>
-
-        {/* Modals */}
-        <AnimatePresence>
-          {editMode && (
-            <EditProfileModal
-              profile={profile}
-              formData={formData}
-              onInputChange={handleInputChange}
-              onSave={handleUpdateProfile}
-              onClose={() => setEditMode(false)}
-            />
-          )}
-          {showPasswordForm && (
-            <PasswordModal
-              passwordData={passwordData}
-              onPasswordChange={setPasswordData}
-              onSave={handleChangePassword}
-              onClose={() => {
-                setShowPasswordForm(false);
-                setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-              }}
-            />
-          )}
-          {showSOSForm && (
-            <SOSModal
-              sosData={sosData}
-              onSOSChange={setSosData}
-              onSave={handleUpdateSOS}
-              onClose={() => setShowSOSForm(false)}
-            />
-          )}
-          {selectedTreatment && (
-            <TreatmentDetailModal
-              treatment={selectedTreatment}
-              onClose={() => setSelectedTreatment(null)}
-            />
-          )}
-        </AnimatePresence>
-      </div>
-    </PatientLayout>
-  );
-};
-
-// Medical Passport Card Component
-const MedicalPassportCard = ({ profile, qrData, profileCompleteness, age, onEditProfile, onChangePassword, onSOS }) => {
-  return (
-    <motion.div
-      className="passport-card"
-      whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="passport-header">
-        <div className="avatar-container">
-          <CircularProgressRing progress={profileCompleteness} size={120} strokeWidth={8}>
-            <div className="avatar">
-              {profile?.fullName?.charAt(0)?.toUpperCase() || 'P'}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Passport */}
+          <aside className="app-card p-6 space-y-6">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-2xl bg-neutral-900 text-white flex items-center justify-center text-3xl font-bold">
+                {profile?.fullName?.charAt(0)?.toUpperCase() || 'B'}
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-neutral-900">{profile?.fullName || 'Bệnh nhân'}</h2>
+              <p className="text-sm text-neutral-500 mt-1">ID: {profile?.id || '—'}</p>
+              <div className="flex items-center gap-3 mt-3 text-sm text-neutral-600">
+                <span>Tuổi: {calculateAge(profile?.dateOfBirth)}</span>
+                <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 font-semibold text-xs">
+                  {mockVitalStats.bloodType}
+                </span>
+              </div>
             </div>
-          </CircularProgressRing>
-        </div>
-        <div className="passport-info">
-          <h2 className="patient-name">{profile?.fullName || 'Patient Name'}</h2>
-          <p className="patient-id">ID: {profile?.id || 'N/A'}</p>
-          <div className="patient-meta">
-            <span>Age: {age}</span>
-            <span className="blood-type-tag">{mockVitalStats.bloodType}</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="qr-section">
-        <div className="qr-wrapper">
-          <QRCodeSVG value={qrData} size={120} level="H" />
-        </div>
-        <p className="qr-label">Scan to Check-in</p>
-      </div>
+            <div className="flex flex-col items-center p-4 rounded-xl border border-neutral-200 bg-neutral-50">
+              <QRCodeSVG value={getQRCodeData()} size={112} level="H" />
+              <p className="text-xs text-neutral-500 mt-3 font-medium">Quét để check-in</p>
+            </div>
 
-      <div className="quick-actions">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="action-btn secondary"
-          onClick={onEditProfile}
-        >
-          <Edit size={18} />
-          Edit Profile
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="action-btn secondary"
-          onClick={onChangePassword}
-        >
-          <Lock size={18} />
-          Change Password
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="action-btn sos"
-          onClick={onSOS}
-        >
-          <AlertTriangle size={18} />
-          SOS Emergency
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-};
+            <div className="space-y-2">
+              <BtnSecondary onClick={() => setEditMode(true)} className="w-full">
+                <Edit className="w-4 h-4" />
+                Chỉnh sửa hồ sơ
+              </BtnSecondary>
+              <BtnSecondary onClick={() => setShowPasswordForm(true)} className="w-full">
+                <Lock className="w-4 h-4" />
+                Đổi mật khẩu
+              </BtnSecondary>
+              <BtnDanger onClick={() => setShowSOSForm(true)} className="w-full">
+                <AlertTriangle className="w-4 h-4" />
+                Liên hệ khẩn cấp
+              </BtnDanger>
+            </div>
 
-// Circular Progress Ring Component
-const CircularProgressRing = ({ progress, size, strokeWidth, children }) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (progress / 100) * circumference;
-
-  return (
-    <div className="progress-ring-container" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="progress-ring-svg">
-        <circle
-          className="progress-ring-background"
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          className="progress-ring-foreground"
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </svg>
-      <div className="progress-ring-content">
-        {children}
-      </div>
-    </div>
-  );
-};
-
-// Block 1: Vital Signs
-const VitalSignsBlock = ({ vitalStats, bmiData, COLORS }) => {
-  return (
-    <motion.div
-      className="bento-block vital-block"
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-      }}
-      whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-    >
-      <h3 className="block-title">Vital Signs & Stats</h3>
-      
-      <div className="vital-content">
-        <div className="bmi-gauge-container">
-          <ResponsiveContainer width="100%" height={150}>
-            <PieChart>
-              <Pie
-                data={bmiData}
-                cx="50%"
-                cy="50%"
-                startAngle={180}
-                endAngle={0}
-                innerRadius={50}
-                outerRadius={70}
-                paddingAngle={5}
-                dataKey="value"
+            <div className="pt-4 border-t border-neutral-100 space-y-2">
+              <Link
+                to="/patient/wallet"
+                className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 hover:bg-neutral-50 transition-colors text-sm font-medium text-neutral-700"
               >
-                {bmiData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <text x="50%" y="50%" textAnchor="middle" className="bmi-text">
-                {vitalStats.bmi}
-              </text>
-              <text x="50%" y="60%" textAnchor="middle" className="bmi-label">
-                BMI
-              </text>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+                <Wallet className="w-4 h-4 text-neutral-500" />
+                Ví sức khỏe
+              </Link>
+              <Link
+                to="/patient/family"
+                className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 hover:bg-neutral-50 transition-colors text-sm font-medium text-neutral-700"
+              >
+                <Users className="w-4 h-4 text-neutral-500" />
+                Hồ sơ gia đình
+              </Link>
+            </div>
+          </aside>
 
-        <div className="vital-stats-grid">
-          <div className="vital-stat-card">
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
-              className="heart-icon"
-            >
-              <Heart size={32} fill="#ef4444" color="#ef4444" />
-            </motion.div>
-            <div className="stat-value">{vitalStats.heartRate}</div>
-            <div className="stat-label">BPM</div>
-          </div>
-
-          <div className="vital-stat-card">
-            <Activity size={32} color="#10b981" />
-            <div className="stat-value">{vitalStats.weight}</div>
-            <div className="stat-label">kg</div>
-          </div>
-        </div>
-      </div>
-
-      {vitalStats.allergies && vitalStats.allergies.length > 0 && (
-        <div className="allergy-warning">
-          <AlertTriangle size={16} />
-          <span>{vitalStats.allergies.join(', ')}</span>
-        </div>
-      )}
-    </motion.div>
-  );
-};
-
-// Block 2: Medicine Cabinet
-const MedicineCabinetBlock = ({ medicines }) => {
-  return (
-    <motion.div
-      className="bento-block medicine-block"
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-      }}
-      whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-    >
-      <h3 className="block-title">Virtual Medicine Cabinet</h3>
-      <div className="medicine-list">
-        {medicines.map((medicine) => (
-          <motion.div
-            key={medicine.id}
-            className="medicine-card"
-            whileHover={{ scale: 1.02, x: 5 }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="medicine-header">
-              <Pill size={20} color="#10b981" />
-              <span className="medicine-name">{medicine.name}</span>
-              {medicine.daysRemaining <= 2 && (
-                <span className="refill-badge">Refill Needed</span>
+          {/* Main */}
+          <div className="lg:col-span-2 space-y-6">
+            <section>
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">Chỉ số sức khỏe</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatTile icon={Activity} label="BMI" value={mockVitalStats.bmi} />
+                <StatTile icon={Heart} label="Nhịp tim (BPM)" value={mockVitalStats.heartRate} />
+                <StatTile icon={Activity} label="Cân nặng (kg)" value={mockVitalStats.weight} />
+              </div>
+              {mockVitalStats.allergies?.length > 0 && (
+                <div className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-900">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  Dị ứng: {mockVitalStats.allergies.join(', ')}
+                </div>
               )}
-            </div>
-            <div className="medicine-progress">
-              <div className="progress-bar">
-                <motion.div
-                  className="progress-fill"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(medicine.daysRemaining / medicine.totalDays) * 100}%` }}
-                  transition={{ duration: 1, delay: 0.3 }}
-                />
-              </div>
-              <span className="progress-text">
-                {medicine.daysRemaining} / {medicine.totalDays} days left
-              </span>
-            </div>
-            <div className="medicine-schedule">{medicine.schedule}</div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  );
-};
+            </section>
 
-// Block 3: Medical Timeline
-const MedicalTimelineBlock = ({ timeline, onViewDetails }) => {
-  return (
-    <motion.div
-      className="bento-block timeline-block"
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-      }}
-      whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-    >
-      <h3 className="block-title">Medical Journey Timeline</h3>
-      <div className="timeline-container">
-        {timeline.map((item, index) => (
-          <motion.div
-            key={item.id}
-            className="timeline-item"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02, x: 5 }}
-          >
-            <div className="timeline-dot" />
-            <div className="timeline-content">
-              <div className="timeline-date">{formatDate(item.date)}</div>
-              <div className="timeline-doctor">{item.doctor}</div>
-              <div className="timeline-diagnosis">{item.diagnosis}</div>
-              <motion.button
-                className="timeline-view-btn"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onViewDetails(item)}
-              >
-                <Eye size={14} />
-                View Prescription
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  );
-};
-
-// Block 4: Insurance & Wallet
-const InsuranceWalletBlock = ({ insuranceNumber, insuranceExpiry, spendingData, isFlipped, onFlip }) => {
-  return (
-    <motion.div
-      className="bento-block insurance-block"
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-      }}
-      whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-    >
-      <h3 className="block-title">Insurance & Wallet</h3>
-      <div className="insurance-content">
-        <div className="flip-card-container" onClick={onFlip}>
-          <motion.div
-            className="flip-card"
-            animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ duration: 0.6 }}
-            style={{ transformStyle: 'preserve-3d' }}
-          >
-            {/* Front */}
-            <div className="flip-card-front">
-              <div className="insurance-card-front">
-                <div className="card-chip">
-                  <CreditCard size={24} />
-                </div>
-                <div className="card-number">{insuranceNumber}</div>
-                <div className="card-expiry">Exp: {insuranceExpiry}</div>
-                <div className="card-label">Health Insurance</div>
+            <section className="app-card p-5 sm:p-6">
+              <h3 className="font-semibold text-neutral-900 mb-4">Tủ thuốc</h3>
+              <div className="space-y-3">
+                {mockMedicines.map((medicine) => {
+                  const pct = Math.round((medicine.daysRemaining / medicine.totalDays) * 100);
+                  const low = medicine.daysRemaining <= 2;
+                  return (
+                    <div key={medicine.id} className="p-4 rounded-xl border border-neutral-200">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Pill className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span className="font-medium text-sm text-neutral-900 truncate">{medicine.name}</span>
+                        </div>
+                        {low && (
+                          <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg shrink-0">
+                            Cần mua thêm
+                          </span>
+                        )}
+                      </div>
+                      <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-neutral-900 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="flex justify-between mt-2 text-xs text-neutral-500">
+                        <span>{medicine.daysRemaining} / {medicine.totalDays} ngày còn lại</span>
+                        <span>{medicine.schedule}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            </section>
 
-            {/* Back */}
-            <div className="flip-card-back">
-              <div className="insurance-card-back">
-                <div className="card-back-qr">
-                  <QRCodeSVG value={insuranceNumber} size={80} level="M" />
+            <section className="app-card p-5 sm:p-6">
+              <h3 className="font-semibold text-neutral-900 mb-4">Lịch sử khám bệnh</h3>
+              {timelineItems.length === 0 ? (
+                <p className="text-sm text-neutral-400 text-center py-8">Chưa có lịch sử điều trị</p>
+              ) : (
+                <div className="space-y-0">
+                  {timelineItems.map((item, index) => (
+                    <div key={item.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-900 shrink-0 mt-1.5" />
+                        {index < timelineItems.length - 1 && (
+                          <div className="w-px flex-1 bg-neutral-200 my-1" />
+                        )}
+                      </div>
+                      <div className="flex-1 pb-6">
+                        <p className="text-xs text-neutral-400">{formatDate(item.date)}</p>
+                        <p className="font-semibold text-neutral-900 text-sm mt-0.5">{item.doctor}</p>
+                        <p className="text-sm text-neutral-600 mt-0.5">{item.diagnosis}</p>
+                        <BtnSecondary
+                          onClick={() => setSelectedTreatment(item)}
+                          className="mt-2 !py-1.5 !px-3 !text-xs"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Xem đơn thuốc
+                        </BtnSecondary>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="card-back-details">
-                  <p>Policy: Premium Plan</p>
-                  <p>Coverage: 80%</p>
-                  <p>Expires: {insuranceExpiry}</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+              )}
+            </section>
+          </div>
         </div>
 
-        <div className="spending-chart">
-          <h4 className="chart-title">Yearly Medical Spending</h4>
-          <ResponsiveContainer width="100%" height={120}>
-            <LineChart data={spendingData}>
-              <XAxis 
-                dataKey="month" 
-                tick={{ fontSize: 10, fill: '#aaa' }} 
-                stroke="#666"
-              />
-              <YAxis 
-                tick={{ fontSize: 10, fill: '#aaa' }} 
-                stroke="#666"
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(15, 15, 15, 0.95)', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '8px',
-                  color: '#e0e0e0'
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="amount"
-                stroke="#10b981"
-                fill="#10b981"
-                fillOpacity={0.3}
-              />
-              <Line
-                type="monotone"
-                dataKey="amount"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={{ fill: '#10b981', r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Block 5: Family Connections
-const FamilyConnectionsBlock = ({ familyMembers }) => {
-  return (
-    <motion.div
-      className="bento-block family-block"
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-      }}
-      whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-    >
-      <h3 className="block-title">Family Connections</h3>
-      <div className="family-avatars">
-        {familyMembers.map((member, index) => (
-          <motion.div
-            key={member.id}
-            className="family-avatar"
-            style={{ marginLeft: index > 0 ? '-20px' : '0' }}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.1, zIndex: 10 }}
-          >
-            <div className="avatar-circle">{member.avatar}</div>
-            <div className="avatar-tooltip">
-              <div className="tooltip-name">{member.name}</div>
-              <div className="tooltip-relation">{member.relation}</div>
-            </div>
-          </motion.div>
-        ))}
-        <motion.button
-          className="family-add-btn"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+        <Modal
+          open={editMode}
+          onClose={() => setEditMode(false)}
+          title="Chỉnh sửa hồ sơ"
+          footer={
+            <>
+              <BtnSecondary onClick={() => setEditMode(false)}>Hủy</BtnSecondary>
+              <BtnPrimary type="submit" form="edit-profile-form">Lưu thay đổi</BtnPrimary>
+            </>
+          }
         >
-          <Plus size={24} />
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-};
+          <form id="edit-profile-form" onSubmit={handleUpdateProfile} className="space-y-4">
+            <FormField label="Họ và tên" required>
+              <Input name="fullName" value={formData.fullName || ''} onChange={handleInputChange} required />
+            </FormField>
+            <FormField label="Ngày sinh">
+              <Input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleInputChange} />
+            </FormField>
+            <FormField label="Giới tính">
+              <Select name="gender" value={formData.gender || ''} onChange={handleInputChange}>
+                <option value="">Chọn giới tính</option>
+                <option value="MALE">Nam</option>
+                <option value="FEMALE">Nữ</option>
+                <option value="OTHER">Khác</option>
+              </Select>
+            </FormField>
+            <FormField label="Số điện thoại">
+              <Input type="tel" name="phone" value={formData.phone || ''} onChange={handleInputChange} />
+            </FormField>
+            <FormField label="Địa chỉ">
+              <Input name="address" value={formData.address || ''} onChange={handleInputChange} />
+            </FormField>
+          </form>
+        </Modal>
 
-// Skeleton Loader
-const SkeletonLoader = () => {
-  return (
-    <div className="skeleton-container">
-      <div className="skeleton-passport"></div>
-      <div className="skeleton-grid">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="skeleton-block"></div>
-        ))}
-      </div>
-    </div>
-  );
-};
+        <Modal
+          open={showPasswordForm}
+          onClose={() => {
+            setShowPasswordForm(false);
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+          }}
+          title="Đổi mật khẩu"
+          footer={
+            <>
+              <BtnSecondary onClick={() => setShowPasswordForm(false)}>Hủy</BtnSecondary>
+              <BtnPrimary type="submit" form="password-form">Cập nhật</BtnPrimary>
+            </>
+          }
+        >
+          <form id="password-form" onSubmit={handleChangePassword} className="space-y-4">
+            <FormField label="Mật khẩu hiện tại" required>
+              <Input
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Mật khẩu mới" required>
+              <Input
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                required
+                minLength={6}
+              />
+            </FormField>
+            <FormField label="Xác nhận mật khẩu mới" required>
+              <Input
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                required
+                minLength={6}
+              />
+            </FormField>
+          </form>
+        </Modal>
 
-// Modal Components
-const EditProfileModal = ({ profile, formData, onInputChange, onSave, onClose }) => {
-  return (
-    <ModalOverlay onClose={onClose}>
-      <motion.div
-        className="modal-content"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-      >
-        <div className="modal-header">
-          <h2>Edit Profile</h2>
-          <button className="modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-        <form onSubmit={onSave} className="modal-form">
-          <div className="form-group">
-            <label>Full Name *</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName || ''}
-              onChange={onInputChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Date of Birth</label>
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Gender</label>
-            <select name="gender" value={formData.gender || ''} onChange={onInputChange}>
-              <option value="">Select Gender</option>
-              <option value="MALE">Male</option>
-              <option value="FEMALE">Female</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Address</label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          <div className="modal-actions">
-            <motion.button
-              type="submit"
-              className="btn-primary"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Save size={18} />
-              Save Changes
-            </motion.button>
-            <button type="button" onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </ModalOverlay>
-  );
-};
+        <Modal
+          open={showSOSForm}
+          onClose={() => setShowSOSForm(false)}
+          title="Liên hệ khẩn cấp"
+          footer={
+            <>
+              <BtnSecondary onClick={() => setShowSOSForm(false)}>Hủy</BtnSecondary>
+              <BtnDanger type="submit" form="sos-form">Lưu</BtnDanger>
+            </>
+          }
+        >
+          <form id="sos-form" onSubmit={handleUpdateSOS} className="space-y-4">
+            <FormField label="Tên người liên hệ" required>
+              <Input
+                value={sosData.emergencyContact}
+                onChange={(e) => setSosData({ ...sosData, emergencyContact: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Số điện thoại khẩn cấp" required>
+              <Input
+                type="tel"
+                value={sosData.emergencyPhone}
+                onChange={(e) => setSosData({ ...sosData, emergencyPhone: e.target.value })}
+                required
+              />
+            </FormField>
+          </form>
+        </Modal>
 
-const PasswordModal = ({ passwordData, onPasswordChange, onSave, onClose }) => {
-  return (
-    <ModalOverlay onClose={onClose}>
-      <motion.div
-        className="modal-content"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-      >
-        <div className="modal-header">
-          <h2>Change Password</h2>
-          <button className="modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-        <form onSubmit={onSave} className="modal-form">
-          <div className="form-group">
-            <label>Current Password *</label>
-            <input
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => onPasswordChange({ ...passwordData, currentPassword: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>New Password *</label>
-            <input
-              type="password"
-              value={passwordData.newPassword}
-              onChange={(e) => onPasswordChange({ ...passwordData, newPassword: e.target.value })}
-              required
-              minLength={6}
-            />
-          </div>
-          <div className="form-group">
-            <label>Confirm New Password *</label>
-            <input
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => onPasswordChange({ ...passwordData, confirmPassword: e.target.value })}
-              required
-              minLength={6}
-            />
-          </div>
-          <div className="modal-actions">
-            <motion.button
-              type="submit"
-              className="btn-primary"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Save size={18} />
-              Update Password
-            </motion.button>
-            <button type="button" onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </ModalOverlay>
-  );
-};
-
-const SOSModal = ({ sosData, onSOSChange, onSave, onClose }) => {
-  return (
-    <ModalOverlay onClose={onClose}>
-      <motion.div
-        className="modal-content"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-      >
-        <div className="modal-header">
-          <h2>SOS Emergency Contact</h2>
-          <button className="modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-        <form onSubmit={onSave} className="modal-form">
-          <div className="form-group">
-            <label>Emergency Contact Name *</label>
-            <input
-              type="text"
-              value={sosData.emergencyContact}
-              onChange={(e) => onSOSChange({ ...sosData, emergencyContact: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Emergency Phone *</label>
-            <input
-              type="tel"
-              value={sosData.emergencyPhone}
-              onChange={(e) => onSOSChange({ ...sosData, emergencyPhone: e.target.value })}
-              required
-            />
-          </div>
-          <div className="modal-actions">
-            <motion.button
-              type="submit"
-              className="btn-danger"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Save size={18} />
-              Save Emergency Contact
-            </motion.button>
-            <button type="button" onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </ModalOverlay>
-  );
-};
-
-const TreatmentDetailModal = ({ treatment, onClose }) => {
-  return (
-    <ModalOverlay onClose={onClose}>
-      <motion.div
-        className="modal-content large"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-      >
-        <div className="modal-header">
-          <h2>Treatment Details</h2>
-          <button className="modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-        <div className="treatment-details">
-          <div className="detail-item">
-            <strong>Doctor:</strong> {treatment.doctor || 'N/A'}
-          </div>
-          <div className="detail-item">
-            <strong>Date:</strong> {formatDate(treatment.date)}
-          </div>
-          <div className="detail-item">
-            <strong>Diagnosis:</strong>
-            <p>{treatment.diagnosis}</p>
-          </div>
-          <div className="detail-item">
-            <strong>Prescription:</strong>
-            <p>{treatment.prescription}</p>
-          </div>
-        </div>
-        <div className="modal-actions">
-          <button onClick={onClose} className="btn-secondary">
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </ModalOverlay>
-  );
-};
-
-const ModalOverlay = ({ children, onClose }) => {
-  return (
-    <motion.div
-      className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        onClick={(e) => e.stopPropagation()}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-      >
-        {children}
-      </motion.div>
-    </motion.div>
+        <Modal
+          open={!!selectedTreatment}
+          onClose={() => setSelectedTreatment(null)}
+          title="Chi tiết điều trị"
+          footer={<BtnSecondary onClick={() => setSelectedTreatment(null)}>Đóng</BtnSecondary>}
+        >
+          {selectedTreatment && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-neutral-50">
+                <div>
+                  <span className="text-neutral-500">Bác sĩ</span>
+                  <p className="font-semibold">{selectedTreatment.doctor}</p>
+                </div>
+                <div>
+                  <span className="text-neutral-500">Ngày</span>
+                  <p className="font-semibold">{formatDate(selectedTreatment.date)}</p>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl border border-neutral-200">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">Chẩn đoán</p>
+                <p className="text-neutral-800">{selectedTreatment.diagnosis}</p>
+              </div>
+              <div className="p-4 rounded-xl border border-neutral-200">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">Đơn thuốc / Ghi chú</p>
+                <p className="text-neutral-800 whitespace-pre-wrap">{selectedTreatment.prescription}</p>
+              </div>
+            </div>
+          )}
+        </Modal>
+      </AppPage>
+    </PatientLayout>
   );
 };
 

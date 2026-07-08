@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Calendar, Wallet, Users, MessageCircle, Send } from 'lucide-react';
 import { patientService } from '../../services/patientService';
 import AISymptomChecker from './AISymptomChecker';
 import FamilyAccount from './FamilyAccount';
-import './HealthAIChat.css';
+import ShellIcon from '../shell/ShellIcon';
 
 const HealthAIChat = ({ onClose, isFullPage = false }) => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (window.feather) window.feather.replace();
     if (inputRef.current && activeMode === 'chat') inputRef.current.focus();
   }, [activeMode]);
 
@@ -139,137 +139,152 @@ const HealthAIChat = ({ onClose, isFullPage = false }) => {
   };
 
   const quickActions = [
-    { id: 'booking', label: 'Đặt lịch mới', icon: '', action: () => { navigate('/patient/booking'); if (!isFullPage && onClose) onClose(); } },
-    { id: 'wallet', label: 'Ví Sức khỏe', icon: '', action: () => { navigate('/patient/wallet'); if (!isFullPage && onClose) onClose(); } },
-    { id: 'family', label: 'Hồ sơ Gia đình', icon: '', action: () => { navigate('/patient/family'); if (!isFullPage && onClose) onClose(); } },
+    { id: 'booking', label: 'Đặt lịch mới', icon: Calendar, action: () => { navigate('/patient/booking'); if (!isFullPage && onClose) onClose(); } },
+    { id: 'wallet', label: 'Ví sức khỏe', icon: Wallet, action: () => { navigate('/patient/wallet'); if (!isFullPage && onClose) onClose(); } },
+    { id: 'family', label: 'Hồ sơ gia đình', icon: Users, action: () => { navigate('/patient/family'); if (!isFullPage && onClose) onClose(); } },
   ];
 
   return (
-    <div className={`healthai-chat-panel ${isFullPage ? 'full-page' : ''}`}>
-      <div className="chat-panel-header">
-        <div className="chat-header-left">
-          <div className="chat-avatar">🤖</div>
-          <div><h3>HealthAI</h3><p>Trợ lý sức khỏe thông minh</p></div>
+    <div className={`flex flex-col bg-white ${isFullPage ? 'h-[calc(100vh-14rem)] min-h-[480px]' : 'h-[520px]'}`}>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center">
+            <MessageCircle className="w-5 h-5 text-neutral-700" strokeWidth={1.75} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-neutral-900 text-sm">Trợ lý sức khỏe</h3>
+            <p className="text-xs text-neutral-500">Hỏi đáp nhanh — không thay thế tư vấn y khoa</p>
+          </div>
         </div>
-        {!isFullPage && <button className="close-chat-btn" onClick={onClose}><i data-feather="x"></i></button>}
+        {!isFullPage && (
+          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-500">
+            <ShellIcon name="x" className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      <div className="chat-panel-content">
+      <div className="flex-1 flex flex-col min-h-0">
         {activeMode === 'chat' && (
-          <div className="chat-interface">
-            <div className="chat-messages">
+          <>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {chatHistory.length === 0 ? (
-                <div className="welcome-screen">
-                  <h2>Xin chào!</h2>
-                  <p>Mô tả triệu chứng để tôi tư vấn cách xử lý và tìm bác sĩ phù hợp.</p>
-                  <div className="quick-actions-grid">
-                    {quickActions.map(action => (
-                      <button key={action.id} className="quick-action-btn" onClick={action.action}>
-                        <span className="action-icon">{action.icon}</span>
-                        <span className="action-label">{action.label}</span>
+                <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                  <MessageCircle className="w-10 h-10 text-neutral-200 mb-4" strokeWidth={1.25} />
+                  <h2 className="text-lg font-bold text-neutral-900">Xin chào!</h2>
+                  <p className="text-sm text-neutral-500 mt-2 max-w-sm">
+                    Mô tả triệu chứng để nhận gợi ý xử lý và tìm bác sĩ phù hợp.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-6 w-full max-w-md">
+                    {quickActions.map((action) => (
+                      <button
+                        key={action.id}
+                        type="button"
+                        onClick={action.action}
+                        className="flex items-center gap-2 p-3 rounded-xl border border-neutral-200 text-left text-sm font-medium text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                      >
+                        <action.icon className="w-4 h-4 text-neutral-500 shrink-0" strokeWidth={1.75} />
+                        {action.label}
                       </button>
                     ))}
                   </div>
                 </div>
               ) : (
                 <>
-                  {chatHistory.map(msg => (
-                    <div key={msg.id} className={`message ${msg.type}`}>
-                      <div className="message-avatar">{msg.type === 'user' ? '' : '🤖'}</div>
-                      <div className="message-content">
-                        <div className="message-text">
-                          {/* Hiển thị nội dung chính */}
-                          <p style={{ whiteSpace: 'pre-line' }}>{msg.content}</p>
+                  {chatHistory.map((msg) => (
+                    <div key={msg.id} className={`flex gap-3 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                        msg.type === 'user' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {msg.type === 'user' ? 'Bạn' : 'AI'}
+                      </div>
+                      <div className={`max-w-[85%] space-y-1 ${msg.type === 'user' ? 'items-end' : ''}`}>
+                        <div className={`rounded-2xl px-4 py-3 text-sm ${
+                          msg.type === 'user'
+                            ? 'bg-neutral-900 text-white rounded-tr-md'
+                            : 'bg-neutral-50 text-neutral-800 border border-neutral-100 rounded-tl-md'
+                        }`}>
+                          <p className="whitespace-pre-line">{msg.content}</p>
 
-                          {/* Hiển thị phần chi tiết từ AI - CHỈ hiển thị khi có thông tin thực sự */}
-                          {msg.type === 'ai' && (
-                            <div className="ai-details" style={{ fontSize: '0.9rem', marginTop: '10px' }}>
+                          {msg.type === 'ai' && msg.reason &&
+                            msg.reason.trim() !== '' &&
+                            !msg.reason.toLowerCase().includes('người dùng') &&
+                            !msg.reason.toLowerCase().includes('cần thêm thông tin') &&
+                            !msg.reason.toLowerCase().includes('chỉ nói') && (
+                              <p className="text-xs text-neutral-500 italic mt-2 pt-2 border-t border-neutral-200/60">
+                                Chẩn đoán gợi ý: {msg.reason}
+                              </p>
+                            )}
 
-                              {/* 1. Lý do chẩn đoán - CHỈ hiển thị khi có reason thực sự và không phải log kỹ thuật */}
-                              {msg.reason &&
-                                msg.reason.trim() !== '' &&
-                                !msg.reason.toLowerCase().includes('người dùng') &&
-                                !msg.reason.toLowerCase().includes('cần thêm thông tin') &&
-                                !msg.reason.toLowerCase().includes('chỉ nói') && (
-                                  <p style={{ color: '#666', fontStyle: 'italic', marginBottom: '8px' }}>
-                                    🔍 <strong>Chẩn đoán:</strong> {msg.reason}
-                                  </p>
-                                )}
-
-                              {/* 2. Lời khuyên tại nhà - CHỈ hiển thị khi có homeRemedies và có reason (nghĩa là có phân tích y tế) */}
-                              {msg.homeRemedies &&
-                                msg.homeRemedies.length > 0 &&
-                                msg.reason &&
-                                msg.reason.trim() !== '' &&
-                                !msg.reason.toLowerCase().includes('người dùng') &&
-                                !msg.reason.toLowerCase().includes('chỉ nói') && (
-                                  <div style={{
-                                    backgroundColor: '#f0fdf4',
-                                    borderLeft: '4px solid #22c55e',
-                                    padding: '10px',
-                                    borderRadius: '4px',
-                                    marginTop: '8px',
-                                    color: '#14532d'
-                                  }}>
-                                    <strong> Lời khuyên tại nhà:</strong>
-                                    <ul style={{ marginTop: '4px', paddingLeft: '20px', margin: '5px 0' }}>
-                                      {msg.homeRemedies.map((item, index) => (
-                                        <li key={index} style={{ marginBottom: '4px' }}>{item}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                            </div>
-                          )}
+                          {msg.type === 'ai' && msg.homeRemedies?.length > 0 &&
+                            msg.reason?.trim() &&
+                            !msg.reason.toLowerCase().includes('người dùng') &&
+                            !msg.reason.toLowerCase().includes('chỉ nói') && (
+                              <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-900 text-xs">
+                                <p className="font-semibold mb-1">Lời khuyên tại nhà</p>
+                                <ul className="list-disc pl-4 space-y-0.5">
+                                  {msg.homeRemedies.map((item, index) => (
+                                    <li key={index}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                         </div>
 
-                        {/* Nút đặt lịch CHỈ HIỆN KHI có khoa phù hợp (suggestion khác null) */}
                         {msg.type === 'ai' && msg.suggestion && (
-                          <div style={{ marginTop: '12px' }}>
-                            <button
-                              className="feature-btn"
-                              style={{
-                                backgroundColor: '#eff6ff',
-                                color: '#1d4ed8',
-                                border: '1px solid #bfdbfe',
-                                padding: '8px 16px',
-                                borderRadius: '20px',
-                                cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600'
-                              }}
-                              onClick={() => handleQuickNavigate(msg.suggestion.specialty)}
-                            >
-                               Đặt lịch khám {msg.suggestion.specialty} ngay
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickNavigate(msg.suggestion.specialty)}
+                            className="text-xs font-semibold text-neutral-700 px-3 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 transition-colors"
+                          >
+                            Đặt lịch khám {msg.suggestion.specialty}
+                          </button>
                         )}
 
-                        <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <p className="text-[10px] text-neutral-400 px-1">
+                          {new Date(msg.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       </div>
                     </div>
                   ))}
-                  {isTyping && <div className="message ai typing"><div className="message-avatar">🤖</div><div className="message-content"><div className="typing-indicator"><span></span><span></span><span></span></div></div></div>}
+                  {isTyping && (
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-xs text-neutral-500">AI</div>
+                      <div className="bg-neutral-50 border border-neutral-100 rounded-2xl rounded-tl-md px-4 py-3 flex gap-1 items-center">
+                        <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  )}
                   <div ref={chatEndRef} />
                 </>
               )}
             </div>
 
-            <form className="chat-input-container" onSubmit={handleSubmit}>
-              <div className="chat-input-wrapper">
+            <form onSubmit={handleSubmit} className="p-4 border-t border-neutral-100 shrink-0">
+              <div className="flex gap-2">
                 <input
-                  ref={inputRef} type="text" className="chat-input"
+                  ref={inputRef}
+                  type="text"
+                  className="flex-1 rounded-xl border border-neutral-200 px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400"
                   placeholder="Ví dụ: Đau đầu, chóng mặt, buồn nôn..."
-                  value={inputValue} onChange={(e) => setInputValue(e.target.value)}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
                 />
-                <button type="submit" className="send-btn" disabled={!inputValue.trim()}><i data-feather="send"></i></button>
+                <button
+                  type="submit"
+                  disabled={!inputValue.trim()}
+                  className="w-11 h-11 rounded-xl bg-neutral-900 text-white flex items-center justify-center hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
               </div>
             </form>
-          </div>
+          </>
         )}
 
-        {/* Giữ nguyên các mode con khác */}
-        {activeMode === 'symptom' && <div style={{ padding: '1rem' }}><AISymptomChecker /></div>}
-        {activeMode === 'family' && <div style={{ padding: '1rem' }}><FamilyAccount /></div>}
+        {activeMode === 'symptom' && <div className="p-4 overflow-y-auto flex-1"><AISymptomChecker /></div>}
+        {activeMode === 'family' && <div className="p-4 overflow-y-auto flex-1"><FamilyAccount /></div>}
       </div>
     </div>
   );

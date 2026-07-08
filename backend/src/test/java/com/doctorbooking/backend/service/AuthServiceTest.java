@@ -3,336 +3,382 @@ package com.doctorbooking.backend.service;
 import com.doctorbooking.backend.dto.request.LoginRequest;
 import com.doctorbooking.backend.dto.request.RegisterRequest;
 import com.doctorbooking.backend.dto.response.AuthResponse;
-import com.doctorbooking.backend.exception.BadRequestException;
 import com.doctorbooking.backend.model.Admin;
+import com.doctorbooking.backend.model.Doctor;
 import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.model.User;
-import com.doctorbooking.backend.repository.*;
+import com.doctorbooking.backend.repository.AdminRepository;
+import com.doctorbooking.backend.repository.DoctorRepository;
+import com.doctorbooking.backend.repository.PatientRepository;
+import com.doctorbooking.backend.repository.UserRepository;
 import com.doctorbooking.backend.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AuthService Unit Tests")
 class AuthServiceTest {
 
-    @Mock UserRepository userRepository;
-    @Mock PatientRepository patientRepository;
-    @Mock DoctorRepository doctorRepository;
-    @Mock AdminRepository adminRepository;
-    @Mock AuthenticationManager authenticationManager;
-    @Mock Authentication authentication;
-    @Mock JwtUtil jwtUtil;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private PatientRepository patientRepository;
+    @Mock
+    private AdminRepository adminRepository;
+    @Mock
+    private DoctorRepository doctorRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private JwtUtil jwtUtil;
+    @Mock
+    private AuthenticationManager authenticationManager;
 
     @InjectMocks
-    AuthService authService;
+    private AuthService authService;
 
-    private User user;   // 👈 tạo ở đây
+    // ---- Helpers ----
 
-    @BeforeEach
-    void setup() {
-        user = new User(); // 👈 tạo ở đây
-        user.setId(1L);
-        user.setUsername("user1");
-        user.setEmail("user1@gmail.com");
-        user.setPassword("123456");
-        user.setRole(User.Role.PATIENT);
-        user.setEnabled(true);
+    private User buildUser(Long id, String username, String email, User.Role role) {
+        User u = new User();
+        u.setId(id);
+        u.setUsername(username);
+        u.setPassword("plain_password");
+        u.setEmail(email);
+        u.setRole(role);
+        u.setEnabled(true);
+        return u;
     }
 
-    // ===================== REGISTER =====================
-
-    @Test
-    void register_success_patient() {
+    private RegisterRequest buildRegisterRequest(String username, String email, String role) {
         RegisterRequest req = new RegisterRequest();
-        req.setUsername("user1");
-        req.setEmail("a@a.com");
-        req.setPassword("123");
-        req.setFullName("Nguyen Van A");
-        req.setRole("PATIENT");
-
-        when(userRepository.existsByUsername("user1")).thenReturn(false);
-        when(userRepository.existsByEmail("a@a.com")).thenReturn(false);
-
-        when(userRepository.save(any())).thenAnswer(invocation -> {
-            User u = invocation.getArgument(0);
-            u.setId(1L);
-            return u;
-        });
-
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
-        when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
-
-        AuthResponse res = authService.register(req);
-
-        assertEquals("user1", res.getUsername());
-        assertEquals("PATIENT", res.getRole());
+        req.setUsername(username);
+        req.setPassword("password123");
+        req.setEmail(email);
+        req.setFullName("Test User");
+        req.setPhone("0901234567");
+        req.setRole(role);
+        return req;
     }
 
-    @Test
-    void register_success_doctor() {
-        RegisterRequest req = new RegisterRequest();
-        req.setUsername("doc1");
-        req.setEmail("doc@a.com");
-        req.setPassword("123");
-        req.setFullName("Dr A");
-        req.setRole("DOCTOR");
+    // =========================================================
+    // REGISTER TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("register()")
+    class RegisterTests {
 
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
+        @ParameterizedTest(name = "[{index}] password length={0}")
+        @CsvSource({
+                "6,true",
+                "7,true",
+                "50,true",
+                "5,false",
+                "51,false"
+        })
+        @DisplayName("Kiểm tra biên độ dài password trong đăng ký")
+        void register_validatesPasswordLength(int passwordLength, boolean expectedValid) {
+            String email = "valid-email@test.com";
+            RegisterRequest req = buildRegisterRequest("validuser", email, "PATIENT");
+            req.setPassword("p".repeat(Math.max(0, Math.min(passwordLength, 100))));
 
-        when(userRepository.save(any())).thenAnswer(invocation -> {
-            User u = invocation.getArgument(0);
-            u.setId(2L);
-            return u;
-        });
+            if (expectedValid) {
+                when(userRepository.existsByUsername(any())).thenReturn(false);
+                when(userRepository.existsByEmail(any())).thenReturn(false);
+                when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+                when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+                when(userRepository.save(any(User.class))).thenReturn(buildUser(1L, "validuser", email, User.Role.PATIENT));
 
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
-        when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+                AuthResponse response = authService.register(req);
+                assertThat(response).isNotNull();
+                assertThat(response.getEmail()).isEqualTo(email);
+            } else {
+                assertThatThrownBy(() -> authService.register(req))
+                        .isInstanceOf(RuntimeException.class)
+                        .hasMessageContaining("Password length must be between 6 and 50 characters");
+            }
+        }
 
-        AuthResponse res = authService.register(req);
+        @ParameterizedTest(name = "[{index}] email length={0}")
+        @CsvSource({
+                "6,true",
+                "7,true",
+                "50,true",
+                "5,false"
+        })
+        @DisplayName("Kiểm tra biên độ dài email trong đăng ký")
+        void register_validatesEmailLength(int emailLength, boolean expectedValid) {
+            String suffix = "@a.co";
+            String email = "a".repeat(Math.max(0, emailLength - suffix.length())) + suffix;
+            String username = "validuser";
+            RegisterRequest req = buildRegisterRequest(username, email, "PATIENT");
 
-        assertEquals("DOCTOR", res.getRole());
+            if (expectedValid) {
+                when(userRepository.existsByUsername(any())).thenReturn(false);
+                when(userRepository.existsByEmail(any())).thenReturn(false);
+                when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+                when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+                when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                AuthResponse response = authService.register(req);
+                assertThat(response).isNotNull();
+                assertThat(response.getEmail()).isEqualTo(email);
+            } else {
+                assertThatThrownBy(() -> authService.register(req))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessageContaining("Email length must be at least 6 characters");
+            }
+        }
+
+        @Test
+        @DisplayName("✅ Đăng ký thành công với role PATIENT")
+        void register_success_patient() {
+            // Arrange
+            RegisterRequest req = buildRegisterRequest("newpatient", "newpatient@test.com", "PATIENT");
+            User savedUser = buildUser(1L, "newpatient", "newpatient@test.com", User.Role.PATIENT);
+
+            when(userRepository.existsByUsername("newpatient")).thenReturn(false);
+            when(userRepository.existsByEmail("newpatient@test.com")).thenReturn(false);
+            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(jwtUtil.generateToken(any(), any())).thenReturn("mock_access_token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("mock_refresh_token");
+
+            // Act
+            AuthResponse response = authService.register(req);
+
+            // Assert
+            assertThat(response).isNotNull();
+            assertThat(response.getToken()).isEqualTo("mock_access_token");
+            assertThat(response.getRefreshToken()).isEqualTo("mock_refresh_token");
+            assertThat(response.getUsername()).isEqualTo("newpatient");
+            assertThat(response.getEmail()).isEqualTo("newpatient@test.com");
+            assertThat(response.getRole()).isEqualTo("PATIENT");
+
+            verify(patientRepository, times(1)).save(any(Patient.class));
+            verify(doctorRepository, never()).save(any());
+            verify(adminRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("✅ Đăng ký thành công với role DOCTOR")
+        void register_success_doctor() {
+            RegisterRequest req = buildRegisterRequest("newdoctor", "newdoctor@test.com", "DOCTOR");
+            User savedUser = buildUser(2L, "newdoctor", "newdoctor@test.com", User.Role.DOCTOR);
+
+            when(userRepository.existsByUsername("newdoctor")).thenReturn(false);
+            when(userRepository.existsByEmail("newdoctor@test.com")).thenReturn(false);
+            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(jwtUtil.generateToken(any(), any())).thenReturn("mock_token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("mock_refresh");
+
+            AuthResponse response = authService.register(req);
+
+            assertThat(response.getRole()).isEqualTo("DOCTOR");
+            verify(doctorRepository, times(1)).save(any(Doctor.class));
+            verify(patientRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("✅ Đăng ký thành công với role ADMIN")
+        void register_success_admin() {
+            RegisterRequest req = buildRegisterRequest("newadmin", "newadmin@test.com", "ADMIN");
+            User savedUser = buildUser(3L, "newadmin", "newadmin@test.com", User.Role.ADMIN);
+
+            when(userRepository.existsByUsername("newadmin")).thenReturn(false);
+            when(userRepository.existsByEmail("newadmin@test.com")).thenReturn(false);
+            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(jwtUtil.generateToken(any(), any())).thenReturn("mock_token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("mock_refresh");
+
+            AuthResponse response = authService.register(req);
+
+            assertThat(response.getRole()).isEqualTo("ADMIN");
+            verify(adminRepository, times(1)).save(any(Admin.class));
+        }
+
+        @Test
+        @DisplayName("✅ Đăng ký không có role → mặc định PATIENT")
+        void register_noRole_defaultsToPatient() {
+            RegisterRequest req = buildRegisterRequest("defaultpatient", "dp@test.com", null);
+            User savedUser = buildUser(4L, "defaultpatient", "dp@test.com", User.Role.PATIENT);
+
+            when(userRepository.existsByUsername(any())).thenReturn(false);
+            when(userRepository.existsByEmail(any())).thenReturn(false);
+            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+
+            AuthResponse response = authService.register(req);
+
+            assertThat(response.getRole()).isEqualTo("PATIENT");
+            verify(patientRepository, times(1)).save(any(Patient.class));
+        }
+
+        @Test
+        @DisplayName("❌ Đăng ký thất bại - username đã tồn tại")
+        void register_fails_usernameExists() {
+            RegisterRequest req = buildRegisterRequest("existinguser", "new@test.com", "PATIENT");
+            when(userRepository.existsByUsername("existinguser")).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.register(req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Username already exists");
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("❌ Đăng ký thất bại - email đã tồn tại")
+        void register_fails_emailExists() {
+            RegisterRequest req = buildRegisterRequest("newuser", "existing@test.com", "PATIENT");
+            when(userRepository.existsByUsername("newuser")).thenReturn(false);
+            when(userRepository.existsByEmail("existing@test.com")).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.register(req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Email already exists");
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("✅ Đăng ký với role không hợp lệ → mặc định PATIENT")
+        void register_invalidRole_defaultsToPatient() {
+            RegisterRequest req = buildRegisterRequest("testuser", "testuser@test.com", "INVALID_ROLE");
+            User savedUser = buildUser(5L, "testuser", "testuser@test.com", User.Role.PATIENT);
+
+            when(userRepository.existsByUsername(any())).thenReturn(false);
+            when(userRepository.existsByEmail(any())).thenReturn(false);
+            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+
+            // Should not throw
+            AuthResponse response = authService.register(req);
+            assertThat(response).isNotNull();
+        }
     }
 
-    @Test
-    void register_duplicate_username() {
-        RegisterRequest req = new RegisterRequest();
-        req.setUsername("user1");
+    // =========================================================
+    // LOGIN TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("login()")
+    class LoginTests {
 
-        when(userRepository.existsByUsername("user1")).thenReturn(true);
+        @Test
+        @DisplayName("✅ Đăng nhập thành công - trả về token và thông tin user")
+        void login_success() {
+            // Arrange
+            User user = buildUser(1L, "trongdang", "trongdang@test.com", User.Role.PATIENT);
+            Patient patient = new Patient();
+            patient.setId(6L);
+            patient.setUser(user);
+            patient.setFullName("Đặng Tấn Trọng");
 
-        assertThrows(BadRequestException.class,
-                () -> authService.register(req));
-    }
+            LoginRequest loginReq = new LoginRequest();
+            loginReq.setUsername("trongdang");
+            loginReq.setPassword("Patient@123");
 
-    @Test
-    void register_invalid_role_fallback() {
-        RegisterRequest req = new RegisterRequest();
-        req.setUsername("user2");
-        req.setEmail("b@b.com");
-        req.setPassword("123");
-        req.setFullName("Test");
-        req.setRole("INVALID_ROLE");
+            Authentication mockAuth = mock(Authentication.class);
+            when(mockAuth.getPrincipal()).thenReturn(user);
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(mockAuth);
+            when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(patient));
+            when(jwtUtil.generateToken(any(), any())).thenReturn("access_token_xyz");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh_token_xyz");
 
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
+            // Act
+            AuthResponse response = authService.login(loginReq);
 
-        when(userRepository.save(any())).thenAnswer(invocation -> {
-            User u = invocation.getArgument(0);
-            u.setId(3L);
-            return u;
-        });
+            // Assert
+            assertThat(response).isNotNull();
+            assertThat(response.getToken()).isEqualTo("access_token_xyz");
+            assertThat(response.getRefreshToken()).isEqualTo("refresh_token_xyz");
+            assertThat(response.getUsername()).isEqualTo("trongdang");
+            assertThat(response.getRole()).isEqualTo("PATIENT");
+            assertThat(response.getFullName()).isEqualTo("Đặng Tấn Trọng");
+        }
 
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
-        when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+        @Test
+        @DisplayName("✅ Đăng nhập thành công với role ADMIN")
+        void login_success_admin() {
+            User adminUser = buildUser(2L, "admin", "admin@hospital.com", User.Role.ADMIN);
+            Admin admin = new Admin();
+            admin.setUser(adminUser);
+            admin.setFullName("System Administrator");
 
-        AuthResponse res = authService.register(req);
+            LoginRequest req = new LoginRequest();
+            req.setUsername("admin");
+            req.setPassword("Admin@123");
 
-        assertEquals("PATIENT", res.getRole()); // fallback default
-    }
+            Authentication mockAuth = mock(Authentication.class);
+            when(mockAuth.getPrincipal()).thenReturn(adminUser);
+            when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+            when(adminRepository.findByUserId(2L)).thenReturn(Optional.of(admin));
+            when(jwtUtil.generateToken(any(), any())).thenReturn("admin_token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("admin_refresh");
 
-    // ===================== LOGIN =====================
+            AuthResponse response = authService.login(req);
 
-    @Test
-    void login_success_with_user_principal() {
-        LoginRequest req = new LoginRequest();
-        req.setUsername("user1");
-        req.setPassword("123");
+            assertThat(response.getRole()).isEqualTo("ADMIN");
+            assertThat(response.getFullName()).isEqualTo("System Administrator");
+        }
 
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("user1");
-        user.setPassword("123");
-        user.setEmail("a@a.com");
-        user.setRole(User.Role.PATIENT);
+        @Test
+        @DisplayName("❌ Đăng nhập thất bại - sai mật khẩu")
+        void login_fails_badCredentials() {
+            LoginRequest req = new LoginRequest();
+            req.setUsername("trongdang");
+            req.setPassword("wrong_password");
 
-        when(authenticationManager.authenticate(any()))
-                .thenReturn(authentication);
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        when(authentication.getPrincipal()).thenReturn(user);
+            assertThatThrownBy(() -> authService.login(req))
+                    .isInstanceOf(BadCredentialsException.class);
+        }
 
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
-        when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
+        @Test
+        @DisplayName("✅ Đăng nhập - fullName null nếu patient chưa có profile")
+        void login_patientWithoutProfile_fullNameNull() {
+            User user = buildUser(99L, "noname", "noname@test.com", User.Role.PATIENT);
+            LoginRequest req = new LoginRequest();
+            req.setUsername("noname");
+            req.setPassword("pass");
 
-        AuthResponse res = authService.login(req);
+            Authentication mockAuth = mock(Authentication.class);
+            when(mockAuth.getPrincipal()).thenReturn(user);
+            when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+            when(patientRepository.findByUserId(99L)).thenReturn(Optional.empty());
+            when(jwtUtil.generateToken(any(), any())).thenReturn("token");
+            when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
 
-        assertEquals("user1", res.getUsername());
-        assertEquals("PATIENT", res.getRole());
-    }
+            AuthResponse response = authService.login(req);
 
-    @Test
-    void login_success_with_userdetails_not_user() {
-
-        LoginRequest req = new LoginRequest();
-        req.setUsername("user1");
-        req.setPassword("123");
-
-        org.springframework.security.core.userdetails.User springUser =
-                new org.springframework.security.core.userdetails.User(
-                        "user1", "123", List.of()
-                );
-
-        when(authenticationManager.authenticate(any()))
-                .thenReturn(authentication);
-
-        when(authentication.getPrincipal())
-                .thenReturn(springUser);
-
-        when(userRepository.findByUsername("user1"))
-                .thenReturn(Optional.of(user));
-
-        when(userRepository.findByEmail("user1"))
-                .thenReturn(Optional.of(user));
-
-        when(jwtUtil.generateToken(any(), any()))
-                .thenReturn("token");
-
-        when(jwtUtil.generateRefreshToken(any()))
-                .thenReturn("refresh");
-
-        AuthResponse res = authService.login(req);
-
-        assertEquals("user1", res.getUsername());
-    }
-    @Test
-    void register_success_admin() {
-        RegisterRequest req = new RegisterRequest();
-        req.setUsername("admin1");
-        req.setEmail("admin@a.com");
-        req.setPassword("123");
-        req.setFullName("Admin");
-        req.setRole("ADMIN");
-
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
-
-        when(userRepository.save(any())).thenAnswer(invocation -> {
-            User u = invocation.getArgument(0);
-            u.setId(10L);
-            return u;
-        });
-
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
-        when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
-
-        AuthResponse res = authService.register(req);
-
-        assertEquals("ADMIN", res.getRole());
-    }
-    @Test
-    void register_success_invalid_role_fallback_branch() {
-        RegisterRequest req = new RegisterRequest();
-        req.setUsername("x");
-        req.setEmail("x@x.com");
-        req.setPassword("123");
-        req.setFullName("X");
-        req.setRole("SOMETHING_RANDOM");
-
-        when(userRepository.existsByUsername(any())).thenReturn(false);
-        when(userRepository.existsByEmail(any())).thenReturn(false);
-
-        when(userRepository.save(any())).thenAnswer(invocation -> {
-            User u = invocation.getArgument(0);
-            u.setId(99L);
-            return u;
-        });
-
-        when(jwtUtil.generateToken(any(), any())).thenReturn("token");
-        when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
-
-        AuthResponse res = authService.register(req);
-
-        assertEquals("PATIENT", res.getRole());
-    }
-
-    @Test
-    void login_fail_exception() {
-        LoginRequest req = new LoginRequest();
-        req.setUsername("user1");
-        req.setPassword("wrong");
-
-        when(authenticationManager.authenticate(any()))
-                .thenThrow(new RuntimeException("fail"));
-
-        assertThrows(RuntimeException.class,
-                () -> authService.login(req));
-    }
-
-    // ===================== FULL NAME BRANCH =====================
-
-    @Test
-    void get_fullname_patient() {
-        User user = new User();
-        user.setId(1L);
-        user.setRole(User.Role.PATIENT);
-
-        Patient p = new Patient();
-        p.setFullName("Patient A");
-
-        when(patientRepository.findByUserId(1L))
-                .thenReturn(Optional.of(p));
-
-        String result = invokePrivate(user);
-
-        assertEquals("Patient A", result);
-    }
-
-    @Test
-    void get_fullname_doctor_null() {
-        User user = new User();
-        user.setId(2L);
-        user.setRole(User.Role.DOCTOR);
-
-        when(doctorRepository.findByUserId(2L))
-                .thenReturn(Optional.empty());
-
-        String result = invokePrivate(user);
-
-        assertNull(result);
-    }
-
-    @Test
-    void get_fullname_admin_default() {
-        User user = new User();
-        user.setId(3L);
-        user.setRole(User.Role.ADMIN);
-
-        Admin admin =
-                new Admin();
-        admin.setFullName(null);
-
-        when(adminRepository.findByUserId(3L))
-                .thenReturn(Optional.of(admin));
-
-        String result = invokePrivate(user);
-
-        assertNull(result);
-    }
-
-    // ===================== helper =====================
-
-    private String invokePrivate(User user) {
-        try {
-            var method = AuthService.class
-                    .getDeclaredMethod("getFullNameByRole", User.class);
-            method.setAccessible(true);
-            return (String) method.invoke(authService, user);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            assertThat(response).isNotNull();
+            assertThat(response.getFullName()).isNull();
         }
     }
 }

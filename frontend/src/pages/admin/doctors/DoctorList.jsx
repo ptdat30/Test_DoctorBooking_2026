@@ -6,7 +6,9 @@ import Loading from '../../../components/common/Loading';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
+import { AppPage, PageHeader, AlertError, BtnPrimary } from '../../../components/shell/DashboardPrimitives';
+import { CrudPagination, tableHeadClass, tableCellClass } from '../../../components/shell/AdminCrudUI';
 
 const DoctorList = () => {
   const navigate = useNavigate();
@@ -21,9 +23,6 @@ const DoctorList = () => {
   useEffect(() => {
     loadAllDoctors();
   }, []);
-
-  // Initialize Feather Icons
-  useFeatherIcons([doctors, currentPage]);
 
   const filteredDoctors = useMemo(() => {
     if (searchTerm.trim() === '') {
@@ -51,94 +50,6 @@ const DoctorList = () => {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-
-    const pages = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    // Previous button
-    pages.push(
-      <button
-        key="prev"
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        ‹
-      </button>
-    );
-
-    // First page
-    if (startPage > 1) {
-      pages.push(
-        <button
-          key={1}
-          onClick={() => handlePageChange(1)}
-          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          1
-        </button>
-      );
-      if (startPage > 2) {
-        pages.push(<span key="dots1" className="px-2">...</span>);
-      }
-    }
-
-    // Page numbers
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`px-3 py-2 border rounded-lg ${
-            currentPage === i
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    // Last page
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        pages.push(<span key="dots2" className="px-2">...</span>);
-      }
-      pages.push(
-        <button
-          key={totalPages}
-          onClick={() => handlePageChange(totalPages)}
-          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          {totalPages}
-        </button>
-      );
-    }
-
-    // Next button
-    pages.push(
-      <button
-        key="next"
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        ›
-      </button>
-    );
-
-    return pages;
   };
 
   const loadAllDoctors = async () => {
@@ -177,104 +88,78 @@ const DoctorList = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Quản Lý Bác Sĩ</h1>
-            <p className="text-gray-600 mt-1">Tổng số {doctors.length} bác sĩ</p>
-          </div>
-          <button 
-            onClick={handleCreate} 
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium shadow-sm"
-          >
-            <span className="text-xl">+</span>
-            Thêm bác sĩ
-          </button>
-        </div>
+      <AppPage>
+        <PageHeader
+          title="Quản lý bác sĩ"
+          subtitle={`Tổng số ${doctors.length} bác sĩ`}
+          actions={
+            <BtnPrimary onClick={handleCreate}>
+              <ShellIcon name="user-plus" className="w-4 h-4" />
+              Thêm bác sĩ
+            </BtnPrimary>
+          }
+        />
 
-        {/* Error Alert */}
-        {error && (
-          <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            <span className="text-lg"></span>
-            <span className="flex-1">{error}</span>
-            <button 
-              onClick={() => setError('')} 
-              className="text-red-800 hover:text-red-900 font-bold text-xl leading-none"
-            >
-              ×
-            </button>
-          </div>
-        )}
+        {error && <AlertError message={error} />}
 
-        {/* Search Section */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="app-card p-4">
           <div className="relative">
-            <i data-feather="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+            <ShellIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Tìm kiếm theo tên, chuyên khoa, email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400"
             />
           </div>
         </div>
 
-        {/* Doctors Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="app-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-neutral-200">
+              <thead className="bg-neutral-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Họ và Tên</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chuyên Khoa</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                  <th className={tableHeadClass}>ID</th>
+                  <th className={tableHeadClass}>Họ và tên</th>
+                  <th className={tableHeadClass}>Chuyên khoa</th>
+                  <th className={tableHeadClass}>Email</th>
+                  <th className={tableHeadClass}>SĐT</th>
+                  <th className={tableHeadClass}>Trạng thái</th>
+                  <th className={`${tableHeadClass} text-center`}>Hành động</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-neutral-100">
                 {doctors.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan="7" className="px-6 py-8 text-center text-neutral-400 text-sm">
                       {searchTerm ? `Không tìm thấy bác sĩ khớp với "${searchTerm}"` : 'Không có bác sĩ'}
                     </td>
                   </tr>
                 ) : (
                   currentDoctors.map((doctor) => (
-                    <tr key={doctor.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doctor.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{doctor.fullName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.specialization}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.phone || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          doctor.status === 'ACTIVE' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
+                    <tr key={doctor.id} className="hover:bg-neutral-50/80">
+                      <td className={tableCellClass}>{doctor.id}</td>
+                      <td className={`${tableCellClass} font-medium text-neutral-900`}>{doctor.fullName}</td>
+                      <td className={tableCellClass}>{doctor.specialization}</td>
+                      <td className={tableCellClass}>{doctor.email}</td>
+                      <td className={tableCellClass}>{doctor.phone || '—'}</td>
+                      <td className={tableCellClass}>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-lg ${
+                          doctor.status === 'ACTIVE'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-rose-50 text-rose-700'
                         }`}>
                           {doctor.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className={tableCellClass}>
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleView(doctor)}
-                            className="text-green-600 hover:text-green-800 transition-colors"
-                            title="Xem chi tiết"
-                          >
-                            <i data-feather="eye" className="w-4 h-4"></i>
+                          <button type="button" onClick={() => handleView(doctor)} className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900" title="Xem chi tiết">
+                            <ShellIcon name="eye" className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleEdit(doctor)}
-                            className="text-blue-600 hover:text-blue-800 transition-colors"
-                            title="Chỉnh sửa"
-                          >
-                            <i data-feather="edit-2" className="w-4 h-4"></i>
+                          <button type="button" onClick={() => handleEdit(doctor)} className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900" title="Chỉnh sửa">
+                            <ShellIcon name="edit-2" className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -286,20 +171,16 @@ const DoctorList = () => {
           </div>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, doctors.length)} của {doctors.length} bác sĩ
-              </div>
-              <div className="flex items-center gap-2">
-                {renderPagination()}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        <CrudPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={doctors.length}
+          indexOfFirstItem={indexOfFirstItem}
+          indexOfLastItem={indexOfLastItem}
+          onPageChange={handlePageChange}
+          itemLabel="bác sĩ"
+        />
+      </AppPage>
       <ToastContainer />
     </AdminLayout>
   );

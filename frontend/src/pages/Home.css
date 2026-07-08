@@ -1,52 +1,124 @@
-/* Custom Scroll & Utilities */
 html {
   scroll-behavior: smooth;
 }
 
-/* Glassmorphism utility card */
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+.home-wolverine {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
-/* Animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(1deg);
+/* Plus Jakarta Sans hỗ trợ tiếng Việt — tránh DM Serif (dấu bị tách) */
+.home-wolverine .font-display {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.home-hero-bg {
+  background-image:
+    linear-gradient(to top, rgb(10 10 10 / 1), rgb(10 10 10 / 0.7) 50%, rgb(10 10 10 / 0.3)),
+    url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000');
+  background-size: cover;
+  background-position: center;
+}
+
+.home-cta-bg {
+  background-image: url('https://images.unsplash.com/photo-1666214280387-f9d0e7f9d5b4?auto=format&fit=crop&q=80&w=2000');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Bo góc ảnh & nút toàn trang home */
+.home-wolverine img {
+  border-radius: 1rem;
+}
+
+.home-wolverine button,
+.home-wolverine input[type="submit"],
+.home-wolverine .home-btn {
+  border-radius: 0.75rem;
+}
+
+.home-wolverine input:not([type="submit"]),
+.home-wolverine textarea,
+.home-wolverine select {
+  border-radius: 0.75rem;
+}
+
+.home-wolverine section img {
+  will-change: transform;
+}
+
+/* 3D perspective role cards (wrapper + content parallax lift) */
+.perspective-role-card {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  perspective: 2500px;
+  cursor: default;
+}
+
+.perspective-role-card__wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 1.875rem;
+  background: linear-gradient(145deg, #e5e5e5 0%, #d4d4d4 100%);
+  box-shadow:
+    rgba(0, 0, 0, 0.12) 0px 14px 28px,
+    rgba(0, 0, 0, 0.08) 0px 10px 10px;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.perspective-role-card__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  padding: 1.5rem 1.75rem;
+  border-radius: 1.875rem;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .perspective-role-card__content {
+    padding: 2rem;
   }
 }
 
-@keyframes float-slow {
-  0%, 100% {
-    transform: translateY(0px) rotate(-1deg);
-  }
-  50% {
-    transform: translateY(-15px) rotate(0deg);
-  }
+.perspective-role-card:hover .perspective-role-card__wrapper {
+  transform: translateY(14px) scale(0.97);
 }
 
-@keyframes pulse-subtle {
-  0%, 100% {
-    opacity: 0.6;
+.perspective-role-card:hover .perspective-role-card__content {
+  transform: translateY(-10px);
+  border-color: #a3a3a3;
+  box-shadow:
+    rgba(0, 0, 0, 0.08) 0px 20px 40px,
+    rgba(79, 169, 255, 0.12) 0px 8px 24px;
+}
+
+.perspective-role-card:hover .perspective-role-card__content svg {
+  color: #4fa9ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perspective-role-card__wrapper,
+  .perspective-role-card__content {
+    transition: none;
   }
-  50% {
-    opacity: 1;
+
+  .perspective-role-card:hover .perspective-role-card__wrapper,
+  .perspective-role-card:hover .perspective-role-card__content {
+    transform: none;
   }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-float-slow {
-  animation: float-slow 8s ease-in-out infinite;
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 3s ease-in-out infinite;
 }
