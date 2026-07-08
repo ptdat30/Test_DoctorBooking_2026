@@ -90,6 +90,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.NOT_FOUND.value());
+        response.put(FIELD_MESSAGE, ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Map<String, Object>> handleBadRequestException(BadRequestException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put(FIELD_TIMESTAMP, LocalDateTime.now());
+        response.put(FIELD_STATUS, HttpStatus.BAD_REQUEST.value());
+        response.put(FIELD_MESSAGE, ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         Map<String, Object> response = new HashMap<>();
@@ -112,7 +132,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({org.springframework.security.core.AuthenticationException.class, 
                       org.springframework.security.authentication.BadCredentialsException.class,
-                      org.springframework.security.core.userdetails.UsernameNotFoundException.class})
+                      org.springframework.security.core.userdetails.UsernameNotFoundException.class,
+                      BadCredentialsException.class})
     public ResponseEntity<Map<String, Object>> handleAuthenticationException(Exception ex) {
         Map<String, Object> response = new HashMap<>();
         response.put(FIELD_TIMESTAMP, LocalDateTime.now());

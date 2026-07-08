@@ -4,6 +4,8 @@ import com.doctorbooking.backend.model.Notification;
 import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.repository.NotificationRepository;
 import com.doctorbooking.backend.repository.PatientRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +35,7 @@ public class NotificationService {
             Long appointmentId) {
         
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + patientId));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
 
         Notification notification = new Notification();
         notification.setPatient(patient);
@@ -69,11 +71,11 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long notificationId, Long patientId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
 
         // Verify ownership
         if (!notification.getPatient().getId().equals(patientId)) {
-            throw new RuntimeException("Notification does not belong to this patient");
+            throw new BadRequestException("Notification does not belong to this patient");
         }
 
         notification.setIsRead(true);
@@ -100,11 +102,11 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(Long notificationId, Long patientId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
 
         // Verify ownership
         if (!notification.getPatient().getId().equals(patientId)) {
-            throw new RuntimeException("Notification does not belong to this patient");
+            throw new BadRequestException("Notification does not belong to this patient");
         }
 
         notificationRepository.delete(notification);

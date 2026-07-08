@@ -16,6 +16,7 @@ import com.doctorbooking.backend.repository.MedicationRepository;
 import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.PrescriptionMedicationRepository;
 import com.doctorbooking.backend.repository.TreatmentRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +57,7 @@ public class TreatmentService {
 
     public TreatmentResponse getTreatmentById(Long id) {
         Treatment treatment = treatmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Treatment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Treatment not found with id: " + id));
         return TreatmentResponse.fromEntity(treatment);
     }
 
@@ -72,10 +73,10 @@ public class TreatmentService {
     @Transactional
     public TreatmentResponse createTreatment(Long doctorId, CreateTreatmentRequest request) {
         Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + doctorId));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
 
         Patient patient = patientRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + request.getPatientId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + request.getPatientId()));
 
         Appointment appointment = null;
         if (request.getAppointmentId() != null) {
@@ -117,7 +118,7 @@ public class TreatmentService {
     @Transactional
     public TreatmentResponse updateTreatment(Long id, UpdateTreatmentRequest request) {
         Treatment treatment = treatmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Treatment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Treatment not found with id: " + id));
 
         if (request.getDiagnosis() != null) {
             treatment.setDiagnosis(request.getDiagnosis());
@@ -156,7 +157,7 @@ public class TreatmentService {
     @Transactional
     public void deleteTreatment(Long id) {
         Treatment treatment = treatmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Treatment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Treatment not found with id: " + id));
         treatmentRepository.delete(treatment);
     }
 
