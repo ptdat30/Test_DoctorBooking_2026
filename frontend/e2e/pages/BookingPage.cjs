@@ -24,7 +24,7 @@ module.exports = {
     notesInput:    'textarea[name="notes"]',
     submitBtn:     'button[type="submit"]',
     confirmModal:  '//h2[contains(text(), "Xem lại thông tin")]',
-    confirmBtn:    '//div[contains(@class, "fixed")]//button[contains(text(), "Xác nhận đặt lịch")]',
+    confirmBtn:    '//div[contains(@class, "fixed") and contains(@class, "inset-0")]//div[contains(@class, "border-t")]//button[contains(., "Xác nhận đặt lịch")]',
   },
 
   feedback: {

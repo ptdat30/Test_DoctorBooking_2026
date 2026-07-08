@@ -31,8 +31,8 @@ module.exports = {
   },
 
   sosModal: {
-    emergencyName:    '//form[@id="sos-form"]//input[@type="text"]',
-    emergencyPhone:   '//form[@id="sos-form"]//input[@type="tel"]',
+    emergencyName:    '//form[@id="sos-form"]//label[contains(., "Tên người liên hệ")]/following-sibling::input',
+    emergencyPhone:   '//form[@id="sos-form"]//label[contains(., "Số điện thoại khẩn cấp")]/following-sibling::input',
     saveBtn:          '//form[@id="sos-form"]/ancestor::div[contains(@class, "app-card")]//button[contains(., "Lưu")]',
   },
 
