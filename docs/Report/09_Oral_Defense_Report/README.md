@@ -1,5 +1,9 @@
 # Bao cao van dap - Doctor Booking System
 
+> **GitHub Release (giong mau NovaTicket):** [Doctor Booking - QA & Test (v1.0.0-qa)](https://github.com/ptdat30/Test_DoctorBooking_2026/releases/tag/v1.0.0-qa)
+>
+> Noi dung release: bang deliverables + file Excel/ZIP tai xuong truc tiep.
+
 Tai lieu nay la ban tong hop nhanh de trinh bay van dap, giup giang vien:
 - Mo truc tiep cac tai lieu tren GitHub.
 - Truy cap nhanh vao cac thu muc/file code lien quan.

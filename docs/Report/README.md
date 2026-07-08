@@ -3,6 +3,8 @@
 > **Phương pháp:** Hybrid (Excel tổng hợp + Repository chứng cứ kỹ thuật)
 >
 > **Mục đích:** Gói tài liệu chính thức nộp giảng viên. Mọi test tự động vẫn nằm trong source code; folder này chỉ **lọc và tổ chức** phần cần trình bày.
+>
+> **GitHub Release (tải file ZIP/Excel):** [Doctor Booking - QA & Test (v1.0.0-qa)](https://github.com/ptdat30/Test_DoctorBooking_2026/releases/tag/v1.0.0-qa)
 
 ---
 
