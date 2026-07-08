@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ErrorMessage from '../components/common/ErrorMessage';
 import Loading from '../components/common/Loading';
+import ShellIcon from '../components/shell/ShellIcon';
 import './Login.css';
 
 const Register = () => {
@@ -99,7 +101,7 @@ const Register = () => {
     <div className="linear-login-page linear-register-page">
       {/* Back to Home Button */}
       <Link to="/" className="linear-back-home">
-        <i data-feather="arrow-left"></i>
+        <ShellIcon name="arrow-left" />
       </Link>
 
       <div className="linear-login-container">
@@ -191,7 +193,7 @@ const Register = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
               >
-                <i data-feather={showPassword ? 'eye-off' : 'eye'}></i>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -215,7 +217,7 @@ const Register = () => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 tabIndex={-1}
               >
-                <i data-feather={showConfirmPassword ? 'eye-off' : 'eye'}></i>
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>

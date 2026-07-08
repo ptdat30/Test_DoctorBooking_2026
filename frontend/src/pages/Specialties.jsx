@@ -39,12 +39,12 @@ const Specialties = () => {
                 <p className="specialty-description">{specialty.description}</p>
                 <div className="specialty-meta">
                   <span className="doctor-count">
-                    <i data-feather="users"></i>
+                    <ShellIcon name="users" />
                     {doctors.length} bác sĩ
                   </span>
                 </div>
                 <div className="specialty-arrow">
-                  <i data-feather="arrow-right"></i>
+                  <ShellIcon name="arrow-right" />
                 </div>
               </Link>
             );

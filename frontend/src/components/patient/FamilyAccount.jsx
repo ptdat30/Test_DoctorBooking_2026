@@ -37,7 +37,7 @@ const FamilyAccount = () => {
           className="add-member-btn"
           onClick={() => setShowAddForm(true)}
         >
-          <i data-feather="plus"></i> Thêm thành viên
+          <ShellIcon name="plus" /> Thêm thành viên
         </button>
       </div>
 
@@ -86,7 +86,7 @@ const FamilyAccount = () => {
               className="close-btn"
               onClick={() => setSelectedMember(null)}
             >
-              <i data-feather="x"></i>
+              <ShellIcon name="x" />
             </button>
           </div>
 
@@ -180,7 +180,7 @@ const FamilyAccount = () => {
                 className="close-btn"
                 onClick={() => setShowAddForm(false)}
               >
-                <i data-feather="x"></i>
+                <ShellIcon name="x" />
               </button>
             </div>
             <form onSubmit={handleAddMember} className="add-member-form">

@@ -1,0 +1,104 @@
+{
+  "theme": {
+    "extend": {
+      "colors": {
+        "primary": "#4fa9ff",
+        "on-primary": "#ffffff",
+        "secondary": "#546e7a",
+        "on-secondary": "#ffffff",
+        "tertiary": "#80deea",
+        "on-tertiary": "#0f172a",
+        "neutral": "#f8f9fa",
+        "on-neutral": "#1f2937",
+        "surface": "#ffffff",
+        "on-surface": "#1f2937",
+        "surface-muted": "#b0bec5",
+        "accent-mint": "#b2dfdb",
+        "accent-peach": "#fce4ec",
+        "accent-lavender": "#d1d1f0",
+        "accent-sky": "#e0f2ff",
+        "error": "#e11d48",
+        "on-error": "#ffffff",
+        "background-start": "#e0f2fe",
+        "background-mid": "#d1fae5",
+        "background-end": "#e9d5ff"
+      },
+      "fontFamily": {
+        "display-lg": [
+          "system-ui"
+        ],
+        "headline-md": [
+          "system-ui"
+        ],
+        "headline-sm": [
+          "system-ui"
+        ],
+        "body-md": [
+          "system-ui"
+        ],
+        "body-sm": [
+          "system-ui"
+        ],
+        "label-caps": [
+          "system-ui"
+        ]
+      },
+      "fontSize": {
+        "display-lg": [
+          "2.5rem",
+          {
+            "fontWeight": "700"
+          }
+        ],
+        "headline-md": [
+          "1.5rem",
+          {
+            "fontWeight": "600"
+          }
+        ],
+        "headline-sm": [
+          "1.25rem",
+          {
+            "fontWeight": "600"
+          }
+        ],
+        "body-md": [
+          "1rem",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "body-sm": [
+          "0.875rem",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "label-caps": [
+          "0.75rem",
+          {
+            "letterSpacing": "0.05em",
+            "fontWeight": "600"
+          }
+        ]
+      },
+      "borderRadius": {
+        "sm": "0.25rem",
+        "md": "0.5rem",
+        "lg": "0.75rem",
+        "xl": "1rem",
+        "2xl": "1.5rem",
+        "3xl": "1.875rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "xs": "4px",
+        "sm": "8px",
+        "md": "16px",
+        "lg": "24px",
+        "xl": "32px",
+        "2xl": "40px"
+      }
+    }
+  }
+}

@@ -14,6 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -509,25 +511,42 @@ class AppointmentServiceTest {
                     .hasMessageContaining("Appointment slot is already taken");
         }
 
-        @Test
-        @DisplayName("❌ Đặt lịch trong quá khứ → throw RuntimeException")
-        void createAppointment_pastDate_throwsException() {
+        @ParameterizedTest(name = "[{index}] date={0}, expectedOutcome={1}")
+        @CsvSource({
+                "-1, Cannot book appointment in the past",
+                "0, Cannot book appointment in the past",
+                "1, VALID"
+        })
+        @DisplayName("Boundary tests for appointment date relative to today (must be after today)")
+        void createAppointment_dateBoundaryTests(int dayOffset, String expectedOutcome) {
             User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
             Patient patient = buildPatient(6L, pUser, "Pat");
             User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
             Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
 
             CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
-            req.setAppointmentDate(LocalDate.now().minusDays(1)); // Quá khứ
+            req.setAppointmentDate(LocalDate.now().plusDays(dayOffset));
 
             when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
             when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
-            when(appointmentRepository.findByDoctorAndDate(any(), any()))
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any(LocalDate.class)))
                     .thenReturn(Collections.emptyList());
 
-            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Cannot book appointment in the past");
+            if ("VALID".equals(expectedOutcome)) {
+                when(appointmentRepository.save(any(Appointment.class))).thenAnswer(inv -> {
+                    Appointment apt = inv.getArgument(0);
+                    apt.setId(99L);
+                    return apt;
+                });
+                when(notificationService.createNotification(any(), any(), any(), any(), any())).thenReturn(null);
+                AppointmentResponse response = appointmentService.createAppointment(6L, req);
+                assertThat(response).isNotNull();
+                assertThat(response.getAppointmentDate()).isEqualTo(req.getAppointmentDate());
+            } else {
+                assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                        .isInstanceOf(RuntimeException.class)
+                        .hasMessageContaining(expectedOutcome);
+            }
         }
 
         @Test
@@ -698,36 +717,36 @@ class AppointmentServiceTest {
 
             assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Cannot book appointment time slot that has already passed today");
+                    .hasMessageContaining("Cannot book appointment in the past");
         }
 
         @Test
-        @DisplayName("✅ Đặt hôm nay giờ trong tương lai → thành công")
-        void createAppointment_futureTimeToday_success() {
+        @DisplayName("✅ Đặt ngày mai thành công")
+        void createAppointment_tomorrow_success() {
             User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
             Patient patient = buildPatient(6L, pUser, "Pat");
             User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
             Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
 
-            // Chọn slot chuẩn còn ở tương lai trong hôm nay; nếu chạy quá muộn thì skip.
-            Optional<LocalTime> futureSlot = firstFutureSlotToday();
-            Assumptions.assumeTrue(futureSlot.isPresent(),
-                    "Không còn slot khám tương lai trong hôm nay (test chạy sau slot cuối)");
-
             CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
-            req.setAppointmentDate(LocalDate.now());
-            req.setAppointmentTime(futureSlot.get());
+            req.setAppointmentDate(LocalDate.now().plusDays(1));
+            req.setAppointmentTime(LocalTime.of(9, 0));
 
             when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
             when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
-            when(appointmentRepository.findByDoctorAndDate(any(), any()))
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any(LocalDate.class)))
                     .thenReturn(Collections.emptyList());
-            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> {
+                Appointment saved = inv.getArgument(0);
+                saved.setId(99L);
+                return saved;
+            });
+            when(notificationService.createNotification(any(), any(), any(), any(), any())).thenReturn(null);
 
             AppointmentResponse result = appointmentService.createAppointment(6L, req);
 
             assertThat(result).isNotNull();
-            assertThat(result.getAppointmentDate()).isEqualTo(LocalDate.now());
+            assertThat(result.getAppointmentDate()).isEqualTo(LocalDate.now().plusDays(1));
             assertThat(result.getAppointmentTime()).isEqualTo(req.getAppointmentTime());
         }
     }

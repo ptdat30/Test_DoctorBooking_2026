@@ -117,7 +117,7 @@ const PatientPortal = () => {
             <div className="user-menu">
               <span className="user-name">{user.fullName || user.username}</span>
               <button className="logout-btn" onClick={handleLogout}>
-                <i data-feather="log-out"></i>
+                <ShellIcon name="log-out" />
               </button>
             </div>
           ) : (
@@ -136,13 +136,13 @@ const PatientPortal = () => {
           <div className="sidebar-header">
             <h3>Lịch sử</h3>
             <button className="icon-btn" title="Xóa lịch sử">
-              <i data-feather="trash-2"></i>
+              <ShellIcon name="trash-2" />
             </button>
           </div>
           <div className="chat-history-list">
             {chatHistory.length === 0 ? (
               <div className="empty-state">
-                <i data-feather="message-circle"></i>
+                <ShellIcon name="message-circle" />
                 <p>Chưa có cuộc trò chuyện nào</p>
               </div>
             ) : (
@@ -238,7 +238,7 @@ const PatientPortal = () => {
                     title="Tìm kiếm sâu"
                     onClick={() => setActiveMode('symptom')}
                   >
-                    <i data-feather="search"></i>
+                    <ShellIcon name="search" />
                     <span>DeepSearch</span>
                   </button>
                   <button
@@ -247,7 +247,7 @@ const PatientPortal = () => {
                     title="Ví Sức khỏe"
                     onClick={() => setActiveMode('wallet')}
                   >
-                    <i data-feather="wallet"></i>
+                    <ShellIcon name="wallet" />
                     <span>Wallet</span>
                   </button>
                   <button
@@ -256,7 +256,7 @@ const PatientPortal = () => {
                     title="Gia đình"
                     onClick={() => setActiveMode('family')}
                   >
-                    <i data-feather="users"></i>
+                    <ShellIcon name="users" />
                     <span>Family</span>
                   </button>
                   <button
@@ -265,7 +265,7 @@ const PatientPortal = () => {
                     title="Đặt lịch"
                     onClick={() => navigate('/patient/booking')}
                   >
-                    <i data-feather="calendar"></i>
+                    <ShellIcon name="calendar" />
                     <span>Booking</span>
                   </button>
                 </div>
@@ -285,7 +285,7 @@ const PatientPortal = () => {
                     }}
                   />
                   <button type="submit" className="send-btn" disabled={!inputValue.trim()}>
-                    <i data-feather="send"></i>
+                    <ShellIcon name="send" />
                   </button>
                 </div>
               </form>
@@ -297,7 +297,7 @@ const PatientPortal = () => {
             <div className="mode-container">
               <div className="mode-header">
                 <button className="back-btn" onClick={() => setActiveMode('chat')}>
-                  <i data-feather="arrow-left"></i>
+                  <ShellIcon name="arrow-left" />
                   Quay lại
                 </button>
                 <h2>Trợ lý AI - Kiểm tra Triệu chứng</h2>
@@ -311,7 +311,7 @@ const PatientPortal = () => {
             <div className="mode-container">
               <div className="mode-header">
                 <button className="back-btn" onClick={() => setActiveMode('chat')}>
-                  <i data-feather="arrow-left"></i>
+                  <ShellIcon name="arrow-left" />
                   Quay lại
                 </button>
                 <h2>Ví Sức khỏe & Loyalty</h2>
@@ -325,7 +325,7 @@ const PatientPortal = () => {
             <div className="mode-container">
               <div className="mode-header">
                 <button className="back-btn" onClick={() => setActiveMode('chat')}>
-                  <i data-feather="arrow-left"></i>
+                  <ShellIcon name="arrow-left" />
                   Quay lại
                 </button>
                 <h2>Quản lý Gia đình</h2>
@@ -368,15 +368,15 @@ const PatientPortal = () => {
             <h3>Gợi ý</h3>
             <div className="suggestions">
               <button className="suggestion-item" onClick={() => setInputValue('Tôi bị đau đầu, nên khám ở đâu?')}>
-                <i data-feather="help-circle"></i>
+                <ShellIcon name="help-circle" />
                 <span>Đau đầu nên khám ở đâu?</span>
               </button>
               <button className="suggestion-item" onClick={() => setInputValue('Cách đặt lịch khám nhanh nhất?')}>
-                <i data-feather="help-circle"></i>
+                <ShellIcon name="help-circle" />
                 <span>Cách đặt lịch khám nhanh?</span>
               </button>
               <button className="suggestion-item" onClick={() => setInputValue('Kiểm tra số dư ví sức khỏe')}>
-                <i data-feather="help-circle"></i>
+                <ShellIcon name="help-circle" />
                 <span>Kiểm tra số dư ví</span>
               </button>
             </div>

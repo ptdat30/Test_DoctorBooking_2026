@@ -1,23 +1,14 @@
-import { useEffect } from 'react';
 import HealthWallet from '../../components/patient/HealthWallet';
 import PatientLayout from '../../components/patient/PatientLayout';
-import './HealthWalletPage.css';
+import { AppPage, PageHeader } from '../../components/shell/DashboardPrimitives';
 
-const HealthWalletPage = () => {
-  useEffect(() => {
-    // Initialize Feather Icons
-    if (window.feather) {
-      window.feather.replace();
-    }
-  }, []);
+const HealthWalletPage = () => (
+  <PatientLayout>
+    <AppPage>
+      <PageHeader title="Ví sức khỏe" subtitle="Số dư, điểm tích lũy và lịch sử giao dịch" />
+      <HealthWallet />
+    </AppPage>
+  </PatientLayout>
+);
 
-  return (
-    <PatientLayout>
-      <div className="health-wallet-page">
-        <HealthWallet />
-      </div>
-    </PatientLayout>
-  );
-};
 export default HealthWalletPage;
-

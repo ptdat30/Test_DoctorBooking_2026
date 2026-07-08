@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import PatientLayout from '../../components/patient/PatientLayout';
 import familyService from '../../services/familyService';
-import feather from 'feather-icons';
-import './FamilyProfilePage.css';
+import ShellIcon from '../../components/shell/ShellIcon';
+import { AppPage, PageHeader, BtnPrimary, BtnSecondary, BtnDanger, Modal, FormField, Input, Select, Textarea, AlertError } from '../../components/shell/DashboardPrimitives';
+import { StatTile } from '../../components/shell/PatientPageUI';
+import { Users, UserCheck, Heart, Pencil, Trash2 } from 'lucide-react';
 
 const FamilyProfilePage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -30,41 +32,6 @@ const FamilyProfilePage = () => {
   useEffect(() => {
     loadFamilyData();
   }, []);
-
-  // Initialize Feather Icons sau khi DOM được update (tránh lỗi removeChild)
-  useEffect(() => {
-    // CHỈ initialize khi:
-    // 1. Không đang loading
-    // 2. Không đang submitting (tránh xung đột với React render)
-    // 3. Không đang deleting
-    // 4. Modal KHÔNG đang mở (tránh replace icons trong modal khi đang submit)
-    if (!loading && !submitting && !deletingMemberId && !showAddModal) {
-      // Dùng requestAnimationFrame + setTimeout để đảm bảo chạy SAU KHI React đã hoàn tất render/unmount
-      const timer = setTimeout(() => {
-        // Dùng requestAnimationFrame để đảm bảo chạy trong next frame (sau khi React đã cleanup)
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            try {
-              // Double-check: vẫn không đang submit/delete và modal không mở (tránh race condition)
-              if (!submitting && !deletingMemberId && !showAddModal) {
-                // Replace icons (chỉ các icons còn tồn tại trong DOM)
-                const icons = document.querySelectorAll('[data-feather]');
-                if (icons.length > 0) {
-                  feather.replace();
-                  console.log(' Feather icons initialized/replaced');
-                }
-              }
-            } catch (e) {
-              // Ignore errors (có thể do removeChild nhưng không ảnh hưởng UX)
-              console.log(' Feather icons error (ignored):', e.message);
-            }
-          }, 100); // Thêm delay nhỏ trong requestAnimationFrame
-        });
-      }, 500); // Delay ban đầu 500ms
-      
-      return () => clearTimeout(timer);
-    }
-  }, [loading, familyMembers, showAddModal, submitting, deletingMemberId]); // Thêm submitting và deletingMemberId vào dependencies
 
   // Load danh sách thành viên và stats
   const loadFamilyData = async (showLoadingScreen = true) => {
@@ -247,335 +214,222 @@ const FamilyProfilePage = () => {
     return map[gender] || gender;
   };
 
-  const getRelationshipIcon = (relationship) => {
-    switch (relationship) {
-      case 'SELF': return '';
-      case 'CHILD': return '👶';
-      case 'PARENT': return '👨‍👩';
-      case 'SPOUSE': return '💑';
-      case 'SIBLING': return '👫';
-      default: return '';
-    }
-  };
-
-  const getRelationshipColor = (relationship) => {
-    switch (relationship) {
-      case 'SELF': return '#667eea';
-      case 'CHILD': return '#48bb78';
-      case 'PARENT': return '#ed8936';
-      case 'SPOUSE': return '#ec4899';
-      case 'SIBLING': return '#4299e1';
-      default: return '#718096';
-    }
+  const getRelationshipIconName = (relationship) => {
+    const map = { SELF: 'user', CHILD: 'user', PARENT: 'users', SPOUSE: 'heart', SIBLING: 'users' };
+    return map[relationship] || 'user';
   };
 
   return (
     <PatientLayout>
-      <div className="family-profile-page">
-      {/* Header */}
-      <div className="family-header">
-        <div className="header-content">
-          <h1>
-            <span className="header-icon"></span>
-            Hồ sơ Gia đình
-          </h1>
-          <p className="header-subtitle">
-            Quản lý thông tin sức khỏe của các thành viên trong gia đình
-          </p>
-        </div>
-        <button className="btn-add-member" onClick={handleAddMember}>
-          <i data-feather="user-plus"></i>
-          Thêm thành viên
-        </button>
-      </div>
+      <AppPage>
+        <PageHeader
+          title="Hồ sơ gia đình"
+          subtitle="Quản lý thông tin sức khỏe các thành viên"
+          actions={
+            <BtnPrimary onClick={handleAddMember}>
+              <ShellIcon name="user-plus" className="w-4 h-4" />
+              Thêm thành viên
+            </BtnPrimary>
+          }
+        />
 
-      {/* Stats */}
-      <div className="family-stats">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <i data-feather="users"></i>
-          </div>
-          <div className="stat-info">
-            <div className="stat-label">Thành viên</div>
-            <div className="stat-value">{stats.totalMembers}</div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatTile icon={Users} label="Thành viên" value={stats.totalMembers} />
+          <StatTile icon={UserCheck} label="Tài khoản chính" value={stats.mainAccounts} />
+          <StatTile icon={Heart} label="Có tiền sử bệnh" value={stats.membersWithMedicalHistory} />
         </div>
-        <div className="stat-card">
-          <div className="stat-icon">
-            <i data-feather="user-check"></i>
-          </div>
-          <div className="stat-info">
-            <div className="stat-label">Tài khoản chính</div>
-            <div className="stat-value">{stats.mainAccounts}</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">
-            <i data-feather="heart"></i>
-          </div>
-          <div className="stat-info">
-            <div className="stat-label">Có tiền sử bệnh</div>
-            <div className="stat-value">{stats.membersWithMedicalHistory}</div>
-          </div>
-        </div>
-      </div>
 
-      {/* Loading state */}
-      {loading && (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
-      )}
+        {loading && (
+          <div className="app-card p-10 text-center text-neutral-400 text-sm">Đang tải dữ liệu...</div>
+        )}
 
-      {/* Error state */}
-      {error && (
-        <div className="error-message">
-          <i data-feather="alert-circle"></i>
-          <p>{error}</p>
-          <button onClick={() => loadFamilyData(true)} className="btn-retry">
-            <i data-feather="refresh-cw"></i>
-            Thử lại
-          </button>
-        </div>
-      )}
-
-      {/* Members List */}
-      {!loading && !error && (
-        <div className="members-section">
-          <div className="section-header">
-            <h2>Danh sách thành viên</h2>
-            <span className="member-count">{familyMembers.length} người</span>
+        {error && (
+          <div className="app-card p-6">
+            <AlertError message={error} />
+            <BtnSecondary onClick={() => loadFamilyData(true)} className="mt-4">
+              <ShellIcon name="refresh-cw" className="w-4 h-4" />
+              Thử lại
+            </BtnSecondary>
           </div>
+        )}
 
-          {familyMembers.length === 0 ? (
-            <div className="empty-state">
-              <i data-feather="users"></i>
-              <h3>Chưa có thành viên nào</h3>
-              <p>Thêm thành viên gia đình để bắt đầu quản lý hồ sơ sức khỏe</p>
-              <button className="btn-add-member" onClick={handleAddMember}>
-                <i data-feather="user-plus"></i>
-                Thêm thành viên đầu tiên
-              </button>
+        {!loading && !error && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-neutral-900">Danh sách thành viên</h2>
+              <span className="text-sm text-neutral-500">{familyMembers.length} người</span>
             </div>
-          ) : (
-            <div className="members-grid">
-          {familyMembers.map(member => (
-            <div 
-              key={member.id} 
-              className={`member-card ${member.isMainAccount ? 'main-account' : ''}`}
-            >
-              {member.isMainAccount && (
-                <div className="main-badge">
-                  <i data-feather="star"></i> Tài khoản chính
-                </div>
-              )}
 
-              <div className="member-header">
-                <div className="member-avatar" style={{ 
-                  background: `linear-gradient(135deg, ${getRelationshipColor(member.relationship)}33, ${getRelationshipColor(member.relationship)}66)`
-                }}>
-                  <span className="avatar-icon">{getRelationshipIcon(member.relationship)}</span>
-                </div>
-                <div className="member-basic-info">
-                  <h3 className="member-name">{member.fullName}</h3>
-                  <span 
-                    className="member-relationship"
-                    style={{ color: getRelationshipColor(member.relationship) }}
-                  >
-                    {getRelationshipLabel(member.relationship)}
-                  </span>
-                </div>
+            {familyMembers.length === 0 ? (
+              <div className="app-card p-10 text-center">
+                <ShellIcon name="users" className="w-10 h-10 mx-auto text-neutral-300 mb-3" />
+                <h3 className="font-semibold text-neutral-900">Chưa có thành viên nào</h3>
+                <p className="text-sm text-neutral-500 mt-1 mb-6">Thêm thành viên gia đình để quản lý hồ sơ sức khỏe</p>
+                <BtnPrimary onClick={handleAddMember}>
+                  <ShellIcon name="user-plus" className="w-4 h-4" />
+                  Thêm thành viên đầu tiên
+                </BtnPrimary>
               </div>
-
-              <div className="member-details">
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <i data-feather="calendar"></i>
-                    <span>{new Date(member.dateOfBirth).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                  <div className="detail-item">
-                    <i data-feather="gift"></i>
-                    <span>{calculateAge(member.dateOfBirth)} tuổi</span>
-                  </div>
-                </div>
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <i data-feather={member.gender === 'MALE' ? 'user' : 'user'}></i>
-                    <span>{getGenderLabel(member.gender)}</span>
-                  </div>
-                </div>
-                {member.medicalHistory && (
-                  <div className="medical-history">
-                    <div className="history-label">
-                      <i data-feather="file-text"></i>
-                      Tiền sử bệnh:
-                    </div>
-                    <div className="history-content">{member.medicalHistory}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Chỉ hiển thị nút Sửa và Xóa nếu KHÔNG phải tài khoản chính */}
-              {!member.isMainAccount && (
-                <div className="member-actions">
-                  <button 
-                    className="btn-action btn-edit"
-                    onClick={() => handleEditMember(member)}
-                    disabled={deletingMemberId || submitting}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {familyMembers.map((member) => (
+                  <article
+                    key={member.id}
+                    className={`app-card p-5 ${member.isMainAccount ? 'ring-2 ring-neutral-900/10' : ''}`}
                   >
-                    <span style={{ marginRight: '6px', fontSize: '14px' }}>✏️</span>
-                    Sửa
-                  </button>
-                  <button 
-                    className="btn-action btn-delete"
-                    onClick={() => handleDeleteMember(member)}
-                    disabled={deletingMemberId || submitting}
-                    title="Xóa thành viên này"
-                  >
-                    {deletingMemberId === member.id ? (
-                      <>
-                        <div className="loading-spinner-small"></div>
-                        Đang xóa...
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ marginRight: '6px', fontSize: '14px' }}>🗑️</span>
-                        Xóa
-                      </>
+                    {member.isMainAccount && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-lg mb-4">
+                        <ShellIcon name="star" className="w-3.5 h-3.5" />
+                        Tài khoản chính
+                      </span>
                     )}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Add/Edit Modal */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={submitting ? null : handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}</h2>
-              <button className="btn-close" onClick={handleCloseModal} disabled={submitting}>
-                <span style={{ fontSize: '20px', lineHeight: '1' }}>×</span>
-              </button>
-            </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0">
+                        <ShellIcon name={getRelationshipIconName(member.relationship)} className="w-5 h-5 text-neutral-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-neutral-900 truncate">{member.fullName}</h3>
+                        <p className="text-sm text-neutral-500">{getRelationshipLabel(member.relationship)}</p>
+                      </div>
+                    </div>
 
-            <form onSubmit={handleSubmit} className="member-form">
-              <div className="form-group">
-                <label className="form-label">
-                  Họ và tên <span className="required">*</span>
-                </label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="Nhập họ và tên"
-                    required
-                    disabled={submitting}
-                  />
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-sm text-neutral-600">
+                      <div className="flex items-center gap-1.5">
+                        <ShellIcon name="calendar" className="w-3.5 h-3.5 text-neutral-400" />
+                        {new Date(member.dateOfBirth).toLocaleDateString('vi-VN')}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <ShellIcon name="gift" className="w-3.5 h-3.5 text-neutral-400" />
+                        {calculateAge(member.dateOfBirth)} tuổi
+                      </div>
+                      <div className="flex items-center gap-1.5 col-span-2">
+                        <ShellIcon name="user" className="w-3.5 h-3.5 text-neutral-400" />
+                        {getGenderLabel(member.gender)}
+                      </div>
+                    </div>
+
+                    {member.medicalHistory && (
+                      <div className="mt-4 p-3 rounded-xl bg-neutral-50 text-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1 flex items-center gap-1">
+                          <ShellIcon name="file-text" className="w-3.5 h-3.5" />
+                          Tiền sử bệnh
+                        </p>
+                        <p className="text-neutral-700">{member.medicalHistory}</p>
+                      </div>
+                    )}
+
+                    {!member.isMainAccount && (
+                      <div className="mt-4 flex gap-2 pt-4 border-t border-neutral-100">
+                        <BtnSecondary
+                          onClick={() => handleEditMember(member)}
+                          disabled={deletingMemberId || submitting}
+                          className="flex-1"
+                        >
+                          <Pencil className="w-4 h-4" />
+                          Sửa
+                        </BtnSecondary>
+                        <BtnDanger
+                          onClick={() => handleDeleteMember(member)}
+                          disabled={deletingMemberId || submitting}
+                          className="flex-1"
+                        >
+                          {deletingMemberId === member.id ? (
+                            'Đang xóa...'
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4" />
+                              Xóa
+                            </>
+                          )}
+                        </BtnDanger>
+                      </div>
+                    )}
+                  </article>
+                ))}
               </div>
+            )}
+          </section>
+        )}
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">
-                    Quan hệ <span className="required">*</span>
-                  </label>
-                  <select
-                    className="form-input"
-                    value={formData.relationship}
-                    onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
-                    required
-                    disabled={submitting}
-                  >
-                    <option value="CHILD">Con cái</option>
-                    <option value="PARENT">Bố/Mẹ</option>
-                    <option value="SPOUSE">Vợ/Chồng</option>
-                    <option value="SIBLING">Anh/Chị/Em</option>
-                    <option value="OTHER">Khác</option>
-                  </select>
-                </div>
+        <Modal
+          open={showAddModal}
+          onClose={handleCloseModal}
+          title={editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
+          footer={
+            <>
+              <BtnSecondary onClick={handleCloseModal} disabled={submitting}>Hủy</BtnSecondary>
+              <BtnPrimary type="submit" form="family-member-form" disabled={submitting}>
+                {submitting ? (editingMember ? 'Đang cập nhật...' : 'Đang thêm...') : (editingMember ? 'Cập nhật' : 'Thêm thành viên')}
+              </BtnPrimary>
+            </>
+          }
+        >
+          <form id="family-member-form" onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Họ và tên" required>
+              <Input
+                type="text"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                placeholder="Nhập họ và tên"
+                required
+                disabled={submitting}
+              />
+            </FormField>
 
-                <div className="form-group">
-                  <label className="form-label">
-                    Giới tính <span className="required">*</span>
-                  </label>
-                  <select
-                    className="form-input"
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    required
-                    disabled={submitting}
-                  >
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
-                    <option value="OTHER">Khác</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Ngày sinh <span className="required">*</span>
-                </label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Quan hệ" required>
+                <Select
+                  value={formData.relationship}
+                  onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
                   required
                   disabled={submitting}
-                />
-              </div>
+                >
+                  <option value="CHILD">Con cái</option>
+                  <option value="PARENT">Bố/Mẹ</option>
+                  <option value="SPOUSE">Vợ/Chồng</option>
+                  <option value="SIBLING">Anh/Chị/Em</option>
+                  <option value="OTHER">Khác</option>
+                </Select>
+              </FormField>
 
-              <div className="form-group">
-                <label className="form-label">Tiền sử bệnh</label>
-                <textarea
-                  className="form-textarea"
-                  value={formData.medicalHistory}
-                  onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
-                  placeholder="Nhập tiền sử bệnh (nếu có)..."
-                  rows="4"
-                  disabled={submitting}
-                />
-                <div className="form-hint">
-                  Ví dụ: Cao huyết áp, Tiểu đường, Dị ứng thuốc...
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="btn-cancel" 
-                  onClick={handleCloseModal}
+              <FormField label="Giới tính" required>
+                <Select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  required
                   disabled={submitting}
                 >
-                  Hủy
-                </button>
-                <button type="submit" className="btn-submit" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <div className="loading-spinner-small"></div>
-                      {editingMember ? 'Đang cập nhật...' : 'Đang thêm...'}
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ marginRight: '6px', fontSize: '16px' }}></span>
-                      {editingMember ? 'Cập nhật' : 'Thêm thành viên'}
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      </div>
+                  <option value="MALE">Nam</option>
+                  <option value="FEMALE">Nữ</option>
+                  <option value="OTHER">Khác</option>
+                </Select>
+              </FormField>
+            </div>
+
+            <FormField label="Ngày sinh" required>
+              <Input
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                required
+                disabled={submitting}
+              />
+            </FormField>
+
+            <FormField label="Tiền sử bệnh">
+              <Textarea
+                value={formData.medicalHistory}
+                onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+                placeholder="Nhập tiền sử bệnh (nếu có)..."
+                rows={4}
+                disabled={submitting}
+              />
+              <p className="text-xs text-neutral-400 mt-1">Ví dụ: Cao huyết áp, Tiểu đường, Dị ứng thuốc...</p>
+            </FormField>
+          </form>
+        </Modal>
+      </AppPage>
     </PatientLayout>
   );
 };

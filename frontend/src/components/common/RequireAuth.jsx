@@ -20,17 +20,17 @@ const RequireAuth = ({ children, message = 'Bạn cần đăng nhập để sử
     <div className="require-auth-container">
       <div className="require-auth-card">
         <div className="require-auth-icon">
-          <i data-feather="lock"></i>
+          <ShellIcon name="lock" />
         </div>
         <h2 className="require-auth-title">Yêu cầu đăng nhập</h2>
         <p className="require-auth-message">{message}</p>
         <div className="require-auth-actions">
           <Link to="/login" className="require-auth-btn primary">
-            <i data-feather="log-in"></i>
+            <ShellIcon name="log-in" />
             Đăng nhập
           </Link>
           <Link to="/register" className="require-auth-btn secondary">
-            <i data-feather="user-plus"></i>
+            <ShellIcon name="user-plus" />
             Đăng ký tài khoản
           </Link>
         </div>

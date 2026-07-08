@@ -3,9 +3,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import { adminService } from '../../../services/adminService';
 import Loading from '../../../components/common/Loading';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import useFeatherIcons from '../../../hooks/useFeatherIcons';
+import ShellIcon from '../../../components/shell/ShellIcon';
+import {
+  AppPage,
+  PageHeader,
+  BackLink,
+  AlertError,
+  BtnPrimary,
+} from '../../../components/shell/DashboardPrimitives';
+
+const DetailField = ({ label, children }) => (
+  <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50">
+    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">{label}</p>
+    <div className="text-sm font-medium text-neutral-900">{children}</div>
+  </div>
+);
 
 const DoctorDetail = () => {
   const navigate = useNavigate();
@@ -17,8 +29,6 @@ const DoctorDetail = () => {
   useEffect(() => {
     loadDoctor();
   }, [id]);
-
-  useFeatherIcons([doctor]);
 
   const loadDoctor = async () => {
     try {
@@ -34,14 +44,10 @@ const DoctorDetail = () => {
     }
   };
 
-  const handleEdit = () => {
-    navigate(`/admin/doctors/${id}/edit`);
-  };
-
   if (loading) {
     return (
       <AdminLayout>
-        <Loading />
+        <Loading message="Đang tải..." />
       </AdminLayout>
     );
   }
@@ -49,87 +55,54 @@ const DoctorDetail = () => {
   if (error || !doctor) {
     return (
       <AdminLayout>
-        <div className="text-center text-red-600 py-8">{error || 'Không tìm thấy bác sĩ'}</div>
+        <AppPage>
+          <AlertError message={error || 'Không tìm thấy bác sĩ'} />
+          <BackLink to="/admin/doctors" />
+        </AppPage>
       </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Chi Tiết Bác Sĩ</h1>
-          <button 
-            onClick={() => navigate('/admin/doctors')} 
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <i data-feather="arrow-left" className="w-5 h-5"></i>
-            Quay lại danh sách
-          </button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">ID</label>
-              <p className="text-lg text-gray-900">{doctor.id}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Họ và Tên</label>
-              <p className="text-lg text-gray-900">{doctor.fullName}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Email</label>
-              <p className="text-lg text-gray-900">{doctor.email}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Số điện thoại</label>
-              <p className="text-lg text-gray-900">{doctor.phone || '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Chuyên khoa</label>
-              <p className="text-lg text-gray-900">{doctor.specialization || '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Bằng cấp</label>
-              <p className="text-lg text-gray-900">{doctor.qualification || '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Kinh nghiệm</label>
-              <p className="text-lg text-gray-900">{doctor.experience ? `${doctor.experience} năm` : '-'}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Trạng thái</label>
-              <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-                doctor.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {doctor.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}
-              </span>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Địa chỉ</label>
-              <p className="text-lg text-gray-900">{doctor.address || '-'}</p>
-            </div>
-            {doctor.bio && (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-500 mb-1">Tiểu sử</label>
-                <p className="text-lg text-gray-900">{doctor.bio}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3 mt-6 pt-6 border-t">
-            <button
-              onClick={handleEdit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <i data-feather="edit-2" className="w-4 h-4"></i>
+      <AppPage>
+        <BackLink to="/admin/doctors" />
+        <PageHeader
+          title="Chi tiết bác sĩ"
+          subtitle={doctor.email}
+          actions={
+            <BtnPrimary onClick={() => navigate(`/admin/doctors/${id}/edit`)}>
+              <ShellIcon name="edit-2" className="w-4 h-4" />
               Chỉnh sửa
-            </button>
+            </BtnPrimary>
+          }
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DetailField label="ID">{doctor.id}</DetailField>
+          <DetailField label="Họ và tên">{doctor.fullName}</DetailField>
+          <DetailField label="Email">{doctor.email}</DetailField>
+          <DetailField label="Số điện thoại">{doctor.phone || '—'}</DetailField>
+          <DetailField label="Chuyên khoa">{doctor.specialization || '—'}</DetailField>
+          <DetailField label="Bằng cấp">{doctor.qualification || '—'}</DetailField>
+          <DetailField label="Kinh nghiệm">{doctor.experience ? `${doctor.experience} năm` : '—'}</DetailField>
+          <DetailField label="Trạng thái">
+            <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-lg ${
+              doctor.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+            }`}>
+              {doctor.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}
+            </span>
+          </DetailField>
+          <div className="sm:col-span-2">
+            <DetailField label="Địa chỉ">{doctor.address || '—'}</DetailField>
           </div>
+          {doctor.bio && (
+            <div className="sm:col-span-2">
+              <DetailField label="Tiểu sử"><p className="whitespace-pre-wrap">{doctor.bio}</p></DetailField>
+            </div>
+          )}
         </div>
-      </div>
-      <ToastContainer />
+      </AppPage>
     </AdminLayout>
   );
 };

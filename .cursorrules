@@ -7,6 +7,7 @@
 - When fixing a bug, address the root cause, not just the symptom.
 
 ## 2. Frontend "Taste" (React, Vite, TailwindCSS, Framer Motion)
+- **Design System:** Follow `frontend/DESIGN.md` (Google DESIGN.md format) for colors, typography, spacing, and component patterns. Run `npm run design:lint` in `frontend/` after changing the design spec.
 - **Aesthetics First:** Design must be modern, premium, and "WOW" the user. Use glassmorphism, soft shadows, vibrant but harmonious color palettes, and micro-animations.
 - **Component Architecture:** Write functional React 19 components using hooks. Keep components small, focused, and reusable.
 - **Styling:** Strictly use TailwindCSS utility classes. Combine classes intelligently (using `clsx` and `tailwind-merge` if needed). Avoid inline styles completely.

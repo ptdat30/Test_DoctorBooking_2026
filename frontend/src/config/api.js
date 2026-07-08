@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Dev: luôn qua Vite proxy (/api → :8080) để tránh CORS khi port frontend đổi (5173, 5174, ...)
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_BASE_URL || '/api');
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
