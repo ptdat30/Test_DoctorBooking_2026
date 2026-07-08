@@ -42,5 +42,5 @@ Scenario('TC-DOC-05: Trang phản hồi bác sĩ load thành công', async ({ I,
 Scenario('TC-DOC-06: Trang quản lý điều trị load thành công', async ({ I }) => {
   I.amOnPage('/doctor/treatments');
   I.waitInUrl('/doctor/treatments', 10);
-  I.waitForText('Treatment Management', 10);
+  I.waitForText('Quản lý điều trị', 10);
 }).tag('@doctor').tag('@smoke');

@@ -6,9 +6,9 @@
 const { I } = inject();
 
 module.exports = {
-  successTitle: '.result-title.success',
-  errorTitle:   '.result-title.error',
-  detailsCard:  '.transaction-details-card',
+  successMessage: 'Thanh toán phí khám bệnh thành công',
+  failureMessage: 'Bạn đã hủy giao dịch',
+  detailsHeading: 'Chi tiết giao dịch',
 
   navigateToResult({ success = true, appointmentId = 501, amount = 300000 } = {}) {
     const code = success ? '00' : '24';
@@ -19,17 +19,17 @@ module.exports = {
   },
 
   seePaymentSuccess() {
-    I.waitForElement(this.successTitle, 10);
-    I.see('Thanh toán phí khám bệnh thành công', this.successTitle);
+    I.waitForText(this.successMessage, 10);
+    I.see(this.detailsHeading);
   },
 
   seePaymentFailure() {
-    I.waitForElement(this.errorTitle, 10);
-    I.see('Bạn đã hủy giao dịch', this.errorTitle);
+    I.waitForText(this.failureMessage, 10);
+    I.see(this.detailsHeading);
   },
 
   seeAppointmentId(id) {
-    I.waitForElement(this.detailsCard, 10);
-    I.see(`#${id}`, this.detailsCard);
+    I.waitForText(this.detailsHeading, 10);
+    I.see(`#${id}`);
   },
 };

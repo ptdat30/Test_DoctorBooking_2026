@@ -6,9 +6,9 @@
 const { I } = inject();
 
 module.exports = {
-  cancelBtn:     'button.action-btn.cancel',
-  statusBadge:   '.status-badge',
-  successAlert:  '.alert-success',
+  cancelBtn:     '//button[contains(., "Hủy lịch hẹn")]',
+  statusBadge:   '.app-badge',
+  successAlert:  '.border-emerald-200',
 
   navigateTo() {
     I.amOnPage('/patient/history');
@@ -22,10 +22,16 @@ module.exports = {
   },
 
   seeCancelSuccess() {
-    I.waitForText('Hủy lịch hẹn thành công', 10, this.successAlert);
+    I.waitForText('Hủy lịch hẹn thành công', 10);
   },
 
   seeStatus(status) {
-    I.waitForText(status, 10, this.statusBadge);
+    const statusLabels = {
+      PENDING: 'Đang chờ',
+      CONFIRMED: 'Đã xác nhận',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+    };
+    I.waitForText(statusLabels[status] || status, 10, this.statusBadge);
   },
 };

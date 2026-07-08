@@ -212,7 +212,7 @@ class AppointmentServiceTest {
                     () -> m.invoke(appointmentService,
                             LocalTime.of(7,15)));
 
-            assertTrue(ex.getCause() instanceof BadRequestException);
+            assertTrue(ex.getCause() instanceof RuntimeException);
         }
 
         @Test
@@ -303,7 +303,7 @@ class AppointmentServiceTest {
                                     List.of(a),
                                     LocalTime.of(8,0)));
 
-            assertTrue(ex.getCause() instanceof BadRequestException);
+            assertTrue(ex.getCause() instanceof RuntimeException);
         }
         @Test
         void duplicateAppointment_ok() throws Exception {

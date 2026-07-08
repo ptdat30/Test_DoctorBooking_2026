@@ -14,14 +14,14 @@ module.exports = {
     submitBtn: 'button[type="submit"]',
     createUserBtn: '//button[contains(., "Thêm người dùng")]',
     createDoctorBtn: '//button[contains(., "Thêm bác sĩ")]',
-    createPatientBtn: '//button[contains(., "Thêm Bệnh Nhân")]',
+    createPatientBtn: '//button[contains(., "Thêm Bệnh Nhân Mới")]',
   },
 
   // Actions
   navigateToDashboard() {
     I.amOnPage('/admin/dashboard');
     I.waitInUrl('/admin/dashboard', 10);
-    I.waitForText('Dashboard Overview', 10);
+    I.waitForText('Tổng quan', 10);
   },
 
   navigateToDoctorList() {

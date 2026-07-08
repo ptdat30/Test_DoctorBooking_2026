@@ -23,8 +23,8 @@ module.exports = {
   form: {
     notesInput:    'textarea[name="notes"]',
     submitBtn:     'button[type="submit"]',
-    confirmModal:  '//h2[contains(text(), "Review Booking Details")]',
-    confirmBtn:    '//div[contains(@class, "fixed")]//button[contains(text(), "Confirm booking")]',
+    confirmModal:  '//h2[contains(text(), "Xem lại thông tin")]',
+    confirmBtn:    '//div[contains(@class, "fixed") and contains(@class, "inset-0")]//div[contains(@class, "border-t")]//button[contains(., "Xác nhận đặt lịch")]',
   },
 
   feedback: {
@@ -68,6 +68,7 @@ module.exports = {
   selectDoctorById(id) {
     I.waitForElement(this.doctorSelect.select, 10);
     I.selectOption(this.doctorSelect.select, String(id));
+    I.wait(1);
   },
 
   /**
@@ -75,23 +76,25 @@ module.exports = {
    */
   async selectFirstAvailableDate() {
     I.waitForElement(this.dateSelect.input, 10);
-    // Tính ngày mai (để đảm bảo luôn có time slot trống, không phụ thuộc vào giờ hiện tại của ngày hôm nay)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const day = String(tomorrow.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    for (let offset = 1; offset <= 7; offset++) {
+      const target = new Date();
+      target.setDate(target.getDate() + offset);
+      const year = target.getFullYear();
+      const month = String(target.getMonth() + 1).padStart(2, '0');
+      const day = String(target.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
 
-    await I.executeScript((dateVal) => {
-      const input = document.querySelector('input[name="appointmentDate"]');
-      if (input) {
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(input, dateVal);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, dateStr);
+      I.fillField(this.dateSelect.input, dateStr);
+      I.wait(1);
+
+      const hasSlots = await I.executeScript(() => {
+        const select = document.querySelector('select[name="appointmentTime"]');
+        return Boolean(select && select.options.length > 1);
+      });
+      if (hasSlots) return;
+    }
+
+    throw new Error('No available slots found in next 7 days');
   },
 
   /**
@@ -106,15 +109,8 @@ module.exports = {
     const day = String(targetDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    await I.executeScript((dateVal) => {
-      const input = document.querySelector('input[name="appointmentDate"]');
-      if (input) {
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(input, dateVal);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, dateStr);
+    I.fillField(this.dateSelect.input, dateStr);
+    I.wait(1);
   },
 
   /**
