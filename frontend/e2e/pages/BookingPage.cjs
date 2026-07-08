@@ -68,6 +68,7 @@ module.exports = {
   selectDoctorById(id) {
     I.waitForElement(this.doctorSelect.select, 10);
     I.selectOption(this.doctorSelect.select, String(id));
+    I.wait(1);
   },
 
   /**
@@ -75,7 +76,6 @@ module.exports = {
    */
   async selectFirstAvailableDate() {
     I.waitForElement(this.dateSelect.input, 10);
-    // Tính ngày mai (để đảm bảo luôn có time slot trống, không phụ thuộc vào giờ hiện tại của ngày hôm nay)
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const year = tomorrow.getFullYear();
@@ -83,15 +83,8 @@ module.exports = {
     const day = String(tomorrow.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    await I.executeScript((dateVal) => {
-      const input = document.querySelector('input[name="appointmentDate"]');
-      if (input) {
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(input, dateVal);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, dateStr);
+    I.fillField(this.dateSelect.input, dateStr);
+    I.wait(1);
   },
 
   /**
@@ -106,15 +99,8 @@ module.exports = {
     const day = String(targetDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    await I.executeScript((dateVal) => {
-      const input = document.querySelector('input[name="appointmentDate"]');
-      if (input) {
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(input, dateVal);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, dateStr);
+    I.fillField(this.dateSelect.input, dateStr);
+    I.wait(1);
   },
 
   /**

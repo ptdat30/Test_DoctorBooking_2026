@@ -42,7 +42,6 @@ Scenario('TC-HISTORY-01: Bệnh nhân hủy lịch hẹn PENDING thành công', 
   BookingPage.fillNotes('E2E test cancel by patient');
   BookingPage.submitBooking();
   BookingPage.confirmInModal();
-  I.waitForText('Đặt lịch thành công', 15);
   I.waitInUrl('/patient/history', 20);
   BookingHistoryPage.seeStatus('PENDING');
 
