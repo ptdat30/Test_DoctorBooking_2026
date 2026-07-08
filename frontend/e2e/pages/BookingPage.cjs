@@ -76,15 +76,25 @@ module.exports = {
    */
   async selectFirstAvailableDate() {
     I.waitForElement(this.dateSelect.input, 10);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const day = String(tomorrow.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    for (let offset = 1; offset <= 7; offset++) {
+      const target = new Date();
+      target.setDate(target.getDate() + offset);
+      const year = target.getFullYear();
+      const month = String(target.getMonth() + 1).padStart(2, '0');
+      const day = String(target.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
 
-    I.fillField(this.dateSelect.input, dateStr);
-    I.wait(1);
+      I.fillField(this.dateSelect.input, dateStr);
+      I.wait(1);
+
+      const hasSlots = await I.executeScript(() => {
+        const select = document.querySelector('select[name="appointmentTime"]');
+        return Boolean(select && select.options.length > 1);
+      });
+      if (hasSlots) return;
+    }
+
+    throw new Error('No available slots found in next 7 days');
   },
 
   /**
