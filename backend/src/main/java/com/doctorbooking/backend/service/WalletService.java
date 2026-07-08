@@ -5,6 +5,8 @@ import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.model.WalletTransaction;
 import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.WalletTransactionRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +34,7 @@ public class WalletService {
      */
     public Patient getWalletByPatientId(Long patientId) {
         return patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
     }
 
     /**
@@ -66,7 +68,7 @@ public class WalletService {
         WalletTransaction transaction = walletTransactionRepository.findByReferenceId(referenceId);
         if (transaction == null) {
             logger.error("Transaction not found with referenceId: {}", referenceId);
-            throw new RuntimeException("Transaction not found with referenceId: " + referenceId);
+            throw new ResourceNotFoundException("Transaction not found with referenceId: " + referenceId);
         }
 
         logger.info("Found transaction: id={}, status={}, amount={}", transaction.getId(), transaction.getStatus(), transaction.getAmount());
@@ -142,7 +144,7 @@ public class WalletService {
         WalletTransaction transaction = walletTransactionRepository.findByReferenceId(referenceId);
         if (transaction == null) {
             logger.error("Transaction not found with referenceId: {}", referenceId);
-            throw new RuntimeException("Transaction not found with referenceId: " + referenceId);
+            throw new ResourceNotFoundException("Transaction not found with referenceId: " + referenceId);
         }
 
         // Chỉ cập nhật nếu transaction chưa ở trạng thái COMPLETED
@@ -186,7 +188,7 @@ public class WalletService {
         BigDecimal currentBalance = patient.getWalletBalance() != null ? patient.getWalletBalance() : BigDecimal.ZERO;
         if (currentBalance.compareTo(amount) < 0) {
             logger.error("Insufficient balance: required={}, available={}", amount, currentBalance);
-            throw new RuntimeException("Insufficient wallet balance. Required: " + amount + ", Available: " + currentBalance);
+            throw new BadRequestException("Insufficient wallet balance. Required: " + amount + ", Available: " + currentBalance);
         }
         
         // Trừ tiền từ ví

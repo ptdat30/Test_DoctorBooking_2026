@@ -13,16 +13,23 @@ import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.UserRepository;
 import com.doctorbooking.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.doctorbooking.backend.constant.AppConstants;
+import com.doctorbooking.backend.exception.BadRequestException;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor
@@ -35,15 +42,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private static final Logger logger =
+            LoggerFactory.getLogger(AuthService.class);
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         // Check if username or email already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BadRequestException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         // Create user
@@ -59,12 +68,19 @@ public class AuthService {
         // Determine role
         User.Role role = User.Role.PATIENT; // Default
         if (request.getRole() != null && !request.getRole().isEmpty()) {
-            try {
-                role = User.Role.valueOf(request.getRole().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Invalid role, stick to default or throw error
-                // For now, let's default to PATIENT but log it
-                System.err.println("Invalid role provided: " + request.getRole());
+            String roleStr = request.getRole().toUpperCase();
+            if (roleStr.equals(AppConstants.ROLE_PATIENT) || roleStr.equals("PATIENT")) {
+                role = User.Role.PATIENT;
+            } else if (roleStr.equals(AppConstants.ROLE_DOCTOR) || roleStr.equals("DOCTOR")) {
+                role = User.Role.DOCTOR;
+            } else if (roleStr.equals("ADMIN")) {
+                role = User.Role.ADMIN;
+            } else {
+                try {
+                    role = User.Role.valueOf(roleStr);
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Invalid role provided: {}", request.getRole());
+                }
             }
         }
         user.setRole(role);
@@ -128,10 +144,9 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
                             request.getPassword()));
-            System.out.println("✅ AuthService.login - Authentication successful for: " + request.getUsername());
-        } catch (org.springframework.security.core.AuthenticationException e) {
-            System.err.println("❌ AuthService.login - Authentication failed: " + e.getMessage());
-            e.printStackTrace();
+            logger.info("AuthService.login - Authentication successful for: {}", request.getUsername());
+        } catch (AuthenticationException e) {
+            logger.error("AuthService.login - Authentication failed: {}", e.getMessage(), e);
             throw e; // Re-throw để GlobalExceptionHandler xử lý
         }
 
@@ -145,18 +160,20 @@ public class AuthService {
         if (userDetails instanceof User) {
             // Nếu UserDetails là User entity, sử dụng trực tiếp (không cần query lại)
             user = (User) userDetails;
-            System.out.println("🔵 AuthService.login - Using User from authentication principal (ID: " + user.getId()
-                    + ", Username: " + user.getUsername() + ")");
+            logger.info("AuthService.login - Using User from authentication principal (ID: {}, Username: {})",
+                    user.getId(), user.getUsername());
         } else {
             // Fallback: nếu không phải User entity, load từ database
             String usernameFromDetails = userDetails.getUsername();
-            System.out.println("⚠️ AuthService.login - Principal is not User entity, loading from DB with username: "
-                    + usernameFromDetails);
+            logger.warn("AuthService.login - Principal is not User entity, loading from DB with username: {}",
+                    usernameFromDetails);
             user = userRepository.findByUsername(usernameFromDetails)
                     .orElse(userRepository.findByEmail(usernameFromDetails)
                             .orElseThrow(() -> {
-                                System.err.println("❌ User not found with username/email: " + usernameFromDetails);
-                                return new RuntimeException("User not found: " + usernameFromDetails);
+                                logger.error("{} with username/email: {}",
+                                        AppConstants.USER_NOT_FOUND,
+                                        usernameFromDetails);
+                                return new ResourceNotFoundException(AppConstants.USER_NOT_FOUND + ": " + usernameFromDetails);
                             }));
         }
 
@@ -179,11 +196,11 @@ public class AuthService {
         String token = jwtUtil.generateToken(tokenUserDetails, extraClaims);
         String refreshToken = jwtUtil.generateRefreshToken(tokenUserDetails);
 
-        System.out.println("🔵 AuthService.login - Token created with username: " + user.getUsername());
+        logger.info("AuthService.login - Token created with username: {}", user.getUsername());
 
         // Get full name based on role
         String fullName = getFullNameByRole(user);
-        System.out.println("🔵 AuthService.login - FullName retrieved: " + fullName);
+        logger.info("AuthService.login - FullName retrieved: {}", fullName);
 
         // Build response
         AuthResponse response = AuthResponse.builder()
@@ -196,7 +213,7 @@ public class AuthService {
                 .fullName(fullName)
                 .build();
 
-        System.out.println("✅ AuthService.login - Response built successfully");
+        logger.info("AuthService.login - Response built successfully");
         return response;
     }
 
@@ -220,8 +237,10 @@ public class AuthService {
                 }
             };
         } catch (Exception e) {
-            System.err.println("❌ Error getting fullName for role " + user.getRole() + ": " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error getting fullName for role {}: {}",
+                    user.getRole(),
+                    e.getMessage(),
+                    e);
             // Return default based on role
             return switch (user.getRole()) {
                 case ADMIN -> "System Administrator";

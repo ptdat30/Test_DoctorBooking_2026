@@ -32,6 +32,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
@@ -60,11 +65,6 @@
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
@@ -145,7 +145,6 @@
 						<exclude>com/doctorbooking/backend/service/EmailService.class</exclude>
 						<exclude>com/doctorbooking/backend/service/AppointmentReminderService.class</exclude>
 						<!-- Tích hợp AI ngoài (Groq) qua HttpClient nội bộ: không inject/mock được, loại khỏi coverage -->
-						<exclude>com/doctorbooking/backend/service/AISymptomService.class</exclude>
 						<exclude>com/doctorbooking/backend/controller/TestController.class</exclude>
 					</excludes>
 				</configuration>

@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -67,7 +68,7 @@ class UserControllerTest {
     @Test
     @DisplayName("getUserById không tồn tại → 404")
     void getUserById_notFound() {
-        when(userService.getUserById(1L)).thenThrow(new RuntimeException("not found"));
+        when(userService.getUserById(1L)).thenThrow(new ResourceNotFoundException("not found"));
         ResponseEntity<UserResponse> result = controller.getUserById(1L);
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -127,7 +128,7 @@ class UserControllerTest {
     @Test
     @DisplayName("deleteUser not found → 404")
     void deleteUser_notFound() {
-        doThrow(new RuntimeException("user not found")).when(userService).deleteUser(1L);
+        doThrow(new ResourceNotFoundException("user not found")).when(userService).deleteUser(1L);
         ResponseEntity<?> result = controller.deleteUser(1L);
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -151,7 +152,7 @@ class UserControllerTest {
     @Test
     @DisplayName("toggleUserStatus không tồn tại → 404")
     void toggleUserStatus_notFound() {
-        when(userService.toggleUserStatus(1L)).thenThrow(new RuntimeException("not found"));
+        when(userService.toggleUserStatus(1L)).thenThrow(new ResourceNotFoundException("not found"));
         ResponseEntity<UserResponse> result = controller.toggleUserStatus(1L);
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }

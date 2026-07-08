@@ -4,6 +4,7 @@ import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
 import com.doctorbooking.backend.dto.request.UpdateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
+import com.doctorbooking.backend.exception.BadRequestException;
 import com.doctorbooking.backend.model.*;
 import com.doctorbooking.backend.repository.*;
 import jakarta.persistence.EntityManager;
@@ -18,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.Mockito;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -174,6 +178,42 @@ class AppointmentServiceTest {
     class GetAvailableTimeSlotsTests {
 
         @Test
+        void buildBookingNotificationMessage_family() throws Exception {
+
+            Method m = AppointmentService.class
+                    .getDeclaredMethod(
+                            "buildBookingNotificationMessage",
+                            String.class,
+                            String.class,
+                            LocalDate.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            String result=(String)m.invoke(
+                    appointmentService,
+                    "An",
+                    "Doctor A",
+                    LocalDate.of(2026,1,1),
+                    LocalTime.of(8,0));
+
+            assertTrue(result.contains("An"));
+        }
+        @Test
+        void validateAppointmentTime_invalid() throws Exception {
+            Method m = AppointmentService.class
+                    .getDeclaredMethod("validateAppointmentTime", LocalTime.class);
+            m.setAccessible(true);
+
+            InvocationTargetException ex = assertThrows(
+                    InvocationTargetException.class,
+                    () -> m.invoke(appointmentService,
+                            LocalTime.of(7,15)));
+
+            assertTrue(ex.getCause() instanceof BadRequestException);
+        }
+
+        @Test
         @DisplayName("✅ Trả về tất cả slots khi bác sĩ chưa có lịch hẹn nào")
         void getAvailableSlots_noPendingAppointments_returnsAllSlots() {
             when(appointmentRepository.findByDoctorAndDate(1L, LocalDate.now().plusDays(1)))
@@ -204,6 +244,85 @@ class AppointmentServiceTest {
 
             assertThat(slots).doesNotContain("08:00");
             assertThat(slots).hasSize(16);
+        }
+        @Test
+        void validateAppointmentTime_valid() throws Exception {
+            Method m = AppointmentService.class
+                    .getDeclaredMethod("validateAppointmentTime", LocalTime.class);
+            m.setAccessible(true);
+
+            assertDoesNotThrow(() ->
+                    m.invoke(appointmentService,
+                            LocalTime.of(8,0)));
+        }
+
+        @Test
+        void buildBookingNotificationMessage_normal() throws Exception {
+
+            Method m = AppointmentService.class
+                    .getDeclaredMethod(
+                            "buildBookingNotificationMessage",
+                            String.class,
+                            String.class,
+                            LocalDate.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            String result=(String)m.invoke(
+                    appointmentService,
+                    null,
+                    "Doctor A",
+                    LocalDate.of(2026,1,1),
+                    LocalTime.of(8,0));
+
+            assertFalse(result.contains("cho An"));
+        }
+        @Test
+        void duplicateAppointment_throw() throws Exception {
+
+            Appointment a=new Appointment();
+            a.setAppointmentTime(LocalTime.of(8,0));
+            a.setStatus(Appointment.AppointmentStatus.PENDING);
+
+            Method m=AppointmentService.class
+                    .getDeclaredMethod(
+                            "checkForDuplicateAppointment",
+                            List.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            InvocationTargetException ex=
+                    assertThrows(
+                            InvocationTargetException.class,
+                            ()->m.invoke(
+                                    appointmentService,
+                                    List.of(a),
+                                    LocalTime.of(8,0)));
+
+            assertTrue(ex.getCause() instanceof BadRequestException);
+        }
+        @Test
+        void duplicateAppointment_ok() throws Exception {
+
+            Appointment a=new Appointment();
+            a.setAppointmentTime(LocalTime.of(8,0));
+            a.setStatus(Appointment.AppointmentStatus.CANCELLED);
+
+            Method m=AppointmentService.class
+                    .getDeclaredMethod(
+                            "checkForDuplicateAppointment",
+                            List.class,
+                            LocalTime.class);
+
+            m.setAccessible(true);
+
+            assertDoesNotThrow(()->
+                    m.invoke(
+                            appointmentService,
+                            List.of(a),
+                            LocalTime.of(8,0)));
         }
 
         @Test
@@ -907,5 +1026,762 @@ class AppointmentServiceTest {
             assertThat(result).isNotNull();
             assertThat(result.getAppointmentDate()).isEqualTo(LocalDate.now());
         }
+        @Test
+        @DisplayName("✅ Admin update status PENDING → CONFIRMED → gửi email")
+        void updateAppointmentByAdmin_statusToConfirmed_sendsEmail() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now().plusDays(3));
+            apt.setAppointmentTime(LocalTime.of(9, 0));
+
+            UpdateAppointmentRequest req = new UpdateAppointmentRequest();
+            req.setStatus(Appointment.AppointmentStatus.CONFIRMED);
+
+            when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyAppointmentRepository.findByAppointmentId(any())).thenReturn(Optional.empty());
+
+            AppointmentResponse result = appointmentService.updateAppointmentByAdmin(88L, req);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getStatus()).isEqualTo(Appointment.AppointmentStatus.CONFIRMED.name());
+        }
+
+        @Test
+        @DisplayName("✅ Admin update chỉ ghi chú (notes) → thành công")
+        void updateAppointmentByAdmin_updateNotesOnly_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(88L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now().plusDays(2));
+            apt.setAppointmentTime(LocalTime.of(9, 0));
+
+            UpdateAppointmentRequest req = new UpdateAppointmentRequest();
+            req.setNotes("Ghi chú mới");
+
+            when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            AppointmentResponse result = appointmentService.updateAppointmentByAdmin(88L, req);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getNotes()).isEqualTo("Ghi chú mới");
+        }
+
+        @Test
+        @DisplayName("❌ Appointment không tồn tại → throw ResourceNotFoundException")
+        void updateAppointmentByAdmin_notFound_throwsException() {
+            when(appointmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            UpdateAppointmentRequest req = new UpdateAppointmentRequest();
+
+            assertThatThrownBy(() -> appointmentService.updateAppointmentByAdmin(999L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // getAllAppointments TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("getAllAppointments()")
+    class GetAllAppointmentsTests {
+
+        @Test
+        @DisplayName("✅ Trả về danh sách rỗng khi không có appointment")
+        void getAllAppointments_empty_returnsEmptyList() {
+            when(appointmentRepository.findAll()).thenReturn(Collections.emptyList());
+
+            List<AppointmentResponse> result = appointmentService.getAllAppointments();
+
+            assertThat(result).isEmpty();
+            verify(appointmentRepository, times(1)).findAll();
+        }
+
+        @Test
+        @DisplayName("✅ Trả về danh sách appointments khi có dữ liệu")
+        void getAllAppointments_withData_returnsList() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat A");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt1 = buildAppointment(1L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            Appointment apt2 = buildAppointment(2L, patient, doctor,
+                    Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
+
+            when(appointmentRepository.findAll()).thenReturn(List.of(apt1, apt2));
+
+            List<AppointmentResponse> result = appointmentService.getAllAppointments();
+
+            assertThat(result).hasSize(2);
+        }
+    }
+
+    // =========================================================
+    // getAppointmentById TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("getAppointmentById()")
+    class GetAppointmentByIdTests {
+
+        @Test
+        @DisplayName("✅ Tìm thấy appointment → trả về response")
+        void getAppointmentById_found_returnsResponse() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(10L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(appointmentRepository.findByIdWithRelations(10L)).thenReturn(Optional.of(apt));
+
+            AppointmentResponse result = appointmentService.getAppointmentById(10L);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo(10L);
+        }
+
+        @Test
+        @DisplayName("❌ Không tìm thấy appointment → throw ResourceNotFoundException")
+        void getAppointmentById_notFound_throwsException() {
+            when(appointmentRepository.findByIdWithRelations(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> appointmentService.getAppointmentById(999L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // getPatientAppointments TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("getPatientAppointments()")
+    class GetPatientAppointmentsTests {
+
+        @Test
+        @DisplayName("✅ Bệnh nhân chưa có lịch hẹn → danh sách rỗng")
+        void getPatientAppointments_noAppointments_returnsEmpty() {
+            when(appointmentRepository.findByPatientIdOrderByDateDesc(5L))
+                    .thenReturn(Collections.emptyList());
+
+            List<AppointmentResponse> result = appointmentService.getPatientAppointments(5L);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("✅ getHasFeedback() = true khi đã có feedback")
+        void getPatientAppointments_hasFeedback_true() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(20L, patient, doctor,
+                    Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
+
+            when(appointmentRepository.findByPatientIdOrderByDateDesc(5L))
+                    .thenReturn(List.of(apt));
+            when(feedbackRepository.findByAppointmentId(20L))
+                    .thenReturn(Optional.of(new Feedback()));
+
+            List<AppointmentResponse> result = appointmentService.getPatientAppointments(5L);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getHasFeedback()).isTrue();
+        }
+
+        @Test
+        @DisplayName("✅ getHasFeedback() = false khi chưa có feedback")
+        void getPatientAppointments_hasFeedback_false() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(21L, patient, doctor,
+                    Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
+
+            when(appointmentRepository.findByPatientIdOrderByDateDesc(5L))
+                    .thenReturn(List.of(apt));
+            when(feedbackRepository.findByAppointmentId(21L))
+                    .thenReturn(Optional.empty());
+
+            List<AppointmentResponse> result = appointmentService.getPatientAppointments(5L);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getHasFeedback()).isFalse();
+        }
+    }
+
+    // =========================================================
+    // completeAppointment TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("completeAppointment()")
+    class CompleteAppointmentTests {
+
+        @Test
+        @DisplayName("✅ Hoàn thành appointment CONFIRMED → COMPLETED")
+        void completeAppointment_confirmed_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(30L, patient, doctor,
+                    Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, "CASH");
+
+            when(appointmentRepository.findById(30L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.completeAppointment(30L);
+
+            assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.COMPLETED);
+            verify(appointmentRepository, times(1)).save(apt);
+        }
+
+        @Test
+        @DisplayName("❌ Appointment PENDING không thể complete → throw BadRequestException")
+        void completeAppointment_pendingStatus_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(31L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(appointmentRepository.findById(31L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.completeAppointment(31L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Only CONFIRMED appointments can be completed");
+        }
+
+        @Test
+        @DisplayName("❌ Appointment CANCELLED không thể complete → throw BadRequestException")
+        void completeAppointment_cancelledStatus_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(32L, patient, doctor,
+                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, AppConstants.WALLET);
+
+            when(appointmentRepository.findById(32L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.completeAppointment(32L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Only CONFIRMED appointments can be completed");
+        }
+
+        @Test
+        @DisplayName("❌ Appointment không tồn tại → throw ResourceNotFoundException")
+        void completeAppointment_notFound_throwsException() {
+            when(appointmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> appointmentService.completeAppointment(999L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // cancelAppointmentByDoctor TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("cancelAppointmentByDoctor()")
+    class CancelAppointmentByDoctorTests {
+
+        @Test
+        @DisplayName("✅ Bác sĩ hủy appointment PENDING hơn 24h → thành công")
+        void cancelByDoctor_pending_moreThan24h_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. B", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            // Lịch hẹn sau 3 ngày → hơn 24h
+            Appointment apt = buildAppointment(40L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now().plusDays(3));
+            apt.setAppointmentTime(LocalTime.of(9, 0));
+
+            when(appointmentRepository.findById(40L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.cancelAppointmentByDoctor(40L, 1L, "Lý do cá nhân");
+
+            assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
+            assertThat(apt.getCancellationReason()).isEqualTo("Lý do cá nhân");
+        }
+
+        @Test
+        @DisplayName("✅ Bác sĩ hủy appointment CONFIRMED hơn 24h với WALLET → hoàn tiền")
+        void cancelByDoctor_confirmed_walletPaid_refundsWallet() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. B", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(41L, patient, doctor,
+                    Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
+            apt.setAppointmentDate(LocalDate.now().plusDays(3));
+            apt.setAppointmentTime(LocalTime.of(9, 0));
+
+            when(appointmentRepository.findById(41L)).thenReturn(Optional.of(apt));
+            when(walletService.refundAppointment(any(), any(), any(), any())).thenReturn(new WalletTransaction());
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.cancelAppointmentByDoctor(41L, 1L, "Bận đột xuất");
+
+            assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
+            assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.REFUNDED);
+            verify(walletService, times(1)).refundAppointment(eq(5L), eq(41L), any(), any());
+        }
+
+        @Test
+        @DisplayName("❌ Bác sĩ hủy lịch không phải của mình → throw BadRequestException")
+        void cancelByDoctor_wrongDoctor_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(42L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(appointmentRepository.findById(42L)).thenReturn(Optional.of(apt));
+
+            // doctorId = 999 ≠ doctor.id = 1
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByDoctor(42L, 999L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment does not belong to this doctor");
+        }
+
+        @Test
+        @DisplayName("❌ Bác sĩ hủy appointment đã COMPLETED → throw BadRequestException")
+        void cancelByDoctor_completed_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(43L, patient, doctor,
+                    Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
+
+            when(appointmentRepository.findById(43L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByDoctor(43L, 1L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Cannot cancel a completed appointment");
+        }
+
+        @Test
+        @DisplayName("❌ Bác sĩ hủy appointment đã CANCELLED → throw BadRequestException")
+        void cancelByDoctor_alreadyCancelled_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(44L, patient, doctor,
+                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, AppConstants.WALLET);
+
+            when(appointmentRepository.findById(44L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByDoctor(44L, 1L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment is already cancelled");
+        }
+
+        @Test
+        @DisplayName("❌ Hủy appointment trong vòng 24h → throw BadRequestException")
+        void cancelByDoctor_within24h_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            // Lịch hẹn trong vòng 1 giờ tới → nhỏ hơn 24h
+            Appointment apt = buildAppointment(45L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            apt.setAppointmentDate(LocalDate.now());
+            // Đặt giờ trong tương lai gần (nếu giờ hiện tại < 23:00)
+            LocalTime nearFuture = LocalTime.now().plusMinutes(30);
+            if (nearFuture.isAfter(LocalTime.of(23, 59))) {
+                nearFuture = LocalTime.of(23, 59);
+            }
+            apt.setAppointmentTime(nearFuture);
+
+            when(appointmentRepository.findById(45L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByDoctor(45L, 1L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Cannot cancel appointment less than 24 hours before scheduled time");
+        }
+    }
+
+    // =========================================================
+    // cancelAppointmentByAdmin TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("cancelAppointmentByAdmin()")
+    class CancelAppointmentByAdminTests {
+
+        @Test
+        @DisplayName("✅ Admin hủy appointment PENDING thành công")
+        void cancelByAdmin_pending_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(50L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(appointmentRepository.findById(50L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.cancelAppointmentByAdmin(50L, "Hệ thống bảo trì");
+
+            assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
+            assertThat(apt.getCancellationReason()).isEqualTo("Hệ thống bảo trì");
+        }
+
+        @Test
+        @DisplayName("✅ Admin hủy appointment WALLET đã thanh toán → hoàn tiền")
+        void cancelByAdmin_walletPaid_refund() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. X", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(51L, patient, doctor,
+                    Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
+
+            when(appointmentRepository.findById(51L)).thenReturn(Optional.of(apt));
+            when(walletService.refundAppointment(any(), any(), any(), any())).thenReturn(new WalletTransaction());
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.cancelAppointmentByAdmin(51L, "Bác sĩ nghỉ đột xuất");
+
+            assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
+            assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.REFUNDED);
+            verify(walletService, times(1)).refundAppointment(eq(5L), eq(51L), any(), any());
+        }
+
+        @Test
+        @DisplayName("❌ Admin hủy appointment đã COMPLETED → throw BadRequestException")
+        void cancelByAdmin_completed_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(52L, patient, doctor,
+                    Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
+
+            when(appointmentRepository.findById(52L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByAdmin(52L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Cannot cancel a completed appointment");
+        }
+
+        @Test
+        @DisplayName("❌ Admin hủy appointment đã CANCELLED → throw BadRequestException")
+        void cancelByAdmin_alreadyCancelled_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(5L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(53L, patient, doctor,
+                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, AppConstants.WALLET);
+
+            when(appointmentRepository.findById(53L)).thenReturn(Optional.of(apt));
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByAdmin(53L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment is already cancelled");
+        }
+
+        @Test
+        @DisplayName("❌ Appointment không tồn tại → throw ResourceNotFoundException")
+        void cancelByAdmin_notFound_throwsException() {
+            when(appointmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentByAdmin(999L, "reason"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // updatePaymentStatus TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("updatePaymentStatus()")
+    class UpdatePaymentStatusTests {
+
+        @Test
+        @DisplayName("✅ Cập nhật payment status thành công")
+        void updatePaymentStatus_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(60L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(appointmentRepository.findById(60L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.updatePaymentStatus(60L, Appointment.PaymentStatus.PAID);
+
+            assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.PAID);
+            verify(appointmentRepository, times(1)).save(apt);
+        }
+
+        @Test
+        @DisplayName("❌ Appointment không tồn tại → throw ResourceNotFoundException")
+        void updatePaymentStatus_notFound_throwsException() {
+            when(appointmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> appointmentService.updatePaymentStatus(999L, Appointment.PaymentStatus.PAID))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // cancelAppointmentDueToPaymentFailure TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("cancelAppointmentDueToPaymentFailure()")
+    class CancelDueToPaymentFailureTests {
+
+        @Test
+        @DisplayName("✅ Hủy appointment khi thanh toán thất bại → status CANCELLED, payment UNPAID")
+        void cancelDueToPaymentFailure_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(70L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, AppConstants.WALLET);
+
+            when(appointmentRepository.findById(70L)).thenReturn(Optional.of(apt));
+            when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            appointmentService.cancelAppointmentDueToPaymentFailure(70L);
+
+            assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
+            assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.UNPAID);
+            verify(appointmentRepository, times(1)).save(apt);
+        }
+
+        @Test
+        @DisplayName("❌ Appointment không tồn tại → throw ResourceNotFoundException")
+        void cancelDueToPaymentFailure_notFound_throwsException() {
+            when(appointmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> appointmentService.cancelAppointmentDueToPaymentFailure(999L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // deleteAppointment TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("deleteAppointment()")
+    class DeleteAppointmentTests {
+
+        @Test
+        @DisplayName("✅ Xóa appointment thành công")
+        void deleteAppointment_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment apt = buildAppointment(80L, patient, doctor,
+                    Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.REFUNDED, AppConstants.WALLET);
+
+            when(appointmentRepository.findById(80L)).thenReturn(Optional.of(apt));
+
+            appointmentService.deleteAppointment(80L);
+
+            verify(appointmentRepository, times(1)).delete(apt);
+        }
+
+        @Test
+        @DisplayName("❌ Appointment không tồn tại → throw ResourceNotFoundException")
+        void deleteAppointment_notFound_throwsException() {
+            when(appointmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> appointmentService.deleteAppointment(999L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Appointment not found");
+        }
+    }
+
+    // =========================================================
+    // createAppointment với FamilyMember TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("createAppointment() - Family Member")
+    class CreateAppointmentFamilyMemberTests {
+
+        @Test
+        @DisplayName("✅ Đặt lịch cho người nhà (familyMemberId hợp lệ) → thành công")
+        void createAppointment_withFamilyMember_success() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat A");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            FamilyMember familyMember = new FamilyMember();
+            familyMember.setId(10L);
+            familyMember.setFullName("Nguyễn Văn B");
+            familyMember.setRelationship(FamilyMember.Relationship.CHILD);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", 10L);
+            Appointment savedApt = buildAppointment(90L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any())).thenReturn(Collections.emptyList());
+            when(appointmentRepository.save(any())).thenReturn(savedApt);
+            when(familyMemberRepository.findByIdAndMainPatientId(10L, 6L)).thenReturn(familyMember);
+            when(familyAppointmentRepository.save(any())).thenReturn(new FamilyAppointment());
+            when(notificationService.createNotification(any(), any(), any(), any(), any())).thenReturn(null);
+
+            AppointmentResponse response = appointmentService.createAppointment(6L, req);
+
+            assertThat(response).isNotNull();
+            verify(familyAppointmentRepository, times(1)).save(any(FamilyAppointment.class));
+        }
+
+        @Test
+        @DisplayName("❌ FamilyMember không thuộc bệnh nhân → throw BadRequestException")
+        void createAppointment_familyMemberNotBelongsToPatient_throwsException() {
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(6L, pUser, "Pat A");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr. A", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", 99L);
+            Appointment savedApt = buildAppointment(91L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+
+            when(patientRepository.findById(6L)).thenReturn(Optional.of(patient));
+            when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+            when(appointmentRepository.findByDoctorAndDate(eq(1L), any())).thenReturn(Collections.emptyList());
+            when(appointmentRepository.save(any())).thenReturn(savedApt);
+            // familyMember không tồn tại → trả về null
+            when(familyMemberRepository.findByIdAndMainPatientId(99L, 6L)).thenReturn(null);
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(6L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Family member not found");
+        }
+
+        @Test
+        @DisplayName("❌ Patient không tồn tại → throw ResourceNotFoundException")
+        void createAppointment_patientNotFound_throwsException() {
+            when(patientRepository.findById(999L)).thenReturn(Optional.empty());
+
+            CreateAppointmentRequest req = buildCreateRequest(1L, "CASH", null);
+
+            assertThatThrownBy(() -> appointmentService.createAppointment(999L, req))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Patient not found");
+        }
+    }
+
+    // =========================================================
+    // getAvailableTimeSlots - Filter hôm nay TESTS
+    // =========================================================
+    @Nested
+    @DisplayName("getAvailableTimeSlots() - Today Filtering")
+    class GetAvailableTimeSlotsForTodayTests {
+
+        @Test
+        @DisplayName("✅ Hôm nay: chỉ trả về các slot trong tương lai")
+        void getAvailableSlots_today_onlyFutureSlots() {
+            LocalDate today = LocalDate.now();
+            when(appointmentRepository.findByDoctorAndDate(1L, today))
+                    .thenReturn(Collections.emptyList());
+
+            List<String> slots = appointmentService.getAvailableTimeSlots(1L, today);
+
+            // Tất cả slot trả về phải ở sau thời điểm hiện tại
+            LocalTime now = LocalTime.now();
+            slots.forEach(slot ->
+                assertThat(LocalTime.parse(slot)).isAfter(now)
+            );
+        }
+
+        @Test
+        @DisplayName("✅ Ngày mai: trả về đủ 17 slots (không lọc theo giờ hiện tại)")
+        void getAvailableSlots_tomorrow_returns17Slots() {
+            LocalDate tomorrow = LocalDate.now().plusDays(1);
+            when(appointmentRepository.findByDoctorAndDate(1L, tomorrow))
+                    .thenReturn(Collections.emptyList());
+
+            List<String> slots = appointmentService.getAvailableTimeSlots(1L, tomorrow);
+
+            assertThat(slots).hasSize(17);
+        }
+
+        @Test
+        @DisplayName("✅ Hôm nay với slot PENDING đã book: loại bỏ slot đó và các slot quá khứ")
+        void getAvailableSlots_today_bookedAndPastSlotsRemoved() {
+            LocalDate today = LocalDate.now();
+
+            // Tìm slot trong tương lai để đặt PENDING
+            Optional<LocalTime> futureSlot = firstFutureSlotToday();
+            Assumptions.assumeTrue(futureSlot.isPresent(), "Không có slot tương lai hôm nay");
+
+            User pUser = buildUser(1L, "p", "p@t.com", User.Role.PATIENT);
+            Patient patient = buildPatient(1L, pUser, "Pat");
+            User dUser = buildUser(2L, "d", "d@t.com", User.Role.DOCTOR);
+            Doctor doctor = buildDoctor(1L, dUser, "Dr.", "Tim", Doctor.DoctorStatus.ACTIVE);
+
+            Appointment pending = buildAppointment(1L, patient, doctor,
+                    Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
+            pending.setAppointmentTime(futureSlot.get());
+
+            when(appointmentRepository.findByDoctorAndDate(1L, today)).thenReturn(List.of(pending));
+
+            List<String> slots = appointmentService.getAvailableTimeSlots(1L, today);
+
+            assertThat(slots).doesNotContain(futureSlot.get().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+        }
     }
 }
+

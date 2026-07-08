@@ -7,6 +7,8 @@ import com.doctorbooking.backend.model.FamilyMember;
 import com.doctorbooking.backend.model.Patient;
 import com.doctorbooking.backend.repository.FamilyMemberRepository;
 import com.doctorbooking.backend.repository.PatientRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,13 +49,13 @@ public class FamilyMemberService {
         logger.info("Creating family member for patient: {}", patientId);
 
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
         // Kiểm tra nếu đây là main account (SELF) và chưa có
         if (request.getRelationship() == FamilyMember.Relationship.SELF) {
             long mainAccountCount = familyMemberRepository.countMainAccountByPatientId(patientId);
             if (mainAccountCount > 0) {
-                throw new RuntimeException("Main account already exists");
+                throw new BadRequestException("Main account already exists");
             }
         }
 
@@ -90,12 +92,12 @@ public class FamilyMemberService {
 
         FamilyMember member = familyMemberRepository.findByIdAndMainPatientId(memberId, patientId);
         if (member == null) {
-            throw new RuntimeException("Family member not found or access denied");
+            throw new ResourceNotFoundException("Family member not found or access denied");
         }
 
         // Không cho phép sửa main account
         if (member.getIsMainAccount()) {
-            throw new RuntimeException("Cannot update main account");
+            throw new BadRequestException("Cannot update main account");
         }
 
         // Update fields if provided
@@ -110,7 +112,7 @@ public class FamilyMemberService {
         }
         if (request.getRelationship() != null) {
             if (request.getRelationship() == FamilyMember.Relationship.SELF) {
-                throw new RuntimeException("Cannot update relationship to SELF");
+                throw new BadRequestException("Cannot update relationship to SELF");
             }
             member.setRelationship(request.getRelationship());
         }
@@ -142,14 +144,14 @@ public class FamilyMemberService {
 
         FamilyMember member = familyMemberRepository.findByIdAndMainPatientId(memberId, patientId);
         if (member == null) {
-            throw new RuntimeException("Family member not found or access denied");
+            throw new ResourceNotFoundException("Family member not found or access denied");
         }
 
         // Nếu là main account, kiểm tra xem còn main account khác không
         if (member.getIsMainAccount()) {
             long mainAccountCount = familyMemberRepository.countMainAccountByPatientId(patientId);
             if (mainAccountCount <= 1) {
-                throw new RuntimeException("Cannot delete the only main account. At least one main account must exist.");
+                throw new BadRequestException("Cannot delete the only main account. At least one main account must exist.");
             }
             logger.info("Deleting main account. Remaining main accounts: {}", mainAccountCount - 1);
         }

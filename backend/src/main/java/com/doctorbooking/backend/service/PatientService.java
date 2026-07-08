@@ -9,6 +9,8 @@ import com.doctorbooking.backend.model.User;
 import com.doctorbooking.backend.repository.PatientRepository;
 import com.doctorbooking.backend.repository.TreatmentRepository;
 import com.doctorbooking.backend.repository.UserRepository;
+import com.doctorbooking.backend.exception.ResourceNotFoundException;
+import com.doctorbooking.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,7 @@ public class PatientService {
 
     public PatientResponse getPatientById(Long id) {
         Patient patient = patientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + id));
         PatientResponse response = PatientResponse.fromEntity(patient);
         
         // Include treatments
@@ -60,14 +62,14 @@ public class PatientService {
     // Patient Profile Management (for patient themselves)
     public PatientResponse getPatientByUserId(Long userId) {
         Patient patient = patientRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Patient not found with user id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with user id: " + userId));
         return PatientResponse.fromEntity(patient);
     }
 
     @Transactional
     public PatientResponse updatePatientProfile(Long userId, UpdatePatientProfileRequest request) {
         Patient patient = patientRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Patient not found with user id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with user id: " + userId));
 
         if (request.getFullName() != null) {
             patient.setFullName(request.getFullName());
@@ -79,7 +81,7 @@ public class PatientService {
             try {
                 patient.setGender(Patient.Gender.valueOf(request.getGender().toUpperCase()));
             } catch (IllegalArgumentException e) {
-                throw new RuntimeException("Invalid gender: " + request.getGender());
+                throw new BadRequestException("Invalid gender: " + request.getGender());
             }
         }
         if (request.getPhone() != null) {
@@ -102,11 +104,11 @@ public class PatientService {
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         // Verify current password (plain text comparison)
         if (!request.getCurrentPassword().equals(user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+            throw new BadRequestException("Current password is incorrect");
         }
 
         // Update password (plain text - tạm thời)

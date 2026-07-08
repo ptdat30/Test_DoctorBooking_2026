@@ -70,5 +70,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("targetDate") java.time.LocalDate targetDate,
         @Param("targetTime") java.time.LocalTime targetTime
     );
+
+    // Explicit re-declarations để giúp Java compiler và Mockito resolve đúng inherited methods
+    // từ JpaRepository khi findAll() bị override với custom @Query
+    @Override
+    Optional<Appointment> findById(Long id);
+
+    @Override
+    <S extends Appointment> S save(S entity);
+
+    @Override
+    void delete(Appointment entity);
 }
 

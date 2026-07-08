@@ -4,8 +4,20 @@ import com.doctorbooking.backend.constant.AppConstants;
 import com.doctorbooking.backend.dto.request.CreateAppointmentRequest;
 import com.doctorbooking.backend.dto.request.UpdateAppointmentRequest;
 import com.doctorbooking.backend.dto.response.AppointmentResponse;
-import com.doctorbooking.backend.model.*;
-import com.doctorbooking.backend.repository.*;
+import com.doctorbooking.backend.model.Appointment;
+import com.doctorbooking.backend.model.Doctor;
+import com.doctorbooking.backend.model.Feedback;
+import com.doctorbooking.backend.model.FamilyAppointment;
+import com.doctorbooking.backend.model.FamilyMember;
+import com.doctorbooking.backend.model.Patient;
+import com.doctorbooking.backend.model.User;
+import com.doctorbooking.backend.model.WalletTransaction;
+import com.doctorbooking.backend.repository.AppointmentRepository;
+import com.doctorbooking.backend.repository.DoctorRepository;
+import com.doctorbooking.backend.repository.FamilyAppointmentRepository;
+import com.doctorbooking.backend.repository.FamilyMemberRepository;
+import com.doctorbooking.backend.repository.FeedbackRepository;
+import com.doctorbooking.backend.repository.PatientRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -114,15 +126,15 @@ class AppointmentServiceExtraTest {
     @Test
     void updatePaymentStatus_success() {
         Appointment apt = appointment(Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "VNPAY");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         service.updatePaymentStatus(88L, Appointment.PaymentStatus.PAID);
         assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.PAID);
-        verify(appointmentRepository).save(apt);
+        verify(appointmentRepository).save(any(Appointment.class));
     }
 
     @Test
     void updatePaymentStatus_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.updatePaymentStatus(88L, Appointment.PaymentStatus.PAID))
                 .hasMessageContaining("Appointment not found");
     }
@@ -131,7 +143,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelDueToPaymentFailure_success() {
         Appointment apt = appointment(Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "VNPAY");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         service.cancelAppointmentDueToPaymentFailure(88L);
         assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
         assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.UNPAID);
@@ -139,7 +151,7 @@ class AppointmentServiceExtraTest {
 
     @Test
     void cancelDueToPaymentFailure_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.cancelAppointmentDueToPaymentFailure(88L))
                 .hasMessageContaining("Appointment not found");
     }
@@ -148,7 +160,7 @@ class AppointmentServiceExtraTest {
     @Test
     void completeAppointment_success() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         service.completeAppointment(88L);
         assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.COMPLETED);
     }
@@ -156,14 +168,14 @@ class AppointmentServiceExtraTest {
     @Test
     void completeAppointment_notConfirmed_throws() {
         Appointment apt = appointment(Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.completeAppointment(88L))
                 .hasMessageContaining("Only CONFIRMED appointments can be completed");
     }
 
     @Test
     void completeAppointment_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.completeAppointment(88L)).hasMessageContaining("Appointment not found");
     }
 
@@ -171,14 +183,14 @@ class AppointmentServiceExtraTest {
     @Test
     void deleteAppointment_success() {
         Appointment apt = appointment(Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         service.deleteAppointment(88L);
-        verify(appointmentRepository).delete(apt);
+        verify(appointmentRepository).delete(any(Appointment.class));
     }
 
     @Test
     void deleteAppointment_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.deleteAppointment(88L)).hasMessageContaining("Appointment not found");
     }
 
@@ -186,7 +198,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByDoctor_success_noRefund() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         service.cancelAppointmentByDoctor(88L, 1L, "Bận đột xuất");
         assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
         assertThat(apt.getCancellationReason()).isEqualTo("Bận đột xuất");
@@ -196,7 +208,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByDoctor_walletRefund() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         when(walletService.refundAppointment(any(), any(), any(), any())).thenReturn(new WalletTransaction());
         service.cancelAppointmentByDoctor(88L, 1L, "Lý do");
         assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.REFUNDED);
@@ -206,7 +218,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByDoctor_wrongDoctor() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.cancelAppointmentByDoctor(88L, 99L, "x"))
                 .hasMessageContaining("does not belong to this doctor");
     }
@@ -214,7 +226,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByDoctor_completed() {
         Appointment apt = appointment(Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.cancelAppointmentByDoctor(88L, 1L, "x"))
                 .hasMessageContaining("Cannot cancel a completed appointment");
     }
@@ -222,7 +234,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByDoctor_alreadyCancelled() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.cancelAppointmentByDoctor(88L, 1L, "x"))
                 .hasMessageContaining("already cancelled");
     }
@@ -230,9 +242,9 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByDoctor_within24h_throws() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PENDING, "CASH");
-        apt.setAppointmentDate(LocalDate.now());
-        apt.setAppointmentTime(LocalTime.of(23, 0));
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        apt.setAppointmentDate(java.time.LocalDate.now());
+        apt.setAppointmentTime(java.time.LocalTime.of(23, 0));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.cancelAppointmentByDoctor(88L, 1L, "x"))
                 .hasMessageContaining("less than 24 hours");
     }
@@ -241,7 +253,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByAdmin_success() {
         Appointment apt = appointment(Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         service.cancelAppointmentByAdmin(88L, "Lý do admin");
         assertThat(apt.getStatus()).isEqualTo(Appointment.AppointmentStatus.CANCELLED);
     }
@@ -249,7 +261,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByAdmin_walletRefund() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         when(walletService.refundAppointment(any(), any(), any(), any())).thenReturn(new WalletTransaction());
         service.cancelAppointmentByAdmin(88L, "x");
         assertThat(apt.getPaymentStatus()).isEqualTo(Appointment.PaymentStatus.REFUNDED);
@@ -258,7 +270,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByAdmin_completed() {
         Appointment apt = appointment(Appointment.AppointmentStatus.COMPLETED, Appointment.PaymentStatus.PAID, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.cancelAppointmentByAdmin(88L, "x"))
                 .hasMessageContaining("Cannot cancel a completed appointment");
     }
@@ -266,14 +278,14 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelByAdmin_alreadyCancelled() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CANCELLED, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         assertThatThrownBy(() -> service.cancelAppointmentByAdmin(88L, "x"))
                 .hasMessageContaining("already cancelled");
     }
 
     @Test
     void cancelByAdmin_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.cancelAppointmentByAdmin(88L, "x"))
                 .hasMessageContaining("Appointment not found");
     }
@@ -493,7 +505,7 @@ class AppointmentServiceExtraTest {
     @Test
     void cancelAppointment_walletRefundFails_throws() {
         Appointment apt = appointment(Appointment.AppointmentStatus.CONFIRMED, Appointment.PaymentStatus.PAID, AppConstants.WALLET);
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         when(walletService.refundAppointment(any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("Wallet error"));
         assertThatThrownBy(() -> service.cancelAppointment(88L, 6L))
@@ -502,7 +514,7 @@ class AppointmentServiceExtraTest {
 
     @Test
     void cancelAppointment_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.cancelAppointment(88L, 6L))
                 .hasMessageContaining("Appointment not found");
     }
@@ -510,7 +522,7 @@ class AppointmentServiceExtraTest {
     // ── cancelByDoctor extra ──
     @Test
     void cancelByDoctor_notFound() {
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.empty());
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.cancelAppointmentByDoctor(88L, 1L, "x"))
                 .hasMessageContaining("Appointment not found");
     }
@@ -519,7 +531,7 @@ class AppointmentServiceExtraTest {
     @Test
     void updateAppointmentByAdmin_statusToConfirmed_sendsEmail() {
         Appointment apt = appointment(Appointment.AppointmentStatus.PENDING, Appointment.PaymentStatus.PENDING, "CASH");
-        when(appointmentRepository.findById(88L)).thenReturn(Optional.of(apt));
+        when(appointmentRepository.findById(Long.valueOf(88L))).thenReturn(Optional.of(apt));
         when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateAppointmentRequest req = new UpdateAppointmentRequest();

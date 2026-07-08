@@ -2,6 +2,7 @@ package com.doctorbooking.backend.service;
 
 import com.doctorbooking.backend.dto.response.SymptomCheckResponse;
 import com.doctorbooking.backend.repository.DoctorRepository;
+import com.doctorbooking.backend.exception.AIServiceException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -189,7 +190,7 @@ public class AISymptomService {
                 "Ví dụ: Nếu không có 'Gastroenterology' nhưng có 'Internal Medicine', thì chọn 'Internal Medicine' cho đau bụng.\n";
     }
 
-    private String callGroqApiWithRetry(String prompt) throws Exception {
+    String callGroqApiWithRetry(String prompt) throws Exception {
         Exception lastException = null;
 
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -206,10 +207,10 @@ public class AISymptomService {
             }
         }
 
-        throw new RuntimeException("Không thể kết nối đến Groq API sau " + MAX_RETRIES + " lần thử", lastException);
+        throw new AIServiceException("Không thể kết nối đến Groq API sau " + MAX_RETRIES + " lần thử", lastException);
     }
 
-    private String callGroqApi(String prompt) throws Exception {
+    String callGroqApi(String prompt) throws Exception {
         // Escape prompt đúng cách
         String escapedPrompt = prompt.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
@@ -239,7 +240,7 @@ public class AISymptomService {
 
         if (response.statusCode() != 200) {
             logger.error("Groq API trả về status code: {}, body: {}", response.statusCode(), response.body());
-            throw new RuntimeException("Groq API Error (Status: " + response.statusCode() + "): " + response.body());
+            throw new AIServiceException("Groq API Error (Status: " + response.statusCode() + "): " + response.body());
         }
 
         return response.body();
@@ -251,12 +252,12 @@ public class AISymptomService {
 
             // Kiểm tra cấu trúc response theo định dạng OpenAI
             if (!root.has(FIELD_CHOICES) || root.get(FIELD_CHOICES).size() == 0) {
-                throw new RuntimeException("Response không có choices");
+                throw new AIServiceException("Response không có choices");
             }
 
             JsonNode choice = root.get(FIELD_CHOICES).get(0);
             if (!choice.has(FIELD_MESSAGE) || !choice.get(FIELD_MESSAGE).has(FIELD_CONTENT)) {
-                throw new RuntimeException("Response không có message.content");
+                throw new AIServiceException("Response không có message.content");
             }
 
             String aiText = choice.get(FIELD_MESSAGE).get(FIELD_CONTENT).asText();
@@ -359,108 +360,101 @@ public class AISymptomService {
             Exception error) {
         String lowerInput = userInput.toLowerCase().trim();
 
-        // Phát hiện câu chào hỏi
-        boolean isGreeting = lowerInput.equals("xin chào") ||
-                lowerInput.equals("hello") ||
-                lowerInput.equals("chào") ||
-                lowerInput.equals("chào bạn") ||
-                lowerInput.startsWith("xin chào") ||
-                lowerInput.startsWith("hello");
-
-        // Phát hiện loại câu hỏi
-        boolean isQuestion = lowerInput.contains("nên") || lowerInput.contains("khám") ||
-                lowerInput.contains("khoa nào") || lowerInput.contains("bác sĩ");
-
-        String advice;
-        String reason;
-        List<String> homeRemedies;
-
-        if (isGreeting) {
-            // Câu chào hỏi - trả lời tự nhiên, không đưa ra chẩn đoán hay lời khuyên y tế
-            advice = "Xin chào! Tôi là HealthAI, trợ lý sức khỏe thông minh của bạn. " +
-                    "Tôi có thể giúp bạn: " +
-                    "• Phân tích triệu chứng và gợi ý chuyên khoa phù hợp " +
-                    "• Tư vấn về các vấn đề sức khỏe " +
-                    "• Hướng dẫn đặt lịch khám với bác sĩ " +
-                    "Bạn hãy mô tả triệu chứng hoặc đặt câu hỏi để tôi hỗ trợ bạn nhé!";
-            reason = ""; // Không có chẩn đoán cho câu chào hỏi
-            homeRemedies = new ArrayList<>(); // Không có lời khuyên tại nhà
-        } else if (isQuestion) {
-            advice = "Dựa trên câu hỏi của bạn, tôi khuyên bạn nên: " +
-                    "1. Mô tả rõ các triệu chứng bạn đang gặp phải. " +
-                    "2. Tôi sẽ phân tích và gợi ý chuyên khoa phù hợp từ hệ thống. " +
-                    "3. Sau đó bạn có thể đặt lịch khám với bác sĩ chuyên khoa đó. " +
-                    "Các chuyên khoa hiện có trong hệ thống: " + specializationsStr + ".";
-            reason = "Bạn đang hỏi về việc nên khám ở đâu. Tôi cần thêm thông tin về triệu chứng để tư vấn chính xác hơn.";
-            homeRemedies = Arrays.asList(
-                    "Mô tả chi tiết các triệu chứng bạn đang gặp phải.",
-                    "Cung cấp thông tin về thời gian và mức độ nghiêm trọng của triệu chứng.");
+        if (isGreetingInput(lowerInput)) {
+            return getGreetingIntelligentFallback();
+        } else if (isQuestionInput(lowerInput)) {
+            return getQuestionIntelligentFallback(specializationsStr);
         } else {
-            advice = "Cảm ơn bạn đã chia sẻ. Tôi đang xử lý thông tin của bạn. " +
-                    "Vui lòng thử lại sau một chút hoặc mô tả rõ hơn về vấn đề sức khỏe bạn đang gặp phải.";
-            reason = ""; // Không có thông tin đủ để chẩn đoán
-            homeRemedies = new ArrayList<>(); // Không có lời khuyên cụ thể
+            return getDefaultIntelligentFallback();
         }
-
-        return new SymptomCheckResponse(
-                "Other",
-                "Low",
-                advice,
-                reason,
-                homeRemedies);
     }
 
     private SymptomCheckResponse createFallbackResponse(String userInput, Exception error) {
         logger.error("Tạo fallback response do lỗi: {}", error.getMessage());
 
-        // Phân tích input để tạo response phù hợp
         String lowerInput = userInput.toLowerCase().trim();
 
-        // Phát hiện câu chào hỏi
-        boolean isGreeting = lowerInput.equals("xin chào") ||
+        if (isGreetingInput(lowerInput)) {
+            return getGreetingFallbackResponse();
+        } else if (isQuestionInput(lowerInput)) {
+            return getQuestionFallbackResponse();
+        } else {
+            return getDefaultFallbackResponse();
+        }
+    }
+
+    private boolean isGreetingInput(String lowerInput) {
+        return lowerInput.equals("xin chào") ||
                 lowerInput.equals("hello") ||
                 lowerInput.equals("chào") ||
                 lowerInput.equals("chào bạn") ||
                 lowerInput.startsWith("xin chào") ||
                 lowerInput.startsWith("hello");
+    }
 
-        boolean isQuestion = lowerInput.contains("nên") || lowerInput.contains("khám") ||
+    private boolean isQuestionInput(String lowerInput) {
+        return lowerInput.contains("nên") || lowerInput.contains("khám") ||
                 lowerInput.contains("khoa nào") || lowerInput.contains("bác sĩ");
+    }
 
-        String advice;
-        String reason;
-        List<String> homeRemedies;
+    private SymptomCheckResponse getGreetingIntelligentFallback() {
+        String advice = "Xin chào! Tôi là HealthAI, trợ lý sức khỏe thông minh của bạn. " +
+                "Tôi có thể giúp bạn: " +
+                "• Phân tích triệu chứng và gợi ý chuyên khoa phù hợp " +
+                "• Tư vấn về các vấn đề sức khỏe " +
+                "• Hướng dẫn đặt lịch khám với bác sĩ " +
+                "Bạn hãy mô tả triệu chứng hoặc đặt câu hỏi để tôi hỗ trợ bạn nhé!";
+        return new SymptomCheckResponse("Other", "Low", advice, "", new java.util.ArrayList<>());
+    }
 
-        if (isGreeting) {
-            // Câu chào hỏi - trả lời tự nhiên
-            advice = "Xin chào! Tôi là HealthAI, trợ lý sức khỏe thông minh của bạn. " +
-                    "Tôi có thể giúp bạn phân tích triệu chứng và gợi ý chuyên khoa phù hợp. " +
-                    "Bạn hãy mô tả triệu chứng hoặc đặt câu hỏi để tôi hỗ trợ bạn nhé!";
-            reason = "";
-            homeRemedies = new ArrayList<>();
-        } else if (isQuestion) {
-            advice = "Xin lỗi, tôi gặp một chút khó khăn trong việc xử lý câu hỏi của bạn. " +
-                    "Bạn có thể mô tả rõ hơn về các triệu chứng hoặc vấn đề sức khỏe bạn đang gặp phải không? " +
-                    "Tôi sẽ cố gắng tư vấn và gợi ý chuyên khoa phù hợp cho bạn.";
-            reason = "Hệ thống đang gặp sự cố kỹ thuật.";
-            homeRemedies = Arrays.asList(
-                    "Thử lại sau vài phút.",
-                    "Mô tả lại vấn đề một cách chi tiết hơn.");
-        } else {
-            advice = "Xin lỗi, hệ thống đang gặp sự cố kỹ thuật tạm thời. " +
-                    "Vui lòng thử lại sau một chút. Nếu vấn đề vẫn tiếp tục, " +
-                    "bạn có thể liên hệ trực tiếp với bác sĩ hoặc mô tả lại triệu chứng của bạn.";
-            reason = "Hệ thống đang gặp sự cố kỹ thuật.";
-            homeRemedies = Arrays.asList(
-                    "Thử lại sau vài phút.",
-                    "Kiểm tra kết nối mạng của bạn.");
-        }
+    private SymptomCheckResponse getQuestionIntelligentFallback(String specializationsStr) {
+        String advice = "Dựa trên câu hỏi của bạn, tôi khuyên bạn nên: " +
+                "1. Mô tả rõ các triệu chứng bạn đang gặp phải. " +
+                "2. Tôi sẽ phân tích và gợi ý chuyên khoa phù hợp từ hệ thống. " +
+                "3. Sau đó bạn có thể đặt lịch khám với bác sĩ chuyên khoa đó. " +
+                "Các chuyên khoa hiện có trong hệ thống: " + specializationsStr + ".";
+        String reason = "Bạn đang hỏi về việc nên khám ở đâu. Tôi cần thêm thông tin về triệu chứng để tư vấn chính xác hơn.";
+        List<String> homeRemedies = java.util.Arrays.asList(
+                "Mô tả chi tiết các triệu chứng bạn đang gặp phải.",
+                "Cung cấp thông tin về thời gian và mức độ nghiêm trọng của triệu chứng."
+        );
+        return new SymptomCheckResponse("Other", "Low", advice, reason, homeRemedies);
+    }
 
-        return new SymptomCheckResponse(
-                "Other",
-                "Low",
-                advice,
-                reason,
-                homeRemedies);
+    private SymptomCheckResponse getDefaultIntelligentFallback() {
+        String advice = "Cảm ơn bạn đã chia sẻ. Tôi đang xử lý thông tin của bạn. " +
+                "Vui lòng thử lại sau một chút hoặc mô tả rõ hơn về vấn đề sức khỏe bạn đang gặp phải.";
+        return new SymptomCheckResponse("Other", "Low", advice, "", new java.util.ArrayList<>());
+    }
+
+    private SymptomCheckResponse getGreetingFallbackResponse() {
+        String advice = "Xin chào! Tôi là HealthAI, trợ lý sức khỏe thông minh của bạn. " +
+                "Tôi có thể giúp bạn phân tích triệu chứng và gợi ý chuyên khoa phù hợp. " +
+                "Bạn hãy mô tả triệu chứng hoặc đặt câu hỏi để tôi hỗ trợ bạn nhé!";
+        return new SymptomCheckResponse("Other", "Low", advice, "", new java.util.ArrayList<>());
+    }
+
+    private SymptomCheckResponse getQuestionFallbackResponse() {
+        String advice = "Xin lỗi, tôi gặp một chút khó khăn trong việc xử lý câu hỏi của bạn. " +
+                "Bạn có thể mô tả rõ hơn về các triệu chứng hoặc vấn đề sức khỏe bạn đang gặp phải không? " +
+                "Tôi sẽ cố gắng tư vấn và gợi ý chuyên khoa phù hợp cho bạn.";
+        String reason = "Hệ thống đang gặp sự cố kỹ thuật.";
+        List<String> homeRemedies = java.util.Arrays.asList(
+                "Thử lại sau vài phút.",
+                "Mô tả lại vấn đề một cách chi tiết hơn."
+        );
+        return new SymptomCheckResponse("Other", "Low", advice, reason, homeRemedies);
+    }
+
+    private SymptomCheckResponse getDefaultFallbackResponse() {
+        String advice = "Xin lỗi, hệ thống đang gặp sự cố kỹ thuật tạm thời. " +
+                "Vui lòng thử lại sau một chút. Nếu vấn đề vẫn tiếp tục, " +
+                "bạn có thể liên hệ trực tiếp với bác sĩ hoặc mô tả lại triệu chứng của bạn.";
+        String reason = "Hệ thống đang gặp sự cố kỹ thuật.";
+        List<String> homeRemedies = java.util.Arrays.asList(
+                "Thử lại sau vài phút.",
+                "Kiểm tra kết nối mạng của bạn."
+        );
+        return new SymptomCheckResponse("Other", "Low", advice, reason, homeRemedies);
     }
 }
