@@ -29,12 +29,13 @@ public class PatientService {
     private final PasswordEncoder passwordEncoder;
 
     public List<PatientResponse> searchPatients(String keyword) {
+        List<Patient> patients;
         if (keyword == null || keyword.trim().isEmpty()) {
-            return patientRepository.findAll().stream()
-                    .map(PatientResponse::fromEntity)
-                    .collect(Collectors.toList());
+            patients = patientRepository.findAllWithUser();
+        } else {
+            patients = patientRepository.searchPatients(keyword.trim());
         }
-        return patientRepository.searchPatients(keyword).stream()
+        return patients.stream()
                 .map(PatientResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -54,7 +55,7 @@ public class PatientService {
     }
 
     public List<PatientResponse> getAllPatients() {
-        return patientRepository.findAll().stream()
+        return patientRepository.findAllWithUser().stream()
                 .map(PatientResponse::fromEntity)
                 .collect(Collectors.toList());
     }

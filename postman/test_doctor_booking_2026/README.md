@@ -77,13 +77,24 @@ postman/test_doctor_booking_2026/
 
 ---
 
-## Import vào Postman GUI
+## Import vào Postman GUI (test LOCAL)
 
-1. Postman → **Import** → chọn `test_doctor_booking_2026.postman_collection.json`
-2. Postman → **Import** → chọn `test_doctor_booking_2026.postman_environment.json`
-3. Chọn environment **test_doctor_booking_2026 - Local**
-4. Chạy folder **00_Setup** đầu tiên (lấy token cho 3 roles)
-5. Chạy từng folder module hoặc **22_E2E_Flows** để test E2E
+> **Quan trọng:** Bộ test này chạy ổn định trên **backend local** (`http://localhost:8080`).  
+> Không chạy full collection lên Render — free tier trả **429 Too Many Requests**.
+
+1. Khởi động backend local trước:
+   ```powershell
+   cd backend
+   .\mvnw.cmd spring-boot:run
+   ```
+2. Postman → **Import** → chọn `test_doctor_booking_2026.postman_collection.json`
+3. Postman → **Import** → chọn `test_doctor_booking_2026.postman_environment.json`
+4. Chọn environment **test_doctor_booking_2026 - Local** (góc phải trên)
+5. Kiểm tra biến `base_url` = `http://localhost:8080` và `allow_remote` = `false`
+6. Chạy folder **00_Setup** đầu tiên (lấy token cho 3 roles)
+7. Chạy từng folder module hoặc **22_E2E_Flows** để test E2E
+
+Nếu trước đó đã import environment cũ trỏ Render: **xóa environment cũ** rồi import lại file JSON trong repo (hoặc sửa `base_url` thủ công).
 
 ---
 
@@ -160,7 +171,8 @@ reports/report.json   ← Dùng cho CI/CD parsing
 
 | Biến | Mô tả | Loại |
 |------|-------|------|
-| `base_url` | API root (mặc định: `http://localhost:8080`) | default |
+| `base_url` | API root — **local:** `http://localhost:8080` | default |
+| `allow_remote` | `false` = chỉ cho phép localhost (mặc định local) | default |
 | `patient_username` / `patient_password` | Tài khoản patient test | default / secret |
 | `doctor_username` / `doctor_password` | Tài khoản doctor test | default / secret |
 | `admin_username` / `admin_password` | Tài khoản admin test | default / secret |
