@@ -5,13 +5,14 @@
 const { I } = inject();
 
 module.exports = {
-  editProfileBtn:    'button.edit-profile-btn',
-  changePasswordBtn: 'button.btn-change-password',
-  profileCard:       '.profile-section-card',
+  editProfileBtn:    '//button[contains(., "Chỉnh sửa")]',
+  changePasswordBtn: '//button[contains(., "Đổi mật khẩu")]',
+  profileCard:       '.app-card',
 
   navigateTo() {
     I.amOnPage('/doctor/profile');
     I.waitInUrl('/doctor/profile', 10);
+    I.waitForText('Hồ sơ của tôi', 15);
     I.waitForElement(this.profileCard, 15);
   },
 

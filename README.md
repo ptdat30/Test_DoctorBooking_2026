@@ -42,6 +42,13 @@
 
 ---
 
+## Academic Reports
+
+- Tong hop bao cao kiem thu: [`docs/Report/README.md`](docs/Report/README.md)
+- Bao cao van dap (tai lieu + code links): [`docs/Report/09_Oral_Defense_Report/README.md`](docs/Report/09_Oral_Defense_Report/README.md)
+
+---
+
 ## Project Overview
 
 Doctor Booking System la he thong dat lich kham benh truc tuyen day du chuc nang, phuc vu 3 vai tro chinh: **Benh nhan (Patient)**, **Bac si (Doctor)** va **Quan tri vien (Admin)**.

@@ -5,7 +5,7 @@
 const { I } = inject();
 
 module.exports = {
-  pageTitle: '//h1[contains(text(), "Doctor Dashboard")]',
+  pageTitle: '//h1[contains(text(), "Bảng điều khiển bác sĩ")]',
 
   navigateTo() {
     I.amOnPage('/doctor/dashboard');

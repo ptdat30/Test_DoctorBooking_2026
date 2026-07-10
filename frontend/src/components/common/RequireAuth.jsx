@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import ShellIcon from '../shell/ShellIcon';
 import './RequireAuth.css';
 
 const RequireAuth = ({ children, message = 'Bạn cần đăng nhập để sử dụng chức năng này' }) => {

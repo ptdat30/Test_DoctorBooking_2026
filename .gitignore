@@ -67,3 +67,7 @@ build/
 
 # Newman test reports (auto-generated on each run, not meant for version control)
 postman/test_doctor_booking_2026/reports/
+
+# QA release assets are uploaded to GitHub Releases, not committed
+docs/Report/09_Oral_Defense_Report/deliverables/*.zip
+docs/Report/09_Oral_Defense_Report/deliverables/*.xlsx

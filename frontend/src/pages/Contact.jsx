@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/common/Navbar';
+import ShellIcon from '../components/shell/ShellIcon';
 import './Contact.css';
 
 const Contact = () => {
