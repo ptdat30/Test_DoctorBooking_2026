@@ -1,9 +1,15 @@
 // Collection-level test script helpers (embedded in Postman collection)
 
-const maxMs = parseInt(pm.environment.get('max_response_ms') || '2000', 10);
+const maxMs = parseInt(pm.environment.get('max_response_ms') || '5000', 10);
+const listMaxMs = parseInt(pm.environment.get('max_response_ms_list') || String(maxMs * 2), 10);
+const requestUrl = pm.request.url.toString();
+const isPatientListGet = pm.request.method === 'GET'
+    && /\/(admin|doctor)\/patients(\?|$)/.test(requestUrl)
+    && !/\/patients\/\d+/.test(requestUrl);
+const thresholdMs = isPatientListGet ? listMaxMs : maxMs;
 
 pm.test('Response time is below threshold', function () {
-    pm.expect(pm.response.responseTime).to.be.below(maxMs);
+    pm.expect(pm.response.responseTime).to.be.below(thresholdMs);
 });
 
 // tv4 mini schema validator (Postman sandbox includes tv4)

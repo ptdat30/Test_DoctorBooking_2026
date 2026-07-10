@@ -58,14 +58,14 @@ class PatientServiceTest {
 
     @Test
     void testSearchPatients_EmptyKeyword_ReturnsAll() {
-        when(patientRepository.findAll()).thenReturn(List.of(mockPatient));
+        when(patientRepository.findAllWithUser()).thenReturn(List.of(mockPatient));
         List<PatientResponse> result = patientService.searchPatients("");
         assertEquals(1, result.size());
     }
 
     @Test
     void testSearchPatients_NullKeyword_ReturnsAll() {
-        when(patientRepository.findAll()).thenReturn(List.of(mockPatient));
+        when(patientRepository.findAllWithUser()).thenReturn(List.of(mockPatient));
         List<PatientResponse> result = patientService.searchPatients(null);
         assertEquals(1, result.size());
     }
@@ -103,7 +103,7 @@ class PatientServiceTest {
 
     @Test
     void testGetAllPatients() {
-        when(patientRepository.findAll()).thenReturn(List.of(mockPatient));
+        when(patientRepository.findAllWithUser()).thenReturn(List.of(mockPatient));
         List<PatientResponse> result = patientService.getAllPatients();
         assertEquals(1, result.size());
     }
