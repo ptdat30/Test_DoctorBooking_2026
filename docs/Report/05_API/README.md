@@ -30,6 +30,8 @@ cd postman/test_doctor_booking_2026/newman
 
 Yêu cầu: backend đang chạy tại `http://localhost:8080`.
 
+**Postman GUI:** import `test_doctor_booking_2026.postman_environment.json`, chọn environment **Local**, kiểm tra `base_url=http://localhost:8080`. Không chạy full suite lên Render (429 rate limit).
+
 ## Nhóm API chính (theo controller)
 
 | Prefix | Role | Ví dụ endpoint |

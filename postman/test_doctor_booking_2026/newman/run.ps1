@@ -34,5 +34,7 @@ if ($DataFile) {
 }
 
 Write-Host "Running: newman $($newmanArgs -join ' ')"
+Write-Host "Environment: base_url = http://localhost:8080 (local)" -ForegroundColor Cyan
+Write-Host "Ensure backend is running: cd backend; .\mvnw.cmd spring-boot:run" -ForegroundColor Yellow
 npx --yes newman $newmanArgs
 exit $LASTEXITCODE

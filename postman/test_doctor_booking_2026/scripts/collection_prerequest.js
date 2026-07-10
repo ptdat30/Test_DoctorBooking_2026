@@ -1,4 +1,21 @@
 // Collection-level pre-request script (embedded in Postman collection)
+
+// Local-only guard: avoid accidental Render/production runs (429 rate limit)
+const baseUrl = (pm.environment.get('base_url') || '').trim();
+const allowRemote = pm.environment.get('allow_remote') === 'true';
+const isLocalHost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(baseUrl);
+
+if (!isLocalHost && !allowRemote) {
+    throw new Error(
+        'Postman chưa cấu hình test LOCAL.\n' +
+        `  base_url hiện tại: "${baseUrl}"\n` +
+        '  → Đặt base_url = http://localhost:8080\n' +
+        '  → Chọn environment "test_doctor_booking_2026 - Local"\n' +
+        '  → Re-import file test_doctor_booking_2026.postman_environment.json\n' +
+        '  (Chỉ set allow_remote=true khi cố ý test staging/production.)'
+    );
+}
+
 if (pm.environment.get('skip_dependent_tests') === 'true') {
     const skipFolders = ['22_E2E_Flows', '99_Skip_Notice'];
     const folderName = pm.info.requestName || '';
