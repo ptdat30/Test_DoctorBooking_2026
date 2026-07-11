@@ -1,49 +1,61 @@
 // e2e/pages/DoctorPage.cjs
-// Page Object Model cho trang Bác sĩ (/doctor/appointments)
+// Page Object Model cho trang Bác sĩ (/doctor/appointments) — UI shell redesign
 
 'use strict';
 
 const { I } = inject();
 
 module.exports = {
-  // Locators
   locators: {
     form: {
       diagnosisCode: 'input[name="diagnosisCode"]',
       diagnosis: 'textarea[name="diagnosis"]',
       treatmentNotes: 'textarea[name="treatmentNotes"]',
       advice: 'textarea[name="advice"]',
-      submitBtn: 'button.button-submit',
-    }
+      submitBtn: '//button[@form="treatment-form"][contains(., "Lưu điều trị")]',
+    },
   },
 
-  // Actions
+  cardForPatient(patientName) {
+    return `//article[contains(@class, "app-card")][.//p[contains(@class, "font-semibold")][contains(., "${patientName}")]]`;
+  },
+
   navigateToAppointments() {
     I.amOnPage('/doctor/appointments');
     I.waitInUrl('/doctor/appointments', 10);
+    I.waitForText('Lịch hẹn của tôi', 10);
   },
 
   confirmAppointment(patientName) {
-    const xpath = `//div[contains(@class, "appointment-card")][descendant::div[contains(@class, "patient-name")][contains(., "${patientName}")]]//button[contains(@class, "confirm-btn")]`;
-    I.waitForElement(xpath, 10);
-    I.click(xpath);
-    I.waitForInvisible('//button[contains(text(), "Đang xác nhận...")]', 10);
+    const card = this.cardForPatient(patientName);
+    I.waitForElement(card, 15);
+    I.scrollTo(card);
+    const btn = `${card}//button[contains(., "Xác nhận")]`;
+    I.waitForElement(btn, 10);
+    I.click(btn);
+    I.waitForInvisible('//button[contains(., "Đang xác nhận")]', 15);
   },
 
   cancelAppointment(patientName) {
-    const xpath = `//div[contains(@class, "appointment-card")][descendant::div[contains(@class, "patient-name")][contains(., "${patientName}")]]//button[contains(@class, "cancel-btn")]`;
-    I.waitForElement(xpath, 10);
-    I.click(xpath);
-    I.waitForElement('//h2[contains(text(), "Hủy Lịch Hẹn")]', 10);
+    const card = this.cardForPatient(patientName);
+    I.waitForElement(card, 15);
+    I.scrollTo(card);
+    const btn = `${card}//button[contains(., "Hủy lịch")]`;
+    I.waitForElement(btn, 10);
+    I.click(btn);
+    I.waitForElement('//h2[contains(text(), "Hủy lịch hẹn")]', 10);
     I.click('//label[contains(., "Bận công việc đột xuất")]');
-    I.click('//button[contains(text(), "Xác nhận hủy")]');
-    I.waitForInvisible('//h2[contains(text(), "Hủy Lịch Hẹn")]', 10);
+    I.click('//button[contains(., "Xác nhận hủy")]');
+    I.waitForInvisible('//h2[contains(text(), "Hủy lịch hẹn")]', 10);
   },
 
   clickTreatmentAppointment(patientName) {
-    const xpath = `//div[contains(@class, "appointment-card")][descendant::div[contains(@class, "patient-name")][contains(., "${patientName}")]]//button[contains(@class, "treatment-btn")]`;
-    I.waitForElement(xpath, 10);
-    I.click(xpath);
+    const card = this.cardForPatient(patientName);
+    I.waitForElement(card, 15);
+    I.scrollTo(card);
+    const btn = `${card}//button[contains(., "Tạo phiếu điều trị")]`;
+    I.waitForElement(btn, 10);
+    I.click(btn);
   },
 
   fillTreatmentForm(code, diagnosis, notes, advice) {
@@ -57,5 +69,5 @@ module.exports = {
   submitTreatmentForm() {
     I.click(this.locators.form.submitBtn);
     I.waitForInvisible(this.locators.form.submitBtn, 10);
-  }
+  },
 };

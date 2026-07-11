@@ -12,17 +12,17 @@ module.exports = {
     ratingRange:       'input[name="rating"]',
     commentArea:       'textarea[name="comment"]',
     submitBtn:         'button[type="submit"]',
-    successMsg:        '//div[contains(text(), "Feedback submitted successfully!")]',
+    successMsg:        '//div[contains(text(), "Gửi phản hồi thành công")]',
     editBtn:           '//button[contains(., "Chỉnh sửa")]',
-    cannotEdit24h:     'Không thể sửa',
-    editModalTitle:    '//h2[contains(text(), "Chỉnh Sửa Phản Hồi")]',
+    cannotEdit24h:     'Hết thời hạn chỉnh sửa',
+    editModalTitle:    '//h2[contains(text(), "Chỉnh sửa phản hồi")]',
     editSaveBtn:       '//div[contains(@class, "fixed")]//button[contains(., "Cập nhật")]',
   },
 
   doctor: {
-    filterSelect:      '//select[preceding-sibling::label[contains(., "Lọc theo sao")]]',
-    replyModalTextArea:'//textarea[@placeholder="Nhập phản hồi cho bệnh nhân..."]',
-    replyModalSubmit:  '//button[contains(., "Gửi phản hồi") or contains(., "Cập nhật")]',
+    filterSelect: '//label[contains(., "Lọc theo sao")]/following-sibling::select | //div[contains(@class, "app-card")][.//label[contains(., "Lọc theo sao")]]//select',
+    replyModalTextArea: '//div[contains(@class, "fixed")]//textarea',
+    replyModalSubmit: '//div[contains(@class, "fixed")]//button[contains(., "Gửi phản hồi") or contains(., "Cập nhật")]',
   },
 
   admin: {
@@ -66,7 +66,7 @@ module.exports = {
       I.fillField(this.patient.commentArea, comment);
     }
     I.click(this.patient.submitBtn);
-    I.waitForElement(this.patient.successMsg, 15);
+    I.waitForText('Gửi phản hồi thành công', 15);
   },
 
   navigateToMyFeedbacks() {
@@ -91,7 +91,7 @@ module.exports = {
   },
 
   seeCannotEditWithin24h() {
-    I.waitForText('quá 24h', 10);
+    I.waitForText('Hết thời hạn chỉnh sửa', 10);
   },
 
   seeEditSuccessToast() {
@@ -106,9 +106,10 @@ module.exports = {
   },
 
   async replyToFeedback(patientName, replyText) {
-    const rowXPath = `//div[contains(@class, "hover:bg-[#232b3b]")][descendant::h3[contains(text(), "${patientName}")]]`;
+    const rowXPath = `//div[contains(@class, "divide-y")]/div[.//h3[contains(text(), "${patientName}")]]`;
     I.waitForElement(rowXPath, 15);
-    
+    I.scrollTo(rowXPath);
+
     const replyBtnXPath = `${rowXPath}//button[contains(., "Trả lời") or contains(., "Sửa")]`;
     I.waitForElement(replyBtnXPath, 10);
     I.click(replyBtnXPath);
@@ -120,7 +121,7 @@ module.exports = {
   },
 
   seeReplyOnDoctorPage(patientName, replyText) {
-    const replyTextXPath = `//div[contains(@class, "hover:bg-[#232b3b]")][descendant::h3[contains(text(), "${patientName}")]]//p[contains(text(), "${replyText}")]`;
+    const replyTextXPath = `//div[contains(@class, "divide-y")]/div[.//h3[contains(text(), "${patientName}")]]//p[contains(text(), "${replyText}")]`;
     I.waitForElement(replyTextXPath, 10);
     I.seeElement(replyTextXPath);
   },

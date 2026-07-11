@@ -33,17 +33,14 @@ Scenario('TC-INT-01: Bệnh nhân đặt lịch khám -> Bác sĩ duyệt thành
 
   await BookingPage.navigateTo();
   await BookingPage.selectDoctorById(doctorId);
-  await BookingPage.selectDateWithOffset(Math.floor(Math.random() * 10) + 10); // Book 10-20 ngày tới để tránh trùng lịch hẹn cũ và 24h constraint
-
-  // Chờ hiển thị danh sách giờ trống
-  I.waitForElement('select[name="appointmentTime"] option:not([value=""])', 10);
+  await BookingPage.selectFirstAvailableDate();
   await BookingPage.selectFirstAvailableTimeSlot();
   BookingPage.fillNotes('Đau đầu kéo dài');
   BookingPage.submitBooking();
-  BookingPage.confirmInModal();
+  await BookingPage.confirmInModal();
 
-  I.waitInUrl('/patient/history', 15);
-  I.see('PENDING', '.status-badge'); // Assert trạng thái ban đầu là PENDING trong bảng lịch sử
+  I.waitInUrl('/patient/history', 20);
+  I.see('Đang chờ'); // StatusBadge PENDING
 
   // Step 2: Logout bệnh nhân
   I.executeScript(() => {
@@ -72,7 +69,7 @@ Scenario('TC-INT-01: Bệnh nhân đặt lịch khám -> Bác sĩ duyệt thành
 
   I.amOnPage('/patient/history');
   I.waitInUrl('/patient/history', 10);
-  I.see('CONFIRMED', '.status-badge');
+  I.see('Đã xác nhận');
 }).tag('@integration').tag('@patient').tag('@doctor');
 
 Scenario('TC-INT-02: Bệnh nhân đặt lịch khám -> Bác sĩ từ chối (Hủy lịch)', async ({ I, LoginPage, BookingPage, DoctorPage }) => {
@@ -85,15 +82,13 @@ Scenario('TC-INT-02: Bệnh nhân đặt lịch khám -> Bác sĩ từ chối (H
 
   await BookingPage.navigateTo();
   await BookingPage.selectDoctorById(doctorId);
-  await BookingPage.selectDateWithOffset(Math.floor(Math.random() * 10) + 21); // Book 21-31 ngày tới để tránh trùng lịch hẹn cũ và 24h constraint
-
-  I.waitForElement('select[name="appointmentTime"] option:not([value=""])', 10);
+  await BookingPage.selectFirstAvailableDate();
   await BookingPage.selectFirstAvailableTimeSlot();
   BookingPage.fillNotes('Đau bụng âm ỉ');
   BookingPage.submitBooking();
-  BookingPage.confirmInModal();
+  await BookingPage.confirmInModal();
 
-  I.waitInUrl('/patient/history', 15);
+  I.waitInUrl('/patient/history', 20);
 
   // Step 2: Logout bệnh nhân
   I.executeScript(() => {
@@ -122,7 +117,7 @@ Scenario('TC-INT-02: Bệnh nhân đặt lịch khám -> Bác sĩ từ chối (H
 
   I.amOnPage('/patient/history');
   I.waitInUrl('/patient/history', 10);
-  I.see('CANCELLED', '.status-badge');
+  I.see('Đã hủy');
 }).tag('@integration').tag('@patient').tag('@doctor');
 
 Scenario('TC-INT-03: Bác sĩ khám bệnh & kê đơn -> Bệnh nhân xem bệnh án', async ({ I, LoginPage, BookingPage, DoctorPage }) => {
@@ -135,15 +130,13 @@ Scenario('TC-INT-03: Bác sĩ khám bệnh & kê đơn -> Bệnh nhân xem bện
 
   await BookingPage.navigateTo();
   await BookingPage.selectDoctorById(doctorId);
-  await BookingPage.selectDateWithOffset(Math.floor(Math.random() * 10) + 32); // Book 32-42 ngày tới để tránh trùng lịch hẹn cũ và 24h constraint
-
-  I.waitForElement('select[name="appointmentTime"] option:not([value=""])', 10);
+  await BookingPage.selectFirstAvailableDate();
   await BookingPage.selectFirstAvailableTimeSlot();
   BookingPage.fillNotes('Đau họng, sốt nhẹ');
   BookingPage.submitBooking();
-  BookingPage.confirmInModal();
+  await BookingPage.confirmInModal();
 
-  I.waitInUrl('/patient/history', 15);
+  I.waitInUrl('/patient/history', 20);
 
   // Step 2: Logout bệnh nhân
   I.executeScript(() => {
@@ -181,9 +174,9 @@ Scenario('TC-INT-03: Bác sĩ khám bệnh & kê đơn -> Bệnh nhân xem bện
 
   I.amOnPage('/patient/treatments');
   I.waitInUrl('/patient/treatments', 10);
-  I.see('Viêm họng hạt cấp tính', 'table');
-  I.click('View Details', 'table');
-  I.waitForText('Treatment Details', 10);
+  I.see('Viêm họng hạt cấp tính');
+  I.click('//button[contains(., "Chi tiết")]');
+  I.waitForText('Chi tiết điều trị', 10);
   I.see('Viêm họng hạt cấp tính');
   I.see('Uống nhiều nước ấm, súc họng nước muối');
 }).tag('@integration').tag('@patient').tag('@doctor');

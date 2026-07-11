@@ -7,12 +7,11 @@ const { I } = inject();
 
 module.exports = {
   // ── Locators ──────────────────────────────────────────────────────────────
-  chatInput:       'input.chat-input',
-  sendBtn:         'button[type="submit"].send-btn',
-  welcomeScreen:   '.welcome-screen',
-  aiMessage:       '.message.ai',
-  typingIndicator: '.typing-indicator',
-  bookingBtn:      '//button[contains(., "Đặt lịch khám")][contains(., "ngay")]',
+  chatInput:       'input[placeholder*="Đau đầu"]',
+  sendBtn:         'form button[type="submit"]',
+  welcomeScreen:   '//h2[contains(text(), "Xin chào")]',
+  aiMessage:       '//div[contains(text(), "AI")]/following-sibling::div | //div[contains(@class, "rounded-2xl")]',
+  bookingBtn:      '//button[contains(., "Đặt lịch khám")]',
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -29,8 +28,8 @@ module.exports = {
   },
 
   waitForAIResponse() {
-    // Chờ ít nhất một tin nhắn từ AI xuất hiện (mock phản hồi nhanh nên bỏ qua typing indicator)
-    I.waitForElement(this.aiMessage, 15);
+    // Chờ tin nhắn AI (bubble bên trái có nhãn AI hoặc nội dung phản hồi)
+    I.waitForElement('//div[contains(@class, "rounded-full")][contains(text(), "AI")]', 15);
   },
 
   clickBookingSuggestion() {
@@ -40,7 +39,7 @@ module.exports = {
   },
 
   seeTextInAIChat(text) {
-    I.waitForText(text, 10, this.aiMessage);
+    I.waitForText(text, 10);
   },
 
   seeSendDisabled() {

@@ -16,7 +16,7 @@ module.exports = {
     username:  '#login-username',
     password:  '#login-password',
     submitBtn: 'button[type="submit"].auth-submit-btn',
-    errorMsg:  '.error-message, [class*="error"]',
+    errorMsg:  '.bg-rose-50, .border-rose-200',
   },
 
   toggles: {
@@ -86,6 +86,8 @@ module.exports = {
       doctor:  '/doctor/dashboard',
       admin:   '/admin/dashboard',
     };
-    I.waitInUrl(routes[role], 10);
+    const path = routes[role];
+    // Codecept waitForFunction chỉ nhận args dạng array (string bị bỏ qua)
+    I.waitForFunction((expected) => window.location.pathname.includes(expected), [path], 15);
   },
 };

@@ -88,7 +88,7 @@ Scenario('TC-BOOK-04: E2E Đặt lịch hoàn chỉnh → tạo appointment thà
   BookingPage.submitBooking();
 
   // Step 6: Confirm modal
-  BookingPage.confirmInModal();
+  await BookingPage.confirmInModal();
 
   // Assert: redirect về trang patient sau booking
   I.waitInUrl('/patient', 15);

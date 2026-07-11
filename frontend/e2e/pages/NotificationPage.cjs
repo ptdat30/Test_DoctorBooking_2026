@@ -1,16 +1,17 @@
 // e2e/pages/NotificationPage.cjs
-// Page Object Model cho dropdown thông báo trên PatientLayout
+// Page Object Model cho dropdown thông báo (ShellNotifications)
 
 'use strict';
 
 const { I } = inject();
 
 module.exports = {
-  bell:              '.notification-bell',
-  badge:             '.notification-badge',
-  dropdown:          '.notification-dropdown',
-  emptyState:        '.notification-empty',
-  notificationItem:  '.notification-item',
+  root:              '[data-notifications-root]',
+  bell:              'button[aria-label="Thông báo"]',
+  badge:             '[data-notifications-root] span.bg-rose-500',
+  dropdown:          '[data-notifications-root] .absolute',
+  emptyState:        '//p[contains(text(), "Chưa có thông báo")]',
+  notificationItem:  '[data-notifications-root] button.w-full.text-left',
   markAllReadBtn:    '//button[contains(., "Đánh dấu tất cả đã đọc")]',
 
   openDropdown() {
@@ -30,7 +31,7 @@ module.exports = {
 
   seeEmptyNotifications() {
     I.waitForElement(this.emptyState, 10);
-    I.see('Chưa có thông báo nào', this.emptyState);
+    I.see('Chưa có thông báo');
   },
 
   seeNotificationCount(n) {

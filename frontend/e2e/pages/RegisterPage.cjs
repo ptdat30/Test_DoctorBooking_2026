@@ -101,7 +101,7 @@ module.exports = {
   },
 
   seeApiError() {
-    I.waitForElement('[class*="error"], .error-message', 8);
+    I.waitForElement('.bg-rose-50, .border-rose-200', 8);
   },
 
   // Xác minh email không hợp lệ theo HTML5 (type="email"): validity.valid === false

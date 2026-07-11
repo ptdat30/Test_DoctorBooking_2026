@@ -30,14 +30,12 @@ Scenario('TC-FEEDBACK-ALL: Luồng gửi đánh giá -> Bác sĩ phản hồi ->
 
   await BookingPage.navigateTo();
   await BookingPage.selectDoctorById(doctorId);
-  await BookingPage.selectDateWithOffset(Math.floor(Math.random() * 10) + 43); // Book 43-53 ngày tới để tránh trùng lịch hẹn cũ và 24h constraint
-
-  I.waitForElement('select[name="appointmentTime"] option:not([value=""])', 10);
+  await BookingPage.selectFirstAvailableDate();
   await BookingPage.selectFirstAvailableTimeSlot();
   BookingPage.fillNotes('Khám đau họng');
   BookingPage.submitBooking();
-  BookingPage.confirmInModal();
-  I.waitInUrl('/patient/history', 15);
+  await BookingPage.confirmInModal();
+  I.waitInUrl('/patient/history', 20);
 
   // Logout bệnh nhân
   I.executeScript(() => {

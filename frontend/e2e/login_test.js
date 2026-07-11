@@ -22,7 +22,7 @@ Scenario('Patient logs in with valid credentials', ({ I }) => {
   I.click('Đăng nhập');
   
   // Wait for redirect to patient dashboard
-  I.waitForElement('.patient-layout', 10);
+  I.waitForElement('.app-shell-sidebar', 10);
   I.seeInCurrentUrl('/patient/dashboard');
   I.see('Bảng điều khiển');
 });

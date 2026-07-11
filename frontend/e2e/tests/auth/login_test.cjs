@@ -46,7 +46,7 @@ Scenario('TC-LOGIN-02: Sai mật khẩu → hiển thị error message', async (
   LoginPage.fillCredentials(testPatient.username, 'WrongPassword!999');
   LoginPage.submit();
   // Assert: phải thấy error message (không redirect)
-  I.waitForElement('[class*="error"], .error-message', 5);
+  I.waitForElement('.bg-rose-50, .border-rose-200', 5);
   I.seeInCurrentUrl('/login');
 }).tag('@login').tag('@negative');
 
@@ -57,7 +57,7 @@ Scenario('TC-LOGIN-03: Username không tồn tại → hiển thị error', asyn
   await LoginPage.navigateTo();
   LoginPage.fillCredentials('nonexistent_user_xyz_999', 'AnyPassword@123');
   LoginPage.submit();
-  I.waitForElement('[class*="error"], .error-message', 5);
+  I.waitForElement('.bg-rose-50, .border-rose-200', 5);
   I.seeInCurrentUrl('/login');
 }).tag('@login').tag('@negative');
 

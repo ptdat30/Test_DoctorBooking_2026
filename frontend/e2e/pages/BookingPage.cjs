@@ -65,9 +65,11 @@ module.exports = {
   /**
    * Chọn bác sĩ theo ID
    */
-  selectDoctorById(id) {
+  async selectDoctorById(id) {
     I.waitForElement(this.doctorSelect.select, 10);
-    I.selectOption(this.doctorSelect.select, String(id));
+    await I.usePlaywrightTo(`select doctor ${id}`, async ({ page }) => {
+      await page.locator('select[name="doctorId"]').selectOption(String(id));
+    });
     I.wait(1);
   },
 
@@ -76,16 +78,10 @@ module.exports = {
    */
   async selectFirstAvailableDate() {
     I.waitForElement(this.dateSelect.input, 10);
-    for (let offset = 1; offset <= 7; offset++) {
-      const target = new Date();
-      target.setDate(target.getDate() + offset);
-      const year = target.getFullYear();
-      const month = String(target.getMonth() + 1).padStart(2, '0');
-      const day = String(target.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-
-      I.fillField(this.dateSelect.input, dateStr);
-      I.wait(1);
+    // Offset ngẫu nhiên để giảm đụng slot giữa các scenario chạy tuần tự
+    const start = 2 + Math.floor(Math.random() * 10);
+    for (let offset = start; offset <= start + 18; offset++) {
+      await this.selectDateWithOffset(offset);
 
       const hasSlots = await I.executeScript(() => {
         const select = document.querySelector('select[name="appointmentTime"]');
@@ -94,7 +90,7 @@ module.exports = {
       if (hasSlots) return;
     }
 
-    throw new Error('No available slots found in next 7 days');
+    throw new Error('No available slots found in search window');
   },
 
   /**
@@ -109,8 +105,13 @@ module.exports = {
     const day = String(targetDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    I.fillField(this.dateSelect.input, dateStr);
-    I.wait(1);
+    // Playwright fill() cập nhật đúng controlled React input (tránh synthetic Event không sync state)
+    await I.usePlaywrightTo(`set appointment date ${dateStr}`, async ({ page }) => {
+      const input = page.locator('input[name="appointmentDate"]');
+      await input.fill(dateStr);
+      await input.dispatchEvent('change');
+    });
+    I.wait(1.5);
   },
 
   /**
@@ -120,16 +121,20 @@ module.exports = {
     I.waitForElement(this.timeSelect.select, 10);
     const value = await I.executeScript(() => {
       const select = document.querySelector('select[name="appointmentTime"]');
-      if (select && select.options.length > 1) {
-        return select.options[1].value;
-      }
-      return null;
+      if (!select || select.options.length <= 1) return null;
+      const options = Array.from(select.options).filter((o) => o.value);
+      if (options.length === 0) return null;
+      // Chọn slot ngẫu nhiên để tránh trùng giờ giữa các test
+      const idx = Math.floor(Math.random() * options.length);
+      return options[idx].value;
     });
 
     if (value) {
-      I.selectOption(this.timeSelect.select, value);
+      await I.usePlaywrightTo(`select time ${value}`, async ({ page }) => {
+        await page.locator('select[name="appointmentTime"]').selectOption(String(value));
+      });
     } else {
-      throw new Error("No time slots available in the dropdown!");
+      throw new Error('No time slots available in the dropdown!');
     }
   },
 
@@ -151,11 +156,27 @@ module.exports = {
   },
 
   /**
-   * Xác nhận trong modal (nếu có)
+   * Xác nhận trong modal. Nếu API lỗi (trùng slot…), chọn lại ngày/giờ và thử lại.
    */
-  confirmInModal() {
-    I.waitForElement(this.form.confirmModal, 5);
-    I.click(this.form.confirmBtn);
+  async confirmInModal(maxAttempts = 3) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      I.waitForElement(this.form.confirmModal, 5);
+      I.click(this.form.confirmBtn);
+
+      const closed = await tryTo(() => I.waitForInvisible(this.form.confirmModal, 12));
+      if (closed) return;
+
+      if (attempt === maxAttempts) {
+        throw new Error(`Booking confirm failed after ${maxAttempts} attempts (modal still open)`);
+      }
+
+      // Đóng modal → chọn slot khác → submit lại
+      I.click('//div[contains(@class, "fixed")]//button[contains(., "Chỉnh sửa")]');
+      I.waitForInvisible(this.form.confirmModal, 5);
+      await this.selectFirstAvailableDate();
+      await this.selectFirstAvailableTimeSlot();
+      this.submitBooking();
+    }
   },
 
   /**
@@ -170,9 +191,9 @@ module.exports = {
     I.selectOption(this.timeSelect.select, time);
   },
 
-  submitAndConfirm() {
+  async submitAndConfirm() {
     this.submitBooking();
-    this.confirmInModal();
+    await this.confirmInModal();
   },
 
   seeBookingError(errorText) {
