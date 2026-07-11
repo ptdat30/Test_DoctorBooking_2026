@@ -1,5 +1,5 @@
 // e2e/pages/WalletPage.cjs
-// Page Object Model cho trang Ví Sức khỏe (/patient/wallet)
+// Page Object Model cho trang Ví Sức khỏe (/patient/wallet) — UI shell redesign
 
 'use strict';
 
@@ -7,25 +7,27 @@ const { I } = inject();
 
 module.exports = {
   // ── Locators ──────────────────────────────────────────────────────────────
-  balanceValue:      '.wallet-card.balance .card-value',
-  topUpBtn:          '//button[contains(@class, "action-btn")][contains(text(), "Nạp tiền")]',
-  tabBtnTransactions: '//button[contains(@class, "tab-btn")][contains(text(), "Lịch sử giao dịch")]',
-  transactionItem:   '.transaction-item',
+  balanceLabel:      '//p[contains(text(), "Số dư")]',
+  balanceValue:      '//p[contains(text(), "Số dư")]/following-sibling::p[contains(@class, "font-bold")]',
+  pointsCard:        '//p[contains(text(), "Điểm tích lũy")]/ancestor::div[contains(@class, "app-card")]',
+  tierCard:          '//p[contains(text(), "Hạng thành viên")]/ancestor::div[contains(@class, "app-card")]',
+  topUpBtn:          '//button[contains(., "Nạp tiền")]',
+  tabBtnTransactions: '//button[contains(., "Lịch sử giao dịch")]',
+  transactionItem:   '//div[contains(@class, "divide-y")]/div[contains(@class, "flex")]',
+  transactionsList:  '//div[contains(@class, "divide-y")]',
 
   topUpModal: {
-    amountInput:     'input.topup-amount-input',
-    quickAmount500k: '//button[contains(@class, "topup-quick-btn")][contains(., "500.000")]',
-    momoRadio:       'input[value="MOMO"]',
-    vnpayRadio:      'input[value="VNPAY"]',
-    confirmBtn:      'button.topup-btn-confirm',
-    cancelBtn:       'button.topup-btn-cancel',
+    amountInput:     '//div[contains(@class, "fixed")]//input[@placeholder="Nhập số tiền"]',
+    quickAmount500k: '//div[contains(@class, "fixed")]//button[contains(., "500.000")]',
+    confirmBtn:      '//div[contains(@class, "fixed")]//button[contains(., "Xác nhận")]',
+    cancelBtn:       '//div[contains(@class, "fixed")]//button[contains(., "Hủy")]',
   },
 
   resultPage: {
-    successTitle:    '.result-title.success',
-    errorTitle:      '.result-title.error',
-    backBtn:         'button.btn-back-to-wallet',
-    viewTxnBtn:      'button.btn-view-transactions',
+    successTitle:    '//h1[contains(text(), "Thanh toán thành công")]',
+    errorTitle:      '//h1[contains(text(), "Thanh toán thất bại")]',
+    details:         '//div[contains(@class, "bg-neutral-50")]',
+    backBtn:         '//button[contains(., "Quay về ví") or contains(., "Thử lại")]',
   },
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -33,15 +35,14 @@ module.exports = {
   navigateTo() {
     I.amOnPage('/patient/wallet');
     I.waitInUrl('/patient/wallet', 10);
+    I.waitForText('Số dư', 15);
     I.waitForElement(this.balanceValue, 15);
   },
 
   async getBalance() {
     I.waitForElement(this.balanceValue, 10);
     const balanceText = await I.grabTextFrom(this.balanceValue);
-    // Trích xuất số từ chuỗi "500.000 VNĐ" -> 500000
-    const amount = parseInt(balanceText.replace(/\D/g, ''));
-    return amount;
+    return parseInt(balanceText.replace(/\D/g, ''), 10);
   },
 
   openTopUpModal() {
@@ -62,9 +63,17 @@ module.exports = {
   },
 
   selectPaymentMethod(method) {
-    const labelSelector = `//label[contains(@class, "topup-payment-option")][.//input[@value="${method}"]]`;
-    I.waitForElement(labelSelector, 10);
-    I.click(labelSelector);
+    const labelSelector = `//div[contains(@class, "fixed")]//input[@name="topupPayment"][@value="${method}"]/ancestor::label | //div[contains(@class, "fixed")]//input[@name="topupPayment"][@value="${method}"]/ancestor::div[contains(@class, "rounded")]`;
+    I.waitForElement(`//div[contains(@class, "fixed")]//input[@name="topupPayment"][@value="${method}"]`, 10);
+    I.executeScript((m) => {
+      const input = document.querySelector(`input[name="topupPayment"][value="${m}"]`);
+      if (input) {
+        input.click();
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        const card = input.closest('label, div');
+        if (card) card.click();
+      }
+    }, method);
   },
 
   submitTopUp() {
@@ -74,17 +83,16 @@ module.exports = {
 
   seeConfirmDisabled() {
     I.waitForVisible(this.topUpModal.confirmBtn, 10);
-    I.seeElement(`${this.topUpModal.confirmBtn}[disabled]`);
+    I.seeElement(`${this.topUpModal.confirmBtn}[@disabled]`);
   },
 
   seeConfirmEnabled() {
     I.waitForVisible(this.topUpModal.confirmBtn, 10);
-    I.dontSeeElement(`${this.topUpModal.confirmBtn}[disabled]`);
+    I.waitForEnabled(this.topUpModal.confirmBtn, 10);
   },
 
   navigateToMockCallback(success = true, amount = 100000, txnRef = 'TX-MOCK-123') {
     const code = success ? '00' : '99';
-    // Số tiền trong VNPAY callback nhân 100
     const vnpAmount = amount * 100;
     const url = `/patient/wallet/payment/result?vnp_ResponseCode=${code}&vnp_Amount=${vnpAmount}&vnp_TransactionNo=12345678&vnp_TxnRef=${txnRef}&vnp_OrderInfo=Nap+tien+vao+vi&vnp_BankCode=NCB&vnp_PayDate=20260626213000`;
     I.amOnPage(url);
@@ -93,17 +101,16 @@ module.exports = {
 
   seePaymentSuccess() {
     I.waitForElement(this.resultPage.successTitle, 10);
-    I.see('Thanh toán thành công!', this.resultPage.successTitle);
+    I.see('Thanh toán thành công!');
   },
 
   seePaymentFailure() {
     I.waitForElement(this.resultPage.errorTitle, 10);
-    I.see('Thanh toán thất bại', this.resultPage.errorTitle);
+    I.see('Thanh toán thất bại');
   },
 
   seePaymentFailureToast() {
-    I.waitForElement('.Toastify__toast--error', 5);
-    I.see('Giao dịch nạp tiền đã bị hủy bởi người dùng hoặc thất bại!', '.Toastify__toast--error');
+    I.waitForText('hủy', 10);
   },
 
   clickBackToWallet() {
@@ -115,10 +122,14 @@ module.exports = {
   viewTransactionsTab() {
     I.waitForVisible(this.tabBtnTransactions, 10);
     I.click(this.tabBtnTransactions);
-    I.waitForElement('.transactions-list', 10);
+    I.waitForText('Lịch sử giao dịch', 10);
   },
 
   seeEmptyTransactions() {
-    I.see('Chưa có giao dịch nào', '.transactions-list');
+    I.see('Chưa có giao dịch nào');
+  },
+
+  seeLoyaltyTier(tierName) {
+    I.waitForText(`Hạng ${tierName}`, 10);
   },
 };

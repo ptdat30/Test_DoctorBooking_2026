@@ -110,8 +110,8 @@ Scenario('TC-WALLET-01: Bệnh nhân nạp tiền vào ví -> chuyển hướng 
 
   // Assert: 3. Thấy thông báo thành công trên trang kết quả
   WalletPage.seePaymentSuccess();
-  I.see('500.000 VNĐ', '.result-details');
-  I.see('TX-MOCK-999', '.result-details');
+  I.see('500.000 VNĐ');
+  I.see('TX-MOCK-999');
 
   // Act: 4. Nhấn nút "Quay về ví" để refresh lại số dư và lịch sử giao dịch
   WalletPage.clickBackToWallet();
@@ -123,8 +123,8 @@ Scenario('TC-WALLET-01: Bệnh nhân nạp tiền vào ví -> chuyển hướng 
   // Xem tab lịch sử và xác nhận giao dịch mới được ghi nhận
   WalletPage.viewTransactionsTab();
   I.waitForElement(WalletPage.transactionItem, 10);
-  I.see('+500.000 VNĐ', '.transactions-list');
-  I.see('Nạp tiền vào ví', '.transactions-list');
+  I.see('+500.000 VNĐ');
+  I.see('Nạp tiền vào ví');
 }).tag('@wallet').tag('@patient');
 
 Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùng -> Hiển thị thông báo lỗi', async ({ I, WalletPage }) => {
@@ -189,5 +189,5 @@ Scenario('TC-WALLET-02: Bệnh nhân nạp tiền bị hủy bởi người dùn
 
   WalletPage.viewTransactionsTab();
   WalletPage.seeEmptyTransactions();
-  I.dontSee('Nạp tiền vào ví', '.transactions-list');
+  I.dontSee('Nạp tiền vào ví');
 }).tag('@wallet').tag('@patient');

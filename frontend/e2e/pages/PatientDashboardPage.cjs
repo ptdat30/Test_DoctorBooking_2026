@@ -9,13 +9,13 @@ module.exports = {
   // ── Locators ──────────────────────────────────────────────────────────────
   // Dựa trên PatientDashboard.jsx
   layout: {
-    sidebar:    '.sidebar, [class*="sidebar"]',
-    mainContent: '.main-content, [class*="main-content"]',
+    sidebar:    '.app-shell-sidebar, .sidebar, [class*="sidebar"]',
+    mainContent: '.main-content, [class*="main-content"], main',
     welcomeMsg:  'h1, h2, [class*="welcome"]',
   },
 
   stats: {
-    container:    '[class*="stats"], [class*="stat-card"]',
+    container:    'button.app-card, .app-card',
     appointmentCount: '[class*="appointment"] [class*="count"], [class*="stat"]',
   },
 
@@ -54,8 +54,8 @@ module.exports = {
    * Kiểm tra có stats card
    */
   seeStatsSection() {
-    I.waitForElement(this.stats.container, 5);
-    I.seeElement(this.stats.container);
+    I.waitForText('Lịch hẹn sắp tới', 10);
+    I.waitForText('Tổng lịch hẹn', 5);
   },
 
   /**

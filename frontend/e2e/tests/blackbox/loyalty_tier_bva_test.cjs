@@ -49,7 +49,7 @@ Scenario('LOY-B0: 999 điểm → hạng Đồng (BRONZE)', async ({ I, LoginPag
   LoginPage.seeSuccessRedirect('patient');
 
   WalletPage.navigateTo();
-  I.see('Hạng Đồng', '.wallet-card.points');
+  WalletPage.seeLoyaltyTier('Đồng');
 }).tag('@bva').tag('@wallet').tag('LOY-B0');
 
 Scenario('LOY-B1: 1.000 điểm → hạng Bạc (SILVER)', async ({ I, LoginPage, WalletPage }) => {
@@ -58,7 +58,7 @@ Scenario('LOY-B1: 1.000 điểm → hạng Bạc (SILVER)', async ({ I, LoginPag
   LoginPage.seeSuccessRedirect('patient');
 
   WalletPage.navigateTo();
-  I.see('Hạng Bạc', '.wallet-card.points');
+  WalletPage.seeLoyaltyTier('Bạc');
 }).tag('@bva').tag('@wallet').tag('LOY-B1');
 
 Scenario('LOY-B3: 5.000 điểm → hạng Vàng (GOLD)', async ({ I, LoginPage, WalletPage }) => {
@@ -67,5 +67,5 @@ Scenario('LOY-B3: 5.000 điểm → hạng Vàng (GOLD)', async ({ I, LoginPage,
   LoginPage.seeSuccessRedirect('patient');
 
   WalletPage.navigateTo();
-  I.see('Hạng Vàng', '.wallet-card.points');
+  WalletPage.seeLoyaltyTier('Vàng');
 }).tag('@bva').tag('@wallet').tag('LOY-B3');

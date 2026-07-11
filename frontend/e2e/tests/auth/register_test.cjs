@@ -53,7 +53,7 @@ Scenario('TC-REG-02: Username trùng → hiển thị error message', async ({ I
   await RegisterPage.register(duplicateUser);
 
   // Assert: phải thấy error, không redirect
-  I.waitForElement('[class*="error"], .error-message', 8);
+  I.waitForElement('.bg-rose-50, .border-rose-200', 8);
   I.seeInCurrentUrl('/register');
 }).tag('@register').tag('@negative');
 
@@ -71,7 +71,7 @@ Scenario('TC-REG-03: Email trùng → hiển thị error message', async ({ I, R
   };
 
   await RegisterPage.register(duplicateEmailUser);
-  I.waitForElement('[class*="error"], .error-message', 8);
+  I.waitForElement('.bg-rose-50, .border-rose-200', 8);
   I.seeInCurrentUrl('/register');
 }).tag('@register').tag('@negative');
 

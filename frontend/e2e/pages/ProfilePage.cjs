@@ -24,9 +24,9 @@ module.exports = {
   },
 
   passwordModal: {
-    currentPassword:  '//form[@id="password-form"]//input[@type="password"][1]',
-    newPassword:      '//form[@id="password-form"]//input[@type="password"][2]',
-    confirmPassword:  '//form[@id="password-form"]//input[@type="password"][3]',
+    currentPassword:  '(//form[@id="password-form"]//input[@type="password"])[1]',
+    newPassword:      '(//form[@id="password-form"]//input[@type="password"])[2]',
+    confirmPassword:  '(//form[@id="password-form"]//input[@type="password"])[3]',
     saveBtn:          '//button[contains(., "Cập nhật")]',
   },
 

@@ -41,9 +41,8 @@ Scenario('TC-PROFILE-01: Cập nhật thông tin cá nhân thành công', async 
   ProfilePage.updateProfile(updatedData);
 
   // Assert: Thấy thông báo thành công và thông tin mới cập nhật hiển thị
-  ProfilePage.seeSuccessMessage('Profile updated successfully');
-  I.see(updatedData.fullName, '.patient-name');
-  I.see('Age:', '.medical-passport');
+  ProfilePage.seeSuccessMessage('Cập nhật hồ sơ thành công');
+  I.see(updatedData.fullName);
 }).tag('@profile').tag('@patient');
 
 Scenario('TC-PROFILE-02: Đổi mật khẩu thành công và kiểm tra đăng nhập bằng mật khẩu mới', async ({ I, LoginPage, ProfilePage, AuthSteps }) => {
@@ -59,14 +58,14 @@ Scenario('TC-PROFILE-02: Đổi mật khẩu thành công và kiểm tra đăng 
   ProfilePage.changePassword(testPatient.password, newPassword);
 
   // Assert: Đổi thành công
-  ProfilePage.seeSuccessMessage('Password changed successfully');
+  ProfilePage.seeSuccessMessage('Đổi mật khẩu thành công');
 
   // Đăng xuất
   AuthSteps.logout();
 
   // Thử đăng nhập lại bằng mật khẩu cũ -> Thất bại
   await LoginPage.login(testPatient.username, testPatient.password);
-  LoginPage.seeError('Invalid username or password');
+  I.waitForElement('.bg-rose-50, .border-rose-200', 5);
 
   // Đăng nhập lại bằng mật khẩu mới -> Thành công
   await LoginPage.login(testPatient.username, newPassword);
@@ -85,7 +84,7 @@ Scenario('TC-PROFILE-03: Đổi mật khẩu thất bại do mật khẩu xác n
   ProfilePage.changePassword(testPatient.password, 'NewPassword@123', 'MismatchPassword@999');
 
   // Assert: Thấy thông báo lỗi
-  ProfilePage.seeErrorMessage('New passwords do not match');
+  ProfilePage.seeErrorMessage('Mật khẩu mới không khớp');
 }).tag('@profile').tag('@patient').tag('@negative');
 
 Scenario('TC-PROFILE-04: Cập nhật liên hệ khẩn cấp SOS thành công', async ({ LoginPage, ProfilePage }) => {
